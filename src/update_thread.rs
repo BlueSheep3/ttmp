@@ -1,5 +1,5 @@
 use crate::{
-	command::match_input,
+	command::{match_input, CommandReturn},
 	config::{load as load_config, Config},
 	input_thread::INPUT_Y,
 };
@@ -62,12 +62,11 @@ pub fn main(receiver: &Receiver<String>) {
 			)
 			.unwrap();
 
-			if match_input(&input, &sink, &mut config) {
-				if input == "q!" {
-					// stop program without saving
-					return;
-				}
-				break;
+			let state = match_input(&input, &sink, &mut config);
+			match state {
+				CommandReturn::Nothing => (),
+				CommandReturn::Quit => break,
+				CommandReturn::QuitNoSave => return,
 			}
 
 			if config.remaining.is_empty() {

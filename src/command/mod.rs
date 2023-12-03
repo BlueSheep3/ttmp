@@ -6,13 +6,23 @@ mod tag;
 use crate::config::Config;
 use rodio::Sink;
 
+/// information to give the update thread after doing a Command
+#[derive(Debug, Default, Clone, PartialEq)]
+pub enum CommandReturn {
+	#[default]
+	Nothing,
+	Quit,
+	QuitNoSave,
+}
+
 // returns true, if the program should quit
-pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> bool {
+pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> CommandReturn {
 	let input = input.split(' ').collect::<Vec<_>>();
 
 	match input.as_slice() {
 		["h" | "?" | "help"] => help(),
-		["q" | "q!"] => return true,
+		["q"] => return CommandReturn::Quit,
+		["q!"] => return CommandReturn::QuitNoSave,
 		["s"] => config.save().unwrap(),
 		["r"] => play::reset(config, sink),
 		["rf"] => reload_files(config),
@@ -34,17 +44,13 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> bool {
 		["trc", tag] => tag::remove_tag_current(config, tag),
 		["taa", tag] => tag::add_tag_remaining(config, tag),
 		["tra", tag] => tag::remove_tag_remaining(config, tag),
-		["m", name, args @ ..] => {
-			if macros::run_macro(config, sink, name, args) {
-				return true;
-			}
-		}
+		["m", name, args @ ..] => return macros::run_macro(config, sink, name, args),
 		["ma", name, commands @ ..] => macros::add_macro(config, name, commands),
 		["mr", name] => macros::remove_macro(config, name),
 		["ml"] => macros::show_macros(config),
 		_ => println!("Invalid Command: {}", input.join(" ")),
 	}
-	false
+	CommandReturn::Nothing
 }
 
 pub fn help() {

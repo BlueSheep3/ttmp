@@ -1,13 +1,14 @@
 //! macros to make using commands less repetitive
 
+use super::CommandReturn;
 use crate::config::Config;
 use rodio::Sink;
 
 // returns true, if the program should quit
-pub fn run_macro(config: &mut Config, sink: &Sink, name: &str, args: &[&str]) -> bool {
+pub fn run_macro(config: &mut Config, sink: &Sink, name: &str, args: &[&str]) -> CommandReturn {
 	let Some(commands) = config.macros.get(&name.to_string()) else {
 		println!("Uknown Macro: {}", name);
-		return false;
+		return CommandReturn::Nothing;
 	};
 
 	let mut commands = commands.clone();
@@ -21,11 +22,14 @@ pub fn run_macro(config: &mut Config, sink: &Sink, name: &str, args: &[&str]) ->
 		.collect::<Vec<_>>();
 
 	for cmd in commands {
-		if super::match_input(&cmd, sink, config) {
-			return true;
+		let state = super::match_input(&cmd, sink, config);
+		match state {
+			CommandReturn::Nothing => (),
+			CommandReturn::Quit => return state,
+			CommandReturn::QuitNoSave => return state,
 		}
 	}
-	false
+	CommandReturn::Nothing
 }
 
 pub fn add_macro(config: &mut Config, name: &str, commands: &[&str]) {
