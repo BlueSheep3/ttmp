@@ -1,0 +1,31 @@
+pub fn help() {
+	println!("Commands:");
+	println!("h | ? - Show this help");
+	println!("q - Quit the program");
+	println!("q! - Quit the program without saving");
+	println!("s - Save the config");
+	println!("r - Reset the Playlist (put all files in it)");
+	println!("rf - Add new files to the config, and remove deleted ones");
+	println!("fte TAGS - Keeps all Files that match any of TAGS");
+	println!("fta TAGS - Keeps all Files that match all of TAGS");
+	println!("ftn - Keeps all Files that have no Tags");
+	println!("fsf SEARCH - Keeps all Files whose full path name contains SEARCH");
+	println!("fs SEARCH - Keeps all Files whose file name contains SEARCH");
+	println!("p - Play / Pause");
+	println!("pr - Randomize / Shuffle Playlist");
+	println!("pn - Skip to the next Song");
+	println!("ps SPEED - Set the playback speed");
+	println!("pv VOLUME - Set the playback volume");
+	println!("max NUM - Set the maximum number of files to be played");
+	println!("prog - Show the current progress");
+	println!("tlc - Display all Tags of the current File");
+	println!("tla - Display all Tags of all Files");
+	println!("tac TAG - add TAG to the current File");
+	println!("trc TAG - remove TAG from the current File");
+	println!("tar TAG - add TAG to all remaining Files");
+	println!("trr TAG - remove TAG from all remaining Files");
+	println!("m NAME ARGS - run Macro with NAME and arguments ARGS");
+	println!("ma NAME STR - add a Macro with NAME that runs STR");
+	println!("mr NAME - remove a Macro with NAME");
+	println!("ml - lists all Macros");
+}

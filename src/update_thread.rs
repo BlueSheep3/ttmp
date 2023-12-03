@@ -41,7 +41,11 @@ pub fn main(receiver: &Receiver<String>) {
 	}
 
 	// starting sink values
-	sink.pause();
+	if config.start_playing_immediately {
+		sink.play();
+	} else {
+		sink.pause();
+	}
 	sink.set_speed(config.speed);
 	sink.set_volume(config.volume);
 

@@ -18,6 +18,8 @@ pub struct Config {
 	pub speed: f32,
 	/// the volume of the music
 	pub volume: f32,
+	/// whether the music should start playing as soon as the program starts
+	pub start_playing_immediately: bool,
 	/// type "m NAME" to run all commands listed under the macro
 	#[serde(serialize_with = "serializer::sorted_hashmap")]
 	pub macros: HashMap<String, String>,
