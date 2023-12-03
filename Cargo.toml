@@ -1,0 +1,27 @@
+[package]
+name = "music_player"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+crossterm = "0.27"
+rand = "0.8"
+rodio = "0.17"
+ron = "0.8"
+serde = { version = "1", features = ["derive"] }
+winapi = { version = "0.3", features = ["winbase"] }
+
+[build-dependencies]
+winres = "0.1"
+
+
+
+[profile.release]
+opt-level = "z"
+strip = "symbols"
+
+[profile.release.package."*"]
+opt-level = "z"
+strip = "symbols"
