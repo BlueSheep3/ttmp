@@ -1,0 +1,4 @@
+- multiple files???
+- faster skipping
+  - allow for any skipping during song
+- format progress better

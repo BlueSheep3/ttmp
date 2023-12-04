@@ -1,5 +1,6 @@
 //! commands that filter the playlist based on some condition like tags or length
 
+use super::play::next_song;
 use crate::config::Config;
 use rodio::Sink;
 use std::collections::HashSet;
@@ -23,7 +24,7 @@ pub fn tag_exists(config: &mut Config, sink: &Sink, tags: &[&str]) {
 	});
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		sink.stop();
+		next_song(sink);
 	}
 }
 
@@ -39,7 +40,7 @@ pub fn tag_all(config: &mut Config, sink: &Sink, tags: &[&str]) {
 	});
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		sink.stop();
+		next_song(sink);
 	}
 }
 
@@ -55,7 +56,7 @@ pub fn no_tags(config: &mut Config, sink: &Sink) {
 	});
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		sink.stop();
+		next_song(sink);
 	}
 }
 
@@ -72,7 +73,7 @@ pub fn search_full(config: &mut Config, sink: &Sink, search: &[&str]) {
 		.retain(|file| file.to_string_lossy().to_lowercase().contains(&search));
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		sink.stop();
+		next_song(sink);
 	}
 }
 
@@ -93,6 +94,27 @@ pub fn search_file_name(config: &mut Config, sink: &Sink, search: &[&str]) {
 	});
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		sink.stop();
+		next_song(sink);
+	}
+}
+
+pub fn search_file_name_starts_with(config: &mut Config, sink: &Sink, search: &[&str]) {
+	if config.remaining.is_empty() {
+		return;
+	}
+	let prev_current = config.remaining[0].clone();
+
+	let search = search.join(" ").to_lowercase();
+
+	config.remaining.retain(|file| {
+		file.file_name()
+			.unwrap()
+			.to_string_lossy()
+			.to_lowercase()
+			.starts_with(&search)
+	});
+
+	if config.remaining.is_empty() || prev_current != config.remaining[0] {
+		next_song(sink);
 	}
 }

@@ -25,6 +25,8 @@ pub struct Config {
 	pub macros: HashMap<String, String>,
 	/// the remaining songs in order (current song included)
 	pub remaining: Vec<PathBuf>,
+	/// the songs to loop when `remaining` ends
+	pub looping_songs: Vec<PathBuf>,
 	/// all music files, paths should be relative to the parent folder
 	#[serde(serialize_with = "serializer::sorted_hashmap")]
 	pub files: HashMap<PathBuf, FileData>,

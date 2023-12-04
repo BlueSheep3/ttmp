@@ -453,7 +453,6 @@ dependencies = [
  "rodio",
  "ron",
  "serde",
- "winapi",
  "winres",
 ]
 

@@ -1,6 +1,7 @@
 mod filter;
 mod help;
 mod macros;
+mod misc;
 mod play;
 mod tag;
 
@@ -21,24 +22,32 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> CommandRetu
 	let input = input.split(' ').collect::<Vec<_>>();
 
 	match input.as_slice() {
-		["h" | "?" | "help"] => help::help(),
+		["h" | "?" | "help"] => help::general(),
+		["h" | "?" | "help", command] => help::specific(command),
 		["q"] => return CommandReturn::Quit,
 		["q!"] => return CommandReturn::QuitNoSave,
 		["s"] => config.save().unwrap(),
-		["r"] => play::reset(config, sink),
-		["rf"] => reload_files(config),
+		["r"] => misc::reset_remaining(config, sink),
+		["rf"] => misc::reload_files(config),
+		["del"] => misc::delete_current(config, sink),
+		["max", max] => misc::enforce_max(config, max),
+		["prog"] => misc::show_progress(config),
+		["p"] => play::toggle_playing(sink),
+		["p+"] => play::start_playing(sink),
+		["p-"] => play::pause_playing(sink),
+		["pr"] => play::randomize(config, sink),
+		["pn"] => play::next_song(sink),
+		["ps", speed] => play::set_speed(config, sink, speed),
+		["pv", volume] => play::set_volume(config, sink, volume),
+		["pv"] => play::set_volume(config, sink, "100"),
+		["pl"] => play::loop_remaining(config),
+		["pl-"] => play::stop_looping(config),
 		["fte", tags @ ..] => filter::tag_exists(config, sink, tags),
 		["fta", tags @ ..] => filter::tag_all(config, sink, tags),
 		["ftn"] => filter::no_tags(config, sink),
 		["fsf", search @ ..] => filter::search_full(config, sink, search),
 		["fs", search @ ..] => filter::search_file_name(config, sink, search),
-		["p"] => play::toggle_playing(sink),
-		["pr"] => play::randomize(config, sink),
-		["pn"] => play::next(sink),
-		["ps", speed] => play::set_speed(config, sink, speed),
-		["pv", volume] => play::set_volume(config, sink, volume),
-		["max", max] => play::enforce_max(config, max),
-		["prog"] => show_progress(config),
+		["fss", search @ ..] => filter::search_file_name_starts_with(config, sink, search),
 		["tlc"] => tag::show_current_tags(config),
 		["tla"] => tag::show_all_tags(config),
 		["tac", tag] => tag::add_tag_current(config, tag),
@@ -49,19 +58,10 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> CommandRetu
 		["ma", name, commands @ ..] => macros::add_macro(config, name, commands),
 		["mr", name] => macros::remove_macro(config, name),
 		["ml"] => macros::show_macros(config),
+		[""] => return macros::run_macro(config, sink, "default", &[]),
 		_ => invalid_command(&input),
 	}
 	CommandReturn::Nothing
-}
-
-fn reload_files(config: &mut Config) {
-	config.reload_files().unwrap_or_else(|e| {
-		println!("failed to add new files: {}", e);
-	});
-}
-
-fn show_progress(config: &Config) {
-	println!("Progress: {:.02}", config.current_progress.as_secs_f32());
 }
 
 fn invalid_command(input: &[&str]) {

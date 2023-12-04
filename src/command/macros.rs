@@ -15,6 +15,11 @@ pub fn run_macro(config: &mut Config, sink: &Sink, name: &str, args: &[&str]) ->
 	for (i, arg) in args.iter().enumerate() {
 		commands = commands.replace(&format!("${}", i), arg);
 	}
+	commands = commands.replace("$a", &args.join(" "));
+
+	if commands.is_empty() {
+		return CommandReturn::Nothing;
+	}
 
 	let commands = commands
 		.split("; ")

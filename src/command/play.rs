@@ -3,11 +3,10 @@
 use crate::config::Config;
 use rand::seq::SliceRandom;
 use rodio::Sink;
-use std::time::Duration;
 
 pub fn randomize(config: &mut Config, sink: &Sink) {
 	config.remaining.shuffle(&mut rand::thread_rng());
-	sink.stop();
+	next_song(sink);
 }
 
 pub fn toggle_playing(sink: &Sink) {
@@ -18,13 +17,15 @@ pub fn toggle_playing(sink: &Sink) {
 	}
 }
 
-pub fn reset(config: &mut Config, sink: &Sink) {
-	config.remaining = config.files.keys().cloned().collect();
-	config.current_progress = Duration::ZERO;
-	sink.stop();
+pub fn start_playing(sink: &Sink) {
+	sink.play();
 }
 
-pub fn next(sink: &Sink) {
+pub fn pause_playing(sink: &Sink) {
+	sink.pause();
+}
+
+pub fn next_song(sink: &Sink) {
 	sink.stop();
 }
 
@@ -39,17 +40,29 @@ pub fn set_speed(config: &mut Config, sink: &Sink, speed: &str) {
 
 pub fn set_volume(config: &mut Config, sink: &Sink, volume: &str) {
 	if let Ok(v) = volume.parse::<f32>() {
-		config.volume = v;
+		if v < 0. {
+			println!("Volume can't be less than 0");
+			return;
+		}
+		if v > 300. {
+			println!("Volume can't be more than 300");
+			return;
+		}
+		config.volume = v / 100.;
 		sink.set_volume(v);
 	} else {
 		println!("Invalid volume: {}", volume);
 	}
 }
 
-pub fn enforce_max(config: &mut Config, max: &str) {
-	if let Ok(m) = max.parse::<usize>() {
-		config.remaining.truncate(m);
+pub fn loop_remaining(config: &mut Config) {
+	if config.remaining.is_empty() {
+		println!("No Songs to loop");
 	} else {
-		println!("Invalid max: {}", max);
+		config.looping_songs = config.remaining.clone();
 	}
+}
+
+pub fn stop_looping(config: &mut Config) {
+	config.looping_songs.clear();
 }

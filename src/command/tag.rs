@@ -1,8 +1,7 @@
 //! commands that manipulate what tags the files have
 
-use std::collections::HashSet;
-
 use crate::config::Config;
+use std::collections::HashSet;
 
 pub fn show_current_tags(config: &Config) {
 	let Some(current) = config.remaining.first() else {

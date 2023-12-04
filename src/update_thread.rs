@@ -25,6 +25,13 @@ pub fn main(receiver: &Receiver<String>) {
 	// load config
 	let mut config = load_config().expect("config should be valid RON");
 
+	// prepend first song if opened with command line args
+	let args = std::env::args().collect::<Vec<String>>();
+	if args.len() > 1 {
+		config.remaining.insert(0, PathBuf::from(args[1].clone()));
+		config.current_progress = Duration::ZERO;
+	}
+
 	// setup sink
 	let (_stream, stream_handle) = OutputStream::try_default().unwrap();
 	let sink = Sink::try_new(&stream_handle).unwrap();
@@ -34,14 +41,15 @@ pub fn main(receiver: &Receiver<String>) {
 	let mut current_song_name = String::new();
 	let mut current_song = PathBuf::new();
 
+	if config.remaining.is_empty() {
+		remaining_songs_ended(&mut config, &sink, &mut current_song_name);
+	}
 	if !config.remaining.is_empty() {
 		load_first_song(&config, &sink, &mut current_song_name, &mut current_song);
-	} else {
-		current_song_name = "[No Songs Remaining]".to_string();
 	}
 
 	// starting sink values
-	if config.start_playing_immediately {
+	if config.start_playing_immediately || args.len() > 1 {
 		sink.play();
 	} else {
 		sink.pause();
@@ -74,8 +82,7 @@ pub fn main(receiver: &Receiver<String>) {
 			}
 
 			if config.remaining.is_empty() {
-				sink.pause();
-				current_song_name = "[No Songs Remaining]".to_string();
+				remaining_songs_ended(&mut config, &sink, &mut current_song_name);
 			}
 
 			print_song_info(&current_song_name, &config);
@@ -93,11 +100,11 @@ pub fn main(receiver: &Receiver<String>) {
 			}
 
 			config.current_progress = Duration::ZERO;
+			if config.remaining.is_empty() {
+				remaining_songs_ended(&mut config, &sink, &mut current_song_name);
+			}
 			if !config.remaining.is_empty() {
 				load_first_song(&config, &sink, &mut current_song_name, &mut current_song);
-			} else {
-				sink.pause();
-				current_song_name = "[No Songs Remaining]".to_string();
 			}
 			print_song_info(&current_song_name, &config);
 		}
@@ -123,18 +130,33 @@ fn print_song_info(current_song_name: &String, config: &Config) {
 }
 
 fn load_first_song(config: &Config, sink: &Sink, song_name: &mut String, song: &mut PathBuf) {
-	let path = config.parent_path.join(&config.remaining[0]);
+	let Some(first) = config.remaining.first().cloned() else {
+		panic!("Tried playing the first song without a Playlist");
+	};
+	let path = {
+		if PathBuf::from(&first).is_absolute() {
+			first.clone()
+		} else {
+			config.parent_path.join(&first)
+		}
+	};
 	let file = File::open(path).unwrap();
 	let source = Decoder::new(BufReader::new(file))
 		.unwrap()
 		.skip_duration(config.current_progress);
 	sink.append(source);
 
-	*song = config.remaining[0].clone();
+	*song = first.clone();
 
-	*song_name = config.remaining[0]
-		.file_name()
-		.unwrap()
-		.to_string_lossy()
-		.to_string();
+	*song_name = first.file_name().unwrap().to_string_lossy().to_string();
+}
+
+fn remaining_songs_ended(config: &mut Config, sink: &Sink, current_song_name: &mut String) {
+	if !config.looping_songs.is_empty() {
+		config.remaining = config.looping_songs.clone();
+		config.current_progress = Duration::ZERO;
+	} else {
+		sink.pause();
+		*current_song_name = "[No Songs Remaining]".to_string();
+	}
 }
