@@ -6,13 +6,14 @@ use rodio::Sink;
 
 // returns true, if the program should quit
 pub fn run_macro(config: &mut Config, sink: &Sink, name: &str, args: &[&str]) -> CommandReturn {
-	let Some(commands) = config.macros.get(&name.to_string()) else {
+	let Some(commands) = config.macros.get(name) else {
 		println!("Uknown Macro: {}", name);
 		return CommandReturn::Nothing;
 	};
 
+	// NOTE will do weird things when arguments contain $ symbols
 	let mut commands = commands.clone();
-	for (i, arg) in args.iter().enumerate() {
+	for (i, arg) in args.iter().enumerate().rev() {
 		commands = commands.replace(&format!("${}", i), arg);
 	}
 	commands = commands.replace("$a", &args.join(" "));
@@ -23,7 +24,7 @@ pub fn run_macro(config: &mut Config, sink: &Sink, name: &str, args: &[&str]) ->
 
 	let commands = commands
 		.split("; ")
-		.map(|s| s.to_string())
+		.map(|s| s.to_owned())
 		.collect::<Vec<_>>();
 
 	for cmd in commands {
@@ -38,11 +39,11 @@ pub fn run_macro(config: &mut Config, sink: &Sink, name: &str, args: &[&str]) ->
 }
 
 pub fn add_macro(config: &mut Config, name: &str, commands: &[&str]) {
-	if config.macros.contains_key(&name.to_string()) {
+	if config.macros.contains_key(name) {
 		println!("Macro already exists: {}", name);
 	}
 	let commands = commands.join(" ");
-	config.macros.insert(name.to_string(), commands);
+	config.macros.insert(name.to_owned(), commands);
 }
 
 pub fn remove_macro(config: &mut Config, name: &str) {

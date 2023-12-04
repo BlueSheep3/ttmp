@@ -33,7 +33,7 @@ pub fn add_tag_current(config: &mut Config, tag: &str) {
 		return;
 	};
 	let tags = &mut config.files.get_mut(current).unwrap().tags;
-	tags.insert(tag.to_string());
+	tags.insert(tag.to_owned());
 }
 
 pub fn remove_tag_current(config: &mut Config, tag: &str) {
@@ -50,7 +50,7 @@ pub fn remove_tag_current(config: &mut Config, tag: &str) {
 pub fn add_tag_remaining(config: &mut Config, tag: &str) {
 	for file in &mut config.remaining {
 		let tags = &mut config.files.get_mut(file).unwrap().tags;
-		tags.insert(tag.to_string());
+		tags.insert(tag.to_owned());
 	}
 }
 

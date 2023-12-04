@@ -7,8 +7,8 @@ use std::collections::HashSet;
 
 fn tag_matches(file_tags: &HashSet<String>, match_tag: &str) -> bool {
 	match_tag.strip_prefix('!').map_or_else(
-		|| file_tags.contains(&match_tag.to_string()),
-		|stripped| !file_tags.contains(&stripped.to_string()),
+		|| file_tags.contains(match_tag),
+		|stripped| !file_tags.contains(stripped),
 	)
 }
 

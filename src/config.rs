@@ -47,8 +47,8 @@ pub fn load() -> Result<Config, DynErr> {
 impl Config {
 	pub fn save(&self) -> Result<(), DynErr> {
 		let mut pretty_config = PrettyConfig::new();
-		pretty_config.indentor = "\t".to_string();
-		pretty_config.new_line = "\n".to_string();
+		pretty_config.indentor = "\t".to_owned();
+		pretty_config.new_line = "\n".to_owned();
 
 		let config_string = ron::ser::to_string_pretty(self, pretty_config)?;
 		fs::write(get_config_path(), config_string)?;

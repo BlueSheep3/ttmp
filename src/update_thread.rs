@@ -157,6 +157,6 @@ fn remaining_songs_ended(config: &mut Config, sink: &Sink, current_song_name: &m
 		config.current_progress = Duration::ZERO;
 	} else {
 		sink.pause();
-		*current_song_name = "[No Songs Remaining]".to_string();
+		*current_song_name = "[No Songs Remaining]".to_owned();
 	}
 }
