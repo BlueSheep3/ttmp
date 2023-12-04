@@ -17,9 +17,5 @@ pub fn main(sender: &Sender<String>) {
 		sender.send(input.clone()).expect("Failed to send input");
 
 		execute!(stdout(), MoveTo(9, INPUT_Y), Clear(UntilNewLine)).unwrap();
-
-		if matches!(input.as_str(), "q" | "q!") {
-			break;
-		}
 	}
 }
