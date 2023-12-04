@@ -91,7 +91,7 @@ fta TAGS   - Keeps all Files that match all of TAGS
 ftn        - Keeps all Files that have no Tags
 fsf SEARCH - Keeps all Files whose full path name contains SEARCH
 fs  SEARCH - Keeps all Files whose file name contains SEARCH
-fss SEARCH - Keeps all Files whose file name starts with SEARCH"
+fss SEARCH - Keeps all Files whose full path name starts with SEARCH"
 	);
 }
 

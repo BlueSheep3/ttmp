@@ -47,7 +47,7 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> CommandRetu
 		["ftn"] => filter::no_tags(config, sink),
 		["fsf", search @ ..] => filter::search_full(config, sink, search),
 		["fs", search @ ..] => filter::search_file_name(config, sink, search),
-		["fss", search @ ..] => filter::search_file_name_starts_with(config, sink, search),
+		["fss", search] => filter::filepath_starts_with(config, sink, search),
 		["tlc"] => tag::show_current_tags(config),
 		["tla"] => tag::show_all_tags(config),
 		["tac", tag] => tag::add_tag_current(config, tag),
@@ -59,6 +59,9 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> CommandRetu
 		["mr", name] => macros::remove_macro(config, name),
 		["ml"] => macros::show_macros(config),
 		[""] => return macros::run_macro(config, sink, "default", &[]),
+		[macro_name, args @ ..] if config.macros.contains_key(*macro_name) => {
+			return macros::run_macro(config, sink, macro_name, args);
+		}
 		_ => invalid_command(&input),
 	}
 	CommandReturn::Nothing

@@ -101,7 +101,7 @@ fn get_all_files_in(path: &Path) -> Result<Vec<PathBuf>, std::io::Error> {
 }
 
 fn is_music_file(file_name: &str) -> bool {
-	[".mp3", ".wav", ".ogg"]
+	[".mp3", ".wav", ".ogg", ".mp4"]
 		.into_iter()
 		.any(|end| file_name.ends_with(end))
 }
