@@ -143,10 +143,10 @@ fn load_first_song(config: &Config, sink: &Sink, song_name: &mut String, song: &
 		}
 	};
 	let file = File::open(path).expect("unable to open file");
+	let file = BufReader::new(file);
 	// mp4 crashes in let source = ...
-	let source = Decoder::new(BufReader::new(file))
-		.expect("unable to convert file to a music file")
-		.skip_duration(config.current_progress);
+	let source = Decoder::new(file).expect("unable to convert file to a music file");
+	let source = source.skip_duration(config.current_progress);
 	sink.append(source);
 
 	*song = first.clone();
