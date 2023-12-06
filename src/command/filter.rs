@@ -98,23 +98,17 @@ pub fn search_file_name(config: &mut Config, sink: &Sink, search: &[&str]) {
 	}
 }
 
-pub fn search_file_name_starts_with(config: &mut Config, sink: &Sink, search: &[&str]) {
+pub fn filepath_starts_with(config: &mut Config, sink: &Sink, starts_with: &str) {
 	if config.remaining.is_empty() {
 		return;
 	}
 	let prev_current = config.remaining[0].clone();
 
-	let search = search.join(" ").to_lowercase();
-
-	config.remaining.retain(|file| {
-		file.file_name()
-			.unwrap()
-			.to_string_lossy()
-			.to_lowercase()
-			.starts_with(&search)
-	});
+	config
+		.remaining
+		.retain(|file| file.to_string_lossy().starts_with(starts_with));
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		next_song(sink);
+		sink.stop();
 	}
 }

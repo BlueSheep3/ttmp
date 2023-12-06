@@ -10,6 +10,7 @@ use crossterm::{
 };
 use rodio::{Decoder, OutputStream, Sink, Source};
 use std::{
+	ffi::OsString,
 	fs::File,
 	io::{stdout, BufReader},
 	path::PathBuf,
@@ -26,7 +27,7 @@ pub fn main(receiver: &Receiver<String>) {
 	let mut config = load_config().expect("config should be valid RON");
 
 	// prepend first song if opened with command line args
-	let args = std::env::args().collect::<Vec<String>>();
+	let args = std::env::args_os().collect::<Vec<OsString>>();
 	if args.len() > 1 {
 		config.remaining.insert(0, PathBuf::from(args[1].clone()));
 		config.current_progress = Duration::ZERO;
@@ -134,7 +135,7 @@ fn load_first_song(config: &Config, sink: &Sink, song_name: &mut String, song: &
 		panic!("Tried playing the first song without a Playlist");
 	};
 	let path = {
-		if PathBuf::from(&first).is_absolute() {
+		if first.is_absolute() {
 			first.clone()
 		} else {
 			config.parent_path.join(&first)
