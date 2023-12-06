@@ -34,8 +34,9 @@ pub fn main(receiver: &Receiver<String>) {
 	}
 
 	// setup sink
-	let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-	let sink = Sink::try_new(&stream_handle).unwrap();
+	let (_stream, stream_handle) =
+		OutputStream::try_default().expect("Failed to create audio stream.");
+	let sink = Sink::try_new(&stream_handle).expect("Failed to create audio sink.");
 
 	// load in first song
 	let mut last_loop_time = Instant::now();
@@ -58,13 +59,13 @@ pub fn main(receiver: &Receiver<String>) {
 	sink.set_speed(config.speed);
 	sink.set_volume(config.volume);
 
-	execute!(stdout(), SavePosition).unwrap();
+	execute!(stdout(), SavePosition).expect("Failed to save cursor position.");
 	print_song_info(&current_song_name, &config);
-	execute!(stdout(), RestorePosition).unwrap();
+	execute!(stdout(), RestorePosition).expect("Failed to restore cursor position.");
 
 	// Update and render loop
 	loop {
-		execute!(stdout(), SavePosition).unwrap();
+		execute!(stdout(), SavePosition).expect("Failed to save cursor position.");
 
 		// Receive user input (if any)
 		if let Ok(input) = receiver.try_recv() {
@@ -73,7 +74,7 @@ pub fn main(receiver: &Receiver<String>) {
 				MoveTo(0, INPUT_Y + 2),
 				Clear(ClearType::FromCursorDown)
 			)
-			.unwrap();
+			.expect("Failed to execute cursor movement and clear.");
 
 			let state = match_input(&input, &sink, &mut config);
 			match state {
@@ -111,7 +112,7 @@ pub fn main(receiver: &Receiver<String>) {
 		}
 
 		// move the cursor back to allow for user input to not be glitchy
-		execute!(stdout(), RestorePosition).unwrap();
+		execute!(stdout(), RestorePosition).expect("Failed to restore cursor position.");
 
 		last_loop_time = Instant::now();
 
@@ -119,7 +120,7 @@ pub fn main(receiver: &Receiver<String>) {
 		sleep(Duration::from_millis(SLEEP_TIME));
 	}
 
-	config.save().unwrap();
+	config.save().expect("Failed to save config.");
 }
 
 fn print_song_info(current_song_name: &String, config: &Config) {
@@ -141,15 +142,20 @@ fn load_first_song(config: &Config, sink: &Sink, song_name: &mut String, song: &
 			config.parent_path.join(&first)
 		}
 	};
-	let file = File::open(path).unwrap();
+	let file = File::open(path).expect("unable to open file");
+	// mp4 crashes in let source = ...
 	let source = Decoder::new(BufReader::new(file))
-		.unwrap()
+		.expect("unable to convert file to a music file")
 		.skip_duration(config.current_progress);
 	sink.append(source);
 
 	*song = first.clone();
 
-	*song_name = first.file_name().unwrap().to_string_lossy().to_string();
+	*song_name = first
+		.file_name()
+		.expect("Failed to get file name from the path.")
+		.to_string_lossy()
+		.to_string();
 }
 
 fn remaining_songs_ended(config: &mut Config, sink: &Sink, current_song_name: &mut String) {

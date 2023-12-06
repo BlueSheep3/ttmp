@@ -87,7 +87,7 @@ pub fn search_file_name(config: &mut Config, sink: &Sink, search: &[&str]) {
 
 	config.remaining.retain(|file| {
 		file.file_name()
-			.unwrap()
+			.expect("couldn't get the filename")
 			.to_string_lossy()
 			.to_lowercase()
 			.contains(&search)

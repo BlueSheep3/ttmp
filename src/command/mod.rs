@@ -26,7 +26,7 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> CommandRetu
 		["h" | "?" | "help", command] => help::specific(command),
 		["q"] => return CommandReturn::Quit,
 		["q!"] => return CommandReturn::QuitNoSave,
-		["s"] => config.save().unwrap(),
+		["s"] => config.save().expect("failed to save"),
 		["r"] => misc::reset_remaining(config, sink),
 		["rf"] => misc::reload_files(config),
 		["del"] => misc::delete_current(config, sink),

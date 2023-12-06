@@ -109,6 +109,6 @@ fn is_music_file(file_name: &str) -> bool {
 fn get_config_path() -> PathBuf {
 	let path = std::env::var("APPDATA").expect("APPDATA not found");
 	let path = PathBuf::from(path);
-	let path = path.parent().unwrap();
+	let path = path.parent().expect("appdata doesn't have a parent");
 	path.join("LocalLow/BlueSheep3/Music Player/config.ron")
 }
