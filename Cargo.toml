@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 crossterm = "0.27"
 rand = "0.8"
-rodio = { version = "0.17", feature = "symphonia" }
+rodio = { version = "0.17", features = ["symphonia"] }
 ron = "0.8"
 serde = { version = "1", features = ["derive"] }
 

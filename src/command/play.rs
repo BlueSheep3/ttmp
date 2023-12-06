@@ -49,7 +49,7 @@ pub fn set_volume(config: &mut Config, sink: &Sink, volume: &str) {
 			return;
 		}
 		config.volume = v / 100.;
-		sink.set_volume(v);
+		sink.set_volume(config.volume);
 	} else {
 		println!("Invalid volume: {}", volume);
 	}
