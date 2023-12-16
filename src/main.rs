@@ -14,9 +14,12 @@ fn main() {
 	let (sender, receiver) = channel();
 
 	// Spawn threads for user input and updating/rendering
-	let _input_thread = thread::spawn(move || input_thread::main(&sender));
+	let input_thread = thread::spawn(move || input_thread::main(&sender));
 	let update_thread = thread::spawn(move || update_thread::main(&receiver));
 
 	// Wait for the threads to finish (when the "quit" command is entered)
-	update_thread.join().expect("Failed to join update thread");
+	if let Err(e) = update_thread.join() {
+		println!("Failed to join update thread: {:?}", e);
+	}
+	input_thread.join().expect("Failed to join update thread");
 }

@@ -47,7 +47,12 @@ pub fn main(receiver: &Receiver<String>) {
 		remaining_songs_ended(&mut config, &sink, &mut current_song_name);
 	}
 	if !config.remaining.is_empty() {
-		load_first_song_and_set_name(&config, &sink, &mut current_song_name, &mut current_song);
+		load_first_song_and_set_name(
+			&mut config,
+			&sink,
+			&mut current_song_name,
+			&mut current_song,
+		);
 	}
 
 	// starting sink values
@@ -107,7 +112,7 @@ pub fn main(receiver: &Receiver<String>) {
 			}
 			if !config.remaining.is_empty() {
 				load_first_song_and_set_name(
-					&config,
+					&mut config,
 					&sink,
 					&mut current_song_name,
 					&mut current_song,
@@ -137,7 +142,7 @@ fn print_song_info(current_song_name: &String, config: &Config) {
 }
 
 fn load_first_song_and_set_name(
-	config: &Config,
+	config: &mut Config,
 	sink: &Sink,
 	song_name: &mut String,
 	song: &mut PathBuf,
@@ -157,11 +162,12 @@ fn load_first_song_and_set_name(
 		.to_string();
 }
 
-pub fn load_first_song(config: &Config, sink: &Sink) {
+pub fn load_first_song(config: &mut Config, sink: &Sink) {
 	sink.stop();
 
 	let Some(first) = config.remaining.first().cloned() else {
-		panic!("Tried playing the first song without a Playlist");
+		println!("Tried playing the first song without a Playlist");
+		return;
 	};
 	let path = {
 		if first.is_absolute() {
@@ -170,7 +176,15 @@ pub fn load_first_song(config: &Config, sink: &Sink) {
 			config.parent_path.join(&first)
 		}
 	};
-	let file = File::open(path).expect("unable to open file");
+	let file = match File::open(path) {
+		Ok(file) => file,
+		Err(_) => {
+			println!("Failed to load song: {}", config.remaining[0].display());
+			config.remaining.remove(0);
+			load_first_song(config, sink);
+			return;
+		}
+	};
 	let file = BufReader::new(file);
 	// mp4 crashes in let source = ...
 	let source = Decoder::new(file).expect("unable to convert file to a music file");
