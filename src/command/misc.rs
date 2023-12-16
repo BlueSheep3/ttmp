@@ -38,7 +38,7 @@ pub fn move_file(config: &mut Config, destination_folder: &str) {
 	} else {
 		let destination = destination_folder.join(song_name.clone());
 		config.remaining[0] = destination.clone();
-		let current = &config.remaining[0];
+		let current = &destination;
 		if let Some(file_data) = config.files.remove(current) {
 			config.files.insert(destination, file_data);
 		}
