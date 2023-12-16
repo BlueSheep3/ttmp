@@ -1,7 +1,7 @@
 mod filter;
 mod help;
 mod macros;
-mod misc;
+pub(crate) mod misc;
 mod play;
 mod tag;
 
@@ -50,6 +50,12 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> CommandRetu
 		["fss", search] => filter::filepath_starts_with(config, sink, search),
 		["tlc"] => tag::show_current_tags(config),
 		["tla"] => tag::show_all_tags(config),
+		["fm", destination] => {
+			if misc::move_file(config, destination.into()) {
+				play::next_song(sink);
+			}
+		}
+		["fms", destination] => misc::set_move_file_soon(config, destination.into()),
 		["tac", tag] => tag::add_tag_current(config, tag),
 		["trc", tag] => tag::remove_tag_current(config, tag),
 		["taa", tag] => tag::add_tag_remaining(config, tag),

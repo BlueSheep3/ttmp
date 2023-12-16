@@ -1,7 +1,7 @@
-use super::play::next_song;
+use super::play::{self, next_song};
 use crate::config::Config;
 use rodio::Sink;
-use std::{fs, time::Duration};
+use std::{fs, path::PathBuf, time::Duration};
 
 pub fn delete_current(config: &mut Config, sink: &Sink) {
 	let Some(current) = config.remaining.first() else {
@@ -15,6 +15,41 @@ pub fn delete_current(config: &mut Config, sink: &Sink) {
 		println!("File deleted successfully.");
 	}
 	next_song(sink);
+}
+
+pub fn move_file(config: &mut Config, destination_folder: PathBuf) -> bool {
+	let file_name = config
+		.remaining
+		.first()
+		.expect("No file currently playing.");
+	let song_name = file_name
+		.file_name()
+		.expect("Failed to get file name from the path.")
+		.to_string_lossy()
+		.to_string();
+	let destination = config
+		.parent_path
+		.join(destination_folder)
+		.join(song_name.clone());
+	if let Err(err) = fs::rename(config.parent_path.join(file_name), destination.clone()) {
+		println!("Error moving file: {}", err);
+		false
+	} else {
+		let current = &config.remaining[0];
+		if let Some(file_data) = config.files.remove(current) {
+			config.files.insert(destination, file_data);
+		}
+		true
+	}
+}
+
+pub fn set_move_file_soon(config: &mut Config, destination_folder: PathBuf) {
+	let destination = config.parent_path.join(destination_folder.clone());
+	if !destination.exists() {
+		println!("Invalid destination folder.");
+		return;
+	}
+	config.move_file_soon = destination_folder;
 }
 
 pub fn reload_files(config: &mut Config) {
@@ -39,5 +74,9 @@ pub fn reset_remaining(config: &mut Config, sink: &Sink) {
 	config.remaining = config.files.keys().cloned().collect();
 	config.looping_songs.clear();
 	config.current_progress = Duration::ZERO;
+	config.move_file_soon = "".to_string().into();
 	next_song(sink);
+	if config.start_playing_immediately {
+		play::start_playing(sink)
+	}
 }
