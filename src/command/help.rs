@@ -12,7 +12,7 @@ rf         - Add new files to the config, and remove deleted ones
 max        - set the maximum number of files to be played
 prog       - show the current progress
 del        - delete the current song from your computer
-mf         - move the current song to a new directory
+fm         - move the current song to a new directory
 
 Categories of Subcommands:
 p          - modify playing songs
@@ -33,7 +33,7 @@ pub fn specific(command: &str) {
 		"max" => max(),
 		"prog" => progress(),
 		"del" => delete(),
-		"fm" => move_(),
+		"fm" => file_move(),
 		"p" => play(),
 		"f" => filter(),
 		"t" => tags(),
@@ -74,9 +74,8 @@ fn delete() {
 	println!("del - delete the current song from your computer");
 }
 
-fn move_() {
+fn file_move() {
 	println!("fm - move the current song to a new directory");
-	println!("fms - move the current song to a new directory after it stopped playing");
 }
 
 fn play() {

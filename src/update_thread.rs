@@ -97,12 +97,6 @@ pub fn main(receiver: &Receiver<String>) {
 
 		// go to the next song if the current one is finished
 		if sink.empty() && !config.remaining.is_empty() {
-			if config.move_file_soon != PathBuf::new() {
-				let move_file = config.move_file_soon.clone();
-				crate::command::misc::move_file(&mut config, move_file);
-				config.move_file_soon = PathBuf::new();
-			}
-
 			if current_song == config.remaining[0] {
 				config.remaining.remove(0);
 			}

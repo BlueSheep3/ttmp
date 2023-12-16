@@ -20,8 +20,6 @@ pub struct Config {
 	pub volume: f32,
 	/// whether the music should start playing as soon as the program starts
 	pub start_playing_immediately: bool,
-	/// where the file should be moved to when it's done
-	pub move_file_soon: PathBuf,
 	/// type "m NAME" to run all commands listed under the macro
 	#[serde(serialize_with = "serializer::sorted_hashmap")]
 	pub macros: HashMap<String, String>,
