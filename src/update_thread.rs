@@ -158,6 +158,8 @@ fn load_first_song_and_set_name(
 }
 
 pub fn load_first_song(config: &Config, sink: &Sink) {
+	sink.stop();
+
 	let Some(first) = config.remaining.first().cloned() else {
 		panic!("Tried playing the first song without a Playlist");
 	};

@@ -20,8 +20,8 @@ fn parse_duration(duration_str: &str) -> Result<Duration, &'static str> {
 		let unit = part.chars().last().ok_or("empty duration part")?;
 		if unit.is_ascii_digit() {
 			// default to seconds
-			let num = part.parse::<u64>().map_err(|_| "invalid duration part")?;
-			duration += Duration::from_secs(num);
+			let num = part.parse::<f32>().map_err(|_| "invalid duration part")?;
+			duration += Duration::from_secs_f32(num);
 			continue;
 		}
 		let num = part[0..part.len() - 1]
