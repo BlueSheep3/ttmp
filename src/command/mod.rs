@@ -1,4 +1,5 @@
 mod filter;
+mod goto;
 mod help;
 mod macros;
 mod misc;
@@ -54,6 +55,9 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> CommandRetu
 		["trc", tag] => tag::remove_tag_current(config, tag),
 		["taa", tag] => tag::add_tag_remaining(config, tag),
 		["tra", tag] => tag::remove_tag_remaining(config, tag),
+		["g"] => goto::jump_to(config, sink, "0"),
+		["g", duration] => goto::jump_to(config, sink, duration),
+		["gf", duration] => goto::jump_forward(config, sink, duration),
 		["m", name, args @ ..] => return macros::run_macro(config, sink, name, args),
 		["ma", name, commands @ ..] => macros::add_macro(config, name, commands),
 		["mr", name] => macros::remove_macro(config, name),

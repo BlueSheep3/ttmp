@@ -47,7 +47,7 @@ pub fn main(receiver: &Receiver<String>) {
 		remaining_songs_ended(&mut config, &sink, &mut current_song_name);
 	}
 	if !config.remaining.is_empty() {
-		load_first_song(&config, &sink, &mut current_song_name, &mut current_song);
+		load_first_song_and_set_name(&config, &sink, &mut current_song_name, &mut current_song);
 	}
 
 	// starting sink values
@@ -106,7 +106,12 @@ pub fn main(receiver: &Receiver<String>) {
 				remaining_songs_ended(&mut config, &sink, &mut current_song_name);
 			}
 			if !config.remaining.is_empty() {
-				load_first_song(&config, &sink, &mut current_song_name, &mut current_song);
+				load_first_song_and_set_name(
+					&config,
+					&sink,
+					&mut current_song_name,
+					&mut current_song,
+				);
 			}
 			print_song_info(&current_song_name, &config);
 		}
@@ -131,7 +136,28 @@ fn print_song_info(current_song_name: &String, config: &Config) {
 	execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
 }
 
-fn load_first_song(config: &Config, sink: &Sink, song_name: &mut String, song: &mut PathBuf) {
+fn load_first_song_and_set_name(
+	config: &Config,
+	sink: &Sink,
+	song_name: &mut String,
+	song: &mut PathBuf,
+) {
+	load_first_song(config, sink);
+
+	let Some(first) = config.remaining.first().cloned() else {
+		panic!("Tried playing the first song without a Playlist");
+	};
+
+	*song = first.clone();
+
+	*song_name = first
+		.file_name()
+		.expect("Failed to get file name from the path.")
+		.to_string_lossy()
+		.to_string();
+}
+
+pub fn load_first_song(config: &Config, sink: &Sink) {
 	let Some(first) = config.remaining.first().cloned() else {
 		panic!("Tried playing the first song without a Playlist");
 	};
@@ -148,14 +174,6 @@ fn load_first_song(config: &Config, sink: &Sink, song_name: &mut String, song: &
 	let source = Decoder::new(file).expect("unable to convert file to a music file");
 	let source = source.skip_duration(config.current_progress);
 	sink.append(source);
-
-	*song = first.clone();
-
-	*song_name = first
-		.file_name()
-		.expect("Failed to get file name from the path.")
-		.to_string_lossy()
-		.to_string();
 }
 
 fn remaining_songs_ended(config: &mut Config, sink: &Sink, current_song_name: &mut String) {

@@ -17,6 +17,7 @@ Categories of Subcommands:
 p          - modify playing songs
 f          - filter the remaining songs
 t          - tags to filter songs
+g          - goto a time in the song
 m          - macros to easily do common things"
 	);
 }
@@ -34,6 +35,7 @@ pub fn specific(command: &str) {
 		"p" => play(),
 		"f" => filter(),
 		"t" => tags(),
+		"g" => goto(),
 		"m" => macros(),
 		_ => println!("No Help available for: {}", command),
 	}
@@ -103,6 +105,13 @@ tac TAG - add TAG to the current File
 trc TAG - remove TAG from the current File
 tar TAG - add TAG to all remaining Files
 trr TAG - remove TAG from all remaining Files"
+	);
+}
+
+fn goto() {
+	println!(
+		"g   TIME - go to TIME in the current Song
+gf  TIME - jumps forward by TIME"
 	);
 }
 
