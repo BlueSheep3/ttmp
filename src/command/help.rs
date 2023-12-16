@@ -108,8 +108,8 @@ fn tags() {
 tla     - Display all Tags of all Files
 tac TAG - add TAG to the current File
 trc TAG - remove TAG from the current File
-tar TAG - add TAG to all remaining Files
-trr TAG - remove TAG from all remaining Files"
+taa TAG - add TAG to all remaining Files
+tra TAG - remove TAG from all remaining Files"
 	);
 }
 
