@@ -73,8 +73,8 @@ fn delete() {
 }
 
 fn move_() {
-	println!("mf - move the current song to a new directory");
-	println!("mfs - move the current song to a new directory after it stopped playing");
+	println!("fm - move the current song to a new directory");
+	println!("fms - move the current song to a new directory after it stopped playing");
 }
 
 fn play() {
