@@ -17,8 +17,9 @@ pub fn delete_current(config: &mut Config, sink: &Sink) {
 	next_song(sink);
 }
 
-pub fn move_file(config: &mut Config, destination_folder: &str) {
-	let destination_folder = Path::new(destination_folder);
+pub fn move_file(config: &mut Config, destination_folder: &[&str]) {
+	let input = destination_folder.join(" ");
+	let destination_folder = Path::new(&input);
 	let file_name = config
 		.remaining
 		.first()
@@ -42,6 +43,18 @@ pub fn move_file(config: &mut Config, destination_folder: &str) {
 		if let Some(file_data) = config.files.remove(current) {
 			config.files.insert(destination, file_data);
 		}
+	}
+}
+
+pub fn show_full_path(config: &Config) {
+	let Some(current) = config.remaining.first() else {
+		println!("No File currently playing");
+		return;
+	};
+	if current.is_absolute() {
+		println!("{}", current.display());
+	} else {
+		println!("{}", config.parent_path.join(current).display());
 	}
 }
 

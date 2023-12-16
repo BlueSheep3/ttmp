@@ -13,6 +13,7 @@ max        - set the maximum number of files to be played
 prog       - show the current progress
 del        - delete the current song from your computer
 fm         - move the current song to a new directory
+fp         - show the full path of the file
 
 Categories of Subcommands:
 p          - modify playing songs
@@ -34,6 +35,7 @@ pub fn specific(command: &str) {
 		"prog" => progress(),
 		"del" => delete(),
 		"fm" => file_move(),
+		"fp" => full_path(),
 		"p" => play(),
 		"f" => filter(),
 		"t" => tags(),
@@ -76,6 +78,10 @@ fn delete() {
 
 fn file_move() {
 	println!("fm - move the current song to a new directory");
+}
+
+fn full_path() {
+	println!("fp - show the full path of the file");
 }
 
 fn play() {
