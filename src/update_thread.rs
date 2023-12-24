@@ -176,7 +176,7 @@ pub fn load_first_song(config: &mut Config, sink: &Sink) {
 			config.parent_path.join(&first)
 		}
 	};
-	let file = match File::open(path) {
+	let file = match File::open(path.clone()) {
 		Ok(file) => file,
 		Err(_) => {
 			println!("Failed to load song: {}", config.remaining[0].display());
@@ -186,9 +186,18 @@ pub fn load_first_song(config: &mut Config, sink: &Sink) {
 		}
 	};
 	let file = BufReader::new(file);
-	// mp4 crashes in let source = ...
-	let source = Decoder::new(file).expect("unable to convert file to a music file");
-	let source = source.skip_duration(config.current_progress);
+	let decoder = if path
+		.file_name()
+		.unwrap()
+		.to_string_lossy()
+		.ends_with(".mp4")
+	{
+		Decoder::new_mp4(file, rodio::decoder::Mp4Type::Mp4)
+			.expect("unable to convert mp4 file to a music file")
+	} else {
+		Decoder::new(file).expect("unable to convert file to a music file")
+	};
+	let source = decoder.skip_duration(config.current_progress);
 	sink.append(source);
 }
 
