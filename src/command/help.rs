@@ -3,7 +3,9 @@
 
 pub fn general() {
 	println!(
-		"Misc Commands:
+		"h <category>  - show help for a category of commands
+
+Misc Commands:
 help, h, ? - Show this help
 q          - Quit the Program
 s          - Save the Config
@@ -26,16 +28,6 @@ m          - macros to easily do common things"
 
 pub fn specific(command: &str) {
 	match command {
-		"h" | "help" | "?" => general(),
-		"q" | "q!" => quit(),
-		"s" => save(),
-		"r" => reset(),
-		"rf" => reset_files(),
-		"max" => max(),
-		"prog" => progress(),
-		"del" => delete(),
-		"fm" => file_move(),
-		"fp" => full_path(),
 		"p" => play(),
 		"f" => filter(),
 		"t" => tags(),
@@ -43,45 +35,6 @@ pub fn specific(command: &str) {
 		"m" => macros(),
 		_ => println!("No Help available for: {}", command),
 	}
-}
-
-fn quit() {
-	println!(
-		"q  - Quits the program and saves
-q! - Quits the program without saving"
-	);
-}
-
-fn save() {
-	println!("s - Save the Config");
-}
-
-fn reset() {
-	println!("r - Reset the Playlist (put all files in it)");
-}
-
-fn reset_files() {
-	println!("rf - Add new files to the config, and remove deleted ones");
-}
-
-fn max() {
-	println!("max NUM - set the maximum number of files to be played to NUM");
-}
-
-fn progress() {
-	println!("prog - Show the current progress");
-}
-
-fn delete() {
-	println!("del - delete the current song from your computer");
-}
-
-fn file_move() {
-	println!("fm - move the current song to a new directory");
-}
-
-fn full_path() {
-	println!("fp - show the full path of the file");
 }
 
 fn play() {
