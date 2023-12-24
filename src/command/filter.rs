@@ -98,7 +98,9 @@ pub fn search_file_name(config: &mut Config, sink: &Sink, search: &[&str]) {
 	}
 }
 
-pub fn filepath_starts_with(config: &mut Config, sink: &Sink, starts_with: &str) {
+pub fn filepath_starts_with(config: &mut Config, sink: &Sink, starts_with: &[&str]) {
+	let starts_with = starts_with.join("");
+
 	if config.remaining.is_empty() {
 		return;
 	}
@@ -106,7 +108,7 @@ pub fn filepath_starts_with(config: &mut Config, sink: &Sink, starts_with: &str)
 
 	config
 		.remaining
-		.retain(|file| file.to_string_lossy().starts_with(starts_with));
+		.retain(|file| file.to_string_lossy().starts_with(&starts_with));
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
 		sink.stop();

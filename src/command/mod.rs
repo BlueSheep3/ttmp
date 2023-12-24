@@ -50,7 +50,7 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> CommandRetu
 		["ftn"] => filter::no_tags(config, sink),
 		["fsf", search @ ..] => filter::search_full(config, sink, search),
 		["fs", search @ ..] => filter::search_file_name(config, sink, search),
-		["fss", search] => filter::filepath_starts_with(config, sink, search),
+		["fss", search @ ..] => filter::filepath_starts_with(config, sink, search),
 		["tlc"] => tag::show_current_tags(config),
 		["tla"] => tag::show_all_tags(config),
 		["tac", tag] => tag::add_tag_current(config, tag),
