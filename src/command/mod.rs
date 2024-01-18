@@ -27,7 +27,7 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> CommandRetu
 		["h" | "?" | "help", command] => help::specific(command),
 		["q"] => return CommandReturn::Quit,
 		["q!"] => return CommandReturn::QuitNoSave,
-		["s"] => config.save().expect("failed to save"),
+		["s"] => save_config(config),
 		["r"] => misc::reset_remaining(config, sink),
 		["rf"] => misc::reload_files(config),
 		["del"] => misc::delete_current(config, sink),
@@ -71,6 +71,12 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> CommandRetu
 		_ => invalid_command(&input),
 	}
 	CommandReturn::Nothing
+}
+
+fn save_config(config: &Config) {
+	if let Err(e) = config.save() {
+		println!("Error saving config: {}", e);
+	}
 }
 
 fn invalid_command(input: &[&str]) {

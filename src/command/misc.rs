@@ -20,10 +20,14 @@ pub fn delete_current(config: &mut Config, sink: &Sink) {
 pub fn move_file(config: &mut Config, destination_folder: &[&str]) {
 	let input = destination_folder.join(" ");
 	let destination_folder = Path::new(&input);
-	let file_name = config
-		.remaining
-		.first()
-		.expect("No file currently playing.");
+	let file_name = config.remaining.first();
+	let file_name = match file_name {
+		Some(name) => name,
+		None => {
+			println!("tried to move file, but no file is playing");
+			return;
+		}
+	};
 	let song_name = file_name
 		.file_name()
 		.expect("Failed to get file name from the path.")

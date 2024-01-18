@@ -3,13 +3,25 @@ use rodio::Sink;
 use std::time::Duration;
 
 pub fn jump_to(config: &mut Config, sink: &Sink, duration: &str) {
-	let duration = parse_duration(duration).unwrap();
+	let duration = match parse_duration(duration) {
+		Ok(d) => d,
+		Err(e) => {
+			println!("invalid duration: {}", e);
+			return;
+		}
+	};
 	config.current_progress = duration;
 	update_thread::load_first_song(config, sink);
 }
 
 pub fn jump_forward(config: &mut Config, sink: &Sink, duration: &str) {
-	let duration = parse_duration(duration).unwrap();
+	let duration = match parse_duration(duration) {
+		Ok(d) => d,
+		Err(e) => {
+			println!("invalid duration: {}", e);
+			return;
+		}
+	};
 	config.current_progress += duration;
 	update_thread::load_first_song(config, sink);
 }
