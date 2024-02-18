@@ -9,7 +9,7 @@ use std::{io::stdout, sync::mpsc::Sender};
 pub const INPUT_Y: u16 = 5;
 
 // Function to handle user input in a separate thread from rendering
-pub fn main(sender: &Sender<String>) {
+pub fn main(sender: &Sender<String>) -> ! {
 	loop {
 		execute!(stdout(), MoveTo(0, INPUT_Y)).expect("couldn't move cursor to 0");
 		let input = readln!("Command: ");

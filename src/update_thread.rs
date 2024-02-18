@@ -186,6 +186,8 @@ pub fn load_first_song(config: &mut Config, sink: &Sink) {
 		}
 	};
 	let file = BufReader::new(file);
+
+	#[cfg(feature = "mp4")]
 	let decoder = if path
 		.file_name()
 		.unwrap()
@@ -197,6 +199,10 @@ pub fn load_first_song(config: &mut Config, sink: &Sink) {
 	} else {
 		Decoder::new(file).expect("unable to convert file to a music file")
 	};
+
+	#[cfg(not(feature = "mp4"))]
+	let decoder = Decoder::new(file).expect("unable to convert file to a music file");
+
 	let source = decoder.skip_duration(config.current_progress);
 	sink.append(source);
 }

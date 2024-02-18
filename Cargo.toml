@@ -8,10 +8,14 @@ edition = "2021"
 [dependencies]
 crossterm = "0.27"
 rand = "0.8"
-rodio = { version = "0.17", features = ["symphonia-isomp4"] }
+rodio = "0.17"
 ron = "0.8"
 serde = { version = "1", features = ["derive"] }
 # symphonia = { version = "0.5", features = ["isomp4"] }
 
 [build-dependencies]
 winres = "0.1"
+
+
+[features]
+mp4 = []
