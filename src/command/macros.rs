@@ -1,14 +1,24 @@
 //! macros to make using commands less repetitive
 
-use super::CommandReturn;
+use super::{
+	error::{
+		CommandError::{MacroAlreadyExists, MacroDoesNotExist},
+		Result,
+	},
+	CommandReturn,
+};
 use crate::config::Config;
 use rodio::Sink;
 
 // returns true, if the program should quit
-pub fn run_macro(config: &mut Config, sink: &Sink, name: &str, args: &[&str]) -> CommandReturn {
+pub fn run_macro(
+	config: &mut Config,
+	sink: &Sink,
+	name: &str,
+	args: &[&str],
+) -> Result<CommandReturn> {
 	let Some(commands) = config.macros.get(name) else {
-		println!("Uknown Macro: {}", name);
-		return CommandReturn::Nothing;
+		return Err(MacroDoesNotExist(name.to_owned()));
 	};
 
 	// NOTE will do weird things when arguments contain $ symbols
@@ -19,7 +29,7 @@ pub fn run_macro(config: &mut Config, sink: &Sink, name: &str, args: &[&str]) ->
 	commands = commands.replace("$a", &args.join(" "));
 
 	if commands.is_empty() {
-		return CommandReturn::Nothing;
+		return Ok(CommandReturn::Nothing);
 	}
 
 	let commands = commands
@@ -28,28 +38,30 @@ pub fn run_macro(config: &mut Config, sink: &Sink, name: &str, args: &[&str]) ->
 		.collect::<Vec<_>>();
 
 	for cmd in commands {
-		let state = super::match_input(&cmd, sink, config);
+		let state = super::match_input(&cmd, sink, config)?;
 		match state {
 			CommandReturn::Nothing => (),
-			CommandReturn::Quit => return state,
-			CommandReturn::QuitNoSave => return state,
+			CommandReturn::Quit => return Ok(state),
+			CommandReturn::QuitNoSave => return Ok(state),
 		}
 	}
-	CommandReturn::Nothing
+	Ok(CommandReturn::Nothing)
 }
 
-pub fn add_macro(config: &mut Config, name: &str, commands: &[&str]) {
+pub fn add_macro(config: &mut Config, name: &str, commands: &[&str]) -> Result<()> {
 	if config.macros.contains_key(name) {
-		println!("Macro already exists: {}", name);
+		return Err(MacroAlreadyExists(name.to_owned()));
 	}
 	let commands = commands.join(" ");
 	config.macros.insert(name.to_owned(), commands);
+	Ok(())
 }
 
-pub fn remove_macro(config: &mut Config, name: &str) {
+pub fn remove_macro(config: &mut Config, name: &str) -> Result<()> {
 	if config.macros.remove(name).is_none() {
-		println!("Macro does not exist: {}", name);
+		return Err(MacroDoesNotExist(name.to_owned()));
 	}
+	Ok(())
 }
 
 pub fn show_macros(config: &Config) {

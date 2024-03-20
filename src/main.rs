@@ -7,8 +7,6 @@ mod update_thread;
 
 use std::{sync::mpsc::channel, thread};
 
-type DynErr = Box<dyn std::error::Error>;
-
 fn main() {
 	// Create channels for communication between threads
 	let (sender, receiver) = channel();

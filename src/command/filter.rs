@@ -13,10 +13,9 @@ fn tag_matches(file_tags: &HashSet<String>, match_tag: &str) -> bool {
 }
 
 pub fn tag_exists(config: &mut Config, sink: &Sink, tags: &[&str]) {
-	if config.remaining.is_empty() {
+	let Some(prev_current) = config.remaining.first().cloned() else {
 		return;
-	}
-	let prev_current = config.remaining[0].clone();
+	};
 
 	config.remaining.retain(|file| {
 		let file_tags = &config.files.entry(file.to_path_buf()).or_default().tags;
@@ -29,10 +28,9 @@ pub fn tag_exists(config: &mut Config, sink: &Sink, tags: &[&str]) {
 }
 
 pub fn tag_all(config: &mut Config, sink: &Sink, tags: &[&str]) {
-	if config.remaining.is_empty() {
+	let Some(prev_current) = config.remaining.first().cloned() else {
 		return;
-	}
-	let prev_current = config.remaining[0].clone();
+	};
 
 	config.remaining.retain(|file| {
 		let file_tags = &config.files.entry(file.to_path_buf()).or_default().tags;
@@ -45,10 +43,9 @@ pub fn tag_all(config: &mut Config, sink: &Sink, tags: &[&str]) {
 }
 
 pub fn no_tags(config: &mut Config, sink: &Sink) {
-	if config.remaining.is_empty() {
+	let Some(prev_current) = config.remaining.first().cloned() else {
 		return;
-	}
-	let prev_current = config.remaining[0].clone();
+	};
 
 	config.remaining.retain(|file| {
 		let file_tags = &config.files.entry(file.to_path_buf()).or_default().tags;
@@ -61,11 +58,9 @@ pub fn no_tags(config: &mut Config, sink: &Sink) {
 }
 
 pub fn search_full(config: &mut Config, sink: &Sink, search: &[&str]) {
-	if config.remaining.is_empty() {
+	let Some(prev_current) = config.remaining.first().cloned() else {
 		return;
-	}
-	let prev_current = config.remaining[0].clone();
-
+	};
 	let search = search.join(" ").to_lowercase();
 
 	config
@@ -78,11 +73,9 @@ pub fn search_full(config: &mut Config, sink: &Sink, search: &[&str]) {
 }
 
 pub fn search_file_name(config: &mut Config, sink: &Sink, search: &[&str]) {
-	if config.remaining.is_empty() {
+	let Some(prev_current) = config.remaining.first().cloned() else {
 		return;
-	}
-	let prev_current = config.remaining[0].clone();
-
+	};
 	let search = search.join(" ").to_lowercase();
 
 	config.remaining.retain(|file| {
@@ -98,19 +91,17 @@ pub fn search_file_name(config: &mut Config, sink: &Sink, search: &[&str]) {
 	}
 }
 
-pub fn filepath_starts_with(config: &mut Config, sink: &Sink, starts_with: &[&str]) {
-	let starts_with = starts_with.join("");
-
-	if config.remaining.is_empty() {
+pub fn filepath_starts_with(config: &mut Config, sink: &Sink, search: &[&str]) {
+	let Some(prev_current) = config.remaining.first().cloned() else {
 		return;
-	}
-	let prev_current = config.remaining[0].clone();
+	};
+	let search = search.join(" ").to_lowercase();
 
 	config
 		.remaining
-		.retain(|file| file.to_string_lossy().starts_with(&starts_with));
+		.retain(|file| file.to_string_lossy().starts_with(&search));
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		sink.stop();
+		next_song(sink);
 	}
 }

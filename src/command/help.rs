@@ -1,6 +1,8 @@
 //! handles all commands that show the user information
 //! about commands and the program itself
 
+use super::error::{CommandError::NoHelpAvailable, Result};
+
 pub fn general() {
 	println!(
 		"h <category>  - show help for a category of commands
@@ -26,15 +28,16 @@ m          - macros to easily do common things"
 	);
 }
 
-pub fn specific(command: &str) {
+pub fn specific(command: &str) -> Result<()> {
 	match command {
 		"p" => play(),
 		"f" => filter(),
 		"t" => tags(),
 		"g" => goto(),
 		"m" => macros(),
-		_ => println!("No Help available for: {}", command),
+		_ => return Err(NoHelpAvailable(command.to_owned())),
 	}
+	Ok(())
 }
 
 fn play() {
@@ -47,7 +50,8 @@ pn        - skip to the next song
 ps SPEED  - set the playback speed to SPEED
 pv VOLUME - set the playback volume to VOLUME
 pl        - loop the remaining songs
-pl-       - stop looping"
+pl-       - stop looping
+po        - order / sort the remaining songs"
 	);
 }
 
