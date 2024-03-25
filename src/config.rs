@@ -42,7 +42,7 @@ pub struct FileData {
 
 pub fn load() -> Result<Config> {
 	let config_string = fs::read_to_string(get_config_path())?;
-	let config = ron::from_str(&config_string)?;
+	let config = ron::from_str(&config_string).map_err(Box::new)?;
 	Ok(config)
 }
 
@@ -52,7 +52,7 @@ impl Config {
 		pretty_config.indentor = "\t".to_owned();
 		pretty_config.new_line = "\n".to_owned();
 
-		let config_string = ron::ser::to_string_pretty(self, pretty_config)?;
+		let config_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
 		fs::write(get_config_path(), config_string)?;
 		Ok(())
 	}
@@ -127,8 +127,10 @@ type Result<T> = result::Result<T, ConfigError>;
 pub enum ConfigError {
 	#[error("io error: {0}")]
 	Io(#[from] io::Error),
+
+	// these are wrapped in Box, because SpannedError is 88 bytes and Error is 72 bytes
 	#[error("ron spanned error: {0}")]
-	RonSpanned(#[from] ron::error::SpannedError),
+	RonSpanned(#[from] Box<ron::error::SpannedError>),
 	#[error("ron error: {0}")]
-	Ron(#[from] ron::Error),
+	Ron(#[from] Box<ron::Error>),
 }

@@ -1,4 +1,4 @@
-use crate::config;
+use crate::{config, duration};
 use std::{io, path::PathBuf};
 use thiserror::Error;
 
@@ -14,6 +14,8 @@ pub enum CommandError {
 	ParseInt(#[from] std::num::ParseIntError),
 	#[error("Failed while parsing Float: {0}")]
 	ParseFloat(#[from] std::num::ParseFloatError),
+	#[error("Failed while parsing Duration: {0}")]
+	DurationParse(#[from] duration::DurationParseError),
 
 	#[error("Uknown or Invalid command: {0}")]
 	UknownOrInvalidCommand(String),
@@ -25,9 +27,6 @@ pub enum CommandError {
 	NoSongsRemaining,
 	#[error("Song not in Files list")]
 	NotInFiles(PathBuf),
-	#[error("Invalid Duration: {0}")]
-	// TODO don't use a static string slice
-	InvalidDuration(&'static str),
 	#[error("Macro already exists: {0}")]
 	MacroAlreadyExists(String),
 	#[error("Macro does not exist: {0}")]

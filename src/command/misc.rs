@@ -63,11 +63,6 @@ pub fn reload_files(config: &mut Config) -> Result<()> {
 	Ok(())
 }
 
-pub fn show_progress(config: &Config) {
-	// TODO print duration better
-	println!("Progress: {:.02}", config.current_progress.as_secs_f32());
-}
-
 pub fn enforce_max(config: &mut Config, max: &str) -> Result<()> {
 	let max = max.parse::<usize>()?;
 	config.remaining.truncate(max);

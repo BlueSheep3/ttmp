@@ -4,6 +4,7 @@ mod input_thread;
 mod macros;
 mod serializer;
 mod update_thread;
+mod duration;
 
 use std::{sync::mpsc::channel, thread};
 

@@ -14,7 +14,6 @@ s          - Save the Config
 r          - Reset the Playlist (put all files in it)
 rf         - Add new files to the config, and remove deleted ones
 max        - set the maximum number of files to be played
-prog       - show the current progress
 del        - delete the current song from your computer
 fm         - move the current song to a new directory
 fp         - show the full path of the file
@@ -80,7 +79,8 @@ tra TAG - remove TAG from all remaining Files"
 fn goto() {
 	println!(
 		"g   TIME - go to TIME in the current Song
-gf  TIME - jumps forward by TIME"
+gf  TIME - jumps forward by TIME
+gd       - display the progress of the current Song"
 	);
 }
 
