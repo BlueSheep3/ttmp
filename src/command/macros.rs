@@ -64,8 +64,20 @@ pub fn remove_macro(config: &mut Config, name: &str) -> Result<()> {
 	Ok(())
 }
 
+pub fn change_macro(config: &mut Config, name: &str, commands: &[&str]) -> Result<()> {
+	let m = config
+		.macros
+		.get_mut(name)
+		.ok_or(MacroDoesNotExist(name.to_owned()))?;
+	let commands = commands.join(" ");
+	*m = commands;
+	Ok(())
+}
+
 pub fn show_macros(config: &Config) {
-	for (name, commands) in &config.macros {
+	let mut macros = config.macros.iter().collect::<Vec<_>>();
+	macros.sort_by_key(|&(name, _commands)| name);
+	for (name, commands) in macros {
 		println!("{} = {}", name, commands);
 	}
 }

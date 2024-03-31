@@ -72,6 +72,7 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> Result<Comm
 		["m", name, args @ ..] => return macros::run_macro(config, sink, name, args),
 		["ma", name, commands @ ..] => macros::add_macro(config, name, commands)?,
 		["mr", name] => macros::remove_macro(config, name)?,
+		["mc", name, commands @ ..] => macros::change_macro(config, name, commands)?,
 		["ml"] => macros::show_macros(config),
 		[""] => return macros::run_macro(config, sink, "default", &[]),
 		[macro_name, args @ ..] if config.macros.contains_key(*macro_name) => {

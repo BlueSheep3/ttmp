@@ -93,6 +93,7 @@ $a will insert all arguments seperated by spaces
 m NAME ARGS - run Macro with NAME and arguments ARGS
 ma NAME STR - add a Macro with NAME that runs STR
 mr NAME     - remove a Macro with NAME
+mc NAME STR - change an existing Macro with NAME to run STR
 ml          - lists all Macros
 <nothing>   - run the \"default\" Macro"
 	);
