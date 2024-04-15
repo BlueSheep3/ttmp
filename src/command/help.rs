@@ -1,6 +1,8 @@
 //! handles all commands that show the user information
 //! about commands and the program itself
 
+use super::error::{CommandError::NoHelpAvailable, Result};
+
 pub fn general() {
 	println!(
 		"h <category>  - show help for a category of commands
@@ -12,7 +14,6 @@ s          - Save the Config
 r          - Reset the Playlist (put all files in it)
 rf         - Add new files to the config, and remove deleted ones
 max        - set the maximum number of files to be played
-prog       - show the current progress
 del        - delete the current song from your computer
 fm         - move the current song to a new directory
 fp         - show the full path of the file
@@ -26,15 +27,16 @@ m          - macros to easily do common things"
 	);
 }
 
-pub fn specific(command: &str) {
+pub fn specific(command: &str) -> Result<()> {
 	match command {
 		"p" => play(),
 		"f" => filter(),
 		"t" => tags(),
 		"g" => goto(),
 		"m" => macros(),
-		_ => println!("No Help available for: {}", command),
+		_ => return Err(NoHelpAvailable(command.to_owned())),
 	}
+	Ok(())
 }
 
 fn play() {
@@ -47,7 +49,8 @@ pn        - skip to the next song
 ps SPEED  - set the playback speed to SPEED
 pv VOLUME - set the playback volume to VOLUME
 pl        - loop the remaining songs
-pl-       - stop looping"
+pl-       - stop looping
+po        - order / sort the remaining songs"
 	);
 }
 
@@ -76,7 +79,8 @@ tra TAG - remove TAG from all remaining Files"
 fn goto() {
 	println!(
 		"g   TIME - go to TIME in the current Song
-gf  TIME - jumps forward by TIME"
+gf  TIME - jumps forward by TIME
+gd       - display the progress of the current Song"
 	);
 }
 
@@ -89,6 +93,7 @@ $a will insert all arguments seperated by spaces
 m NAME ARGS - run Macro with NAME and arguments ARGS
 ma NAME STR - add a Macro with NAME that runs STR
 mr NAME     - remove a Macro with NAME
+mc NAME STR - change an existing Macro with NAME to run STR
 ml          - lists all Macros
 <nothing>   - run the \"default\" Macro"
 	);

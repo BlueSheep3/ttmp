@@ -1,5 +1,9 @@
 //! commands that act on the playing songs
 
+use super::error::{
+	CommandError::{NoSongsRemaining, VolumeTooHigh, VolumeTooLow},
+	Result,
+};
 use crate::config::Config;
 use rand::seq::SliceRandom;
 use rodio::Sink;
@@ -29,40 +33,46 @@ pub fn next_song(sink: &Sink) {
 	sink.stop();
 }
 
-pub fn set_speed(config: &mut Config, sink: &Sink, speed: &str) {
-	if let Ok(s) = speed.parse::<f32>() {
-		config.speed = s;
-		sink.set_speed(s);
-	} else {
-		println!("Invalid speed: {}", speed);
-	}
+pub fn set_speed(config: &mut Config, sink: &Sink, speed: &str) -> Result<()> {
+	let s = speed.parse::<f32>()?;
+	config.speed = s;
+	sink.set_speed(s);
+	Ok(())
 }
 
-pub fn set_volume(config: &mut Config, sink: &Sink, volume: &str) {
-	if let Ok(v) = volume.parse::<f32>() {
-		if v < 0. {
-			println!("Volume can't be less than 0");
-			return;
-		}
-		if v > 300. {
-			println!("Volume can't be more than 300");
-			return;
-		}
-		config.volume = v / 100.;
-		sink.set_volume(config.volume);
-	} else {
-		println!("Invalid volume: {}", volume);
+pub fn set_volume(config: &mut Config, sink: &Sink, volume: &str) -> Result<()> {
+	let v = volume.parse::<f32>()?;
+	if v < 0. {
+		return Err(VolumeTooLow(v));
 	}
+	if v > 300. {
+		return Err(VolumeTooHigh(v));
+	}
+	config.volume = v / 100.;
+	sink.set_volume(config.volume);
+	Ok(())
 }
 
-pub fn loop_remaining(config: &mut Config) {
+pub fn loop_remaining(config: &mut Config) -> Result<()> {
 	if config.remaining.is_empty() {
-		println!("No Songs to loop");
-	} else {
-		config.looping_songs = config.remaining.clone();
+		return Err(NoSongsRemaining);
 	}
+	config.looping_songs = config.remaining.clone();
+	Ok(())
 }
 
 pub fn stop_looping(config: &mut Config) {
 	config.looping_songs.clear();
+}
+
+pub fn sort(config: &mut Config, sink: &Sink) {
+	let Some(prev_current) = config.remaining.first().cloned() else {
+		return;
+	};
+
+	config.remaining.sort();
+
+	if config.remaining.is_empty() || prev_current != config.remaining[0] {
+		next_song(sink);
+	}
 }

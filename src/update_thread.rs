@@ -83,9 +83,10 @@ pub fn main(receiver: &Receiver<String>) {
 
 			let state = match_input(&input, &sink, &mut config);
 			match state {
-				CommandReturn::Nothing => (),
-				CommandReturn::Quit => break,
-				CommandReturn::QuitNoSave => return,
+				Ok(CommandReturn::Nothing) => (),
+				Ok(CommandReturn::Quit) => break,
+				Ok(CommandReturn::QuitNoSave) => return,
+				Err(e) => println!("Error: {}", e),
 			}
 
 			if config.remaining.is_empty() {
@@ -140,6 +141,8 @@ fn print_song_info(current_song_name: &String, config: &Config) {
 	println!("Songs Remaining: {}", config.remaining.len());
 	execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
 }
+
+// TODO handle errors of the following functions better
 
 fn load_first_song_and_set_name(
 	config: &mut Config,

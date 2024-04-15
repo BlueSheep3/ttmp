@@ -5,10 +5,9 @@ mod macros;
 mod pause_thread;
 mod serializer;
 mod update_thread;
+mod duration;
 
 use std::{sync::mpsc::channel, thread};
-
-type DynErr = Box<dyn std::error::Error>;
 
 fn main() {
 	// Create channels for communication between threads

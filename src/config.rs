@@ -1,12 +1,14 @@
-use crate::{serializer, DynErr};
+use crate::serializer;
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use std::{
 	collections::{HashMap, HashSet},
-	fs,
+	fs, io,
 	path::{Path, PathBuf},
+	result,
 	time::Duration,
 };
+use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
@@ -38,30 +40,33 @@ pub struct FileData {
 	pub tags: HashSet<String>,
 }
 
-pub fn load() -> Result<Config, DynErr> {
+pub fn load() -> Result<Config> {
 	let config_string = fs::read_to_string(get_config_path())?;
-	let config = ron::from_str(&config_string)?;
+	let config = ron::from_str(&config_string).map_err(Box::new)?;
 	Ok(config)
 }
 
 impl Config {
-	pub fn save(&self) -> Result<(), DynErr> {
+	pub fn save(&self) -> Result<()> {
 		let mut pretty_config = PrettyConfig::new();
 		pretty_config.indentor = "\t".to_owned();
 		pretty_config.new_line = "\n".to_owned();
 
-		let config_string = ron::ser::to_string_pretty(self, pretty_config)?;
+		let config_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
 		fs::write(get_config_path(), config_string)?;
 		Ok(())
 	}
 
 	/// add all files that are in the system, but not in the config,
 	/// and remove all files that are in the config but not in the system.
-	pub fn reload_files(&mut self) -> Result<(), DynErr> {
+	pub fn reload_files(&mut self) -> Result<()> {
 		let system_files = get_all_files_in(&self.parent_path)?;
 
 		for full_path in &system_files {
-			let rel_path = full_path.strip_prefix(&self.parent_path)?.to_path_buf();
+			let rel_path = full_path
+				.strip_prefix(&self.parent_path)
+				.unwrap_or_else(|_| unreachable!())
+				.to_path_buf();
 			self.files.entry(rel_path).or_default();
 		}
 
@@ -82,7 +87,7 @@ impl Config {
 }
 
 /// gets all files in a folder, including subfolders
-fn get_all_files_in(path: &Path) -> Result<Vec<PathBuf>, std::io::Error> {
+fn get_all_files_in(path: &Path) -> result::Result<Vec<PathBuf>, io::Error> {
 	let mut files = vec![];
 
 	for entry in fs::read_dir(path)? {
@@ -107,8 +112,25 @@ fn is_music_file(file_name: &str) -> bool {
 }
 
 fn get_config_path() -> PathBuf {
+	#[cfg(not(target_os = "windows"))]
+	compile_error!("get_config_path() only works on windows");
+
 	let path = std::env::var("APPDATA").expect("APPDATA not found");
 	let path = PathBuf::from(path);
 	let path = path.parent().expect("appdata doesn't have a parent");
 	path.join("LocalLow/BlueSheep3/Music Player/config.ron")
+}
+
+type Result<T> = result::Result<T, ConfigError>;
+
+#[derive(Error, Debug)]
+pub enum ConfigError {
+	#[error("io error: {0}")]
+	Io(#[from] io::Error),
+
+	// these are wrapped in Box, because SpannedError is 88 bytes and Error is 72 bytes
+	#[error("ron spanned error: {0}")]
+	RonSpanned(#[from] Box<ron::error::SpannedError>),
+	#[error("ron error: {0}")]
+	Ron(#[from] Box<ron::Error>),
 }

@@ -1,20 +1,18 @@
-use super::play::{self, next_song};
+use super::{
+	error::{CommandError::NoFilePlaying, Result},
+	play::{self, next_song},
+};
 use crate::config::Config;
 use rodio::Sink;
 use std::{fs, path::Path, time::Duration};
 
-pub fn delete_current(config: &mut Config, sink: &Sink) {
-	let Some(current) = config.remaining.first() else {
-		println!("No File currently playing");
-		return;
-	};
+pub fn delete_current(config: &mut Config, sink: &Sink) -> Result<()> {
+	let current = config.remaining.first().ok_or(NoFilePlaying)?;
 	config.files.remove(current);
-	if let Err(err) = fs::remove_file(config.parent_path.join(current)) {
-		println!("Error deleting file: {}", err);
-	} else {
-		println!("File deleted successfully.");
-	}
+	fs::remove_file(config.parent_path.join(current))?;
+	println!("File deleted successfully.");
 	next_song(sink);
+	Ok(())
 }
 
 pub fn move_file(config: &mut Config, destination_folder: &[&str]) {
@@ -50,34 +48,25 @@ pub fn move_file(config: &mut Config, destination_folder: &[&str]) {
 	}
 }
 
-pub fn show_full_path(config: &Config) {
-	let Some(current) = config.remaining.first() else {
-		println!("No File currently playing");
-		return;
-	};
+pub fn show_full_path(config: &Config) -> Result<()> {
+	let current = config.remaining.first().ok_or(NoFilePlaying)?;
 	if current.is_absolute() {
 		println!("{}", current.display());
 	} else {
 		println!("{}", config.parent_path.join(current).display());
 	}
+	Ok(())
 }
 
-pub fn reload_files(config: &mut Config) {
-	config.reload_files().unwrap_or_else(|e| {
-		println!("failed to add new files: {}", e);
-	});
+pub fn reload_files(config: &mut Config) -> Result<()> {
+	config.reload_files()?;
+	Ok(())
 }
 
-pub fn show_progress(config: &Config) {
-	println!("Progress: {:.02}", config.current_progress.as_secs_f32());
-}
-
-pub fn enforce_max(config: &mut Config, max: &str) {
-	if let Ok(m) = max.parse::<usize>() {
-		config.remaining.truncate(m);
-	} else {
-		println!("Invalid max: {}", max);
-	}
+pub fn enforce_max(config: &mut Config, max: &str) -> Result<()> {
+	let max = max.parse::<usize>()?;
+	config.remaining.truncate(max);
+	Ok(())
 }
 
 pub fn reset_remaining(config: &mut Config, sink: &Sink) {

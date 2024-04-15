@@ -1,50 +1,25 @@
-use crate::{config::Config, update_thread};
+use super::error::Result;
+use crate::{
+	config::Config,
+	duration::{display_duration, parse_duration},
+	update_thread,
+};
 use rodio::Sink;
-use std::time::Duration;
 
-pub fn jump_to(config: &mut Config, sink: &Sink, duration: &str) {
-	let duration = match parse_duration(duration) {
-		Ok(d) => d,
-		Err(e) => {
-			println!("invalid duration: {}", e);
-			return;
-		}
-	};
+pub fn jump_to(config: &mut Config, sink: &Sink, duration: &[&str]) -> Result<()> {
+	let duration = parse_duration(&duration.join(" "))?;
 	config.current_progress = duration;
 	update_thread::load_first_song(config, sink);
+	Ok(())
 }
 
-pub fn jump_forward(config: &mut Config, sink: &Sink, duration: &str) {
-	let duration = match parse_duration(duration) {
-		Ok(d) => d,
-		Err(e) => {
-			println!("invalid duration: {}", e);
-			return;
-		}
-	};
+pub fn jump_forward(config: &mut Config, sink: &Sink, duration: &[&str]) -> Result<()> {
+	let duration = parse_duration(&duration.join(" "))?;
 	config.current_progress += duration;
 	update_thread::load_first_song(config, sink);
+	Ok(())
 }
 
-fn parse_duration(duration_str: &str) -> Result<Duration, &'static str> {
-	let mut duration = Duration::ZERO;
-	for part in duration_str.split(' ') {
-		let unit = part.chars().last().ok_or("empty duration part")?;
-		if unit.is_ascii_digit() {
-			// default to seconds
-			let num = part.parse::<f32>().map_err(|_| "invalid duration part")?;
-			duration += Duration::from_secs_f32(num);
-			continue;
-		}
-		let num = part[0..part.len() - 1]
-			.parse::<f32>()
-			.map_err(|_| "invalid duration part")?;
-		match unit {
-			's' => duration += Duration::from_secs_f32(num),
-			'm' => duration += Duration::from_secs_f32(num * 60.),
-			'h' => duration += Duration::from_secs_f32(num * 60. * 60.),
-			_ => return Err("unknown unit"),
-		}
-	}
-	Ok(duration)
+pub fn display_progress(config: &Config) {
+	println!("{}", display_duration(config.current_progress));
 }
