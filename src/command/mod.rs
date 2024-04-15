@@ -3,7 +3,7 @@ mod goto;
 mod help;
 mod macros;
 mod misc;
-mod play;
+pub(crate) mod play;
 mod tag;
 
 use crate::config::Config;
