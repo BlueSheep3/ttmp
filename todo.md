@@ -1,7 +1,5 @@
 - multiple files???
 - faster skipping
   - allow for any skipping during song
-- format progress better
 - mp4 implementation fix (it just closes the program)
-- better error handling
 - proper version numbers maybe?

@@ -1,2 +1,3 @@
-target
-config.lnk
+/target
+# move your own ignore files into `/.git/info/exclude`
+/config.lnk

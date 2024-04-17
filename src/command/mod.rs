@@ -4,7 +4,7 @@ mod goto;
 mod help;
 mod macros;
 mod misc;
-pub(crate) mod play;
+mod play;
 mod tag;
 
 use self::error::{CommandError::UknownOrInvalidCommand, Result};
@@ -18,12 +18,6 @@ pub enum CommandReturn {
 	Nothing,
 	Quit,
 	QuitNoSave,
-}
-
-impl From<()> for CommandReturn {
-	fn from(_value: ()) -> Self {
-		Self::Nothing
-	}
 }
 
 /// runs the command specified by `input` and may return information to the update thread
