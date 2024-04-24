@@ -41,6 +41,7 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> Result<Comm
 		["p-"] => play::pause_playing(sink),
 		["pr"] => play::randomize(config, sink),
 		["pn"] => play::next_song(sink),
+		["pn", num] => play::skip_songs(sink, config, num)?,
 		["ps", speed] => play::set_speed(config, sink, speed)?,
 		["pv", volume] => play::set_volume(config, sink, volume)?,
 		["pv"] => play::set_volume(config, sink, "100")?,

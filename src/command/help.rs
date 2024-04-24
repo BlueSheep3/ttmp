@@ -45,7 +45,7 @@ fn play() {
 p+        - play
 p-        - pause
 pr        - randomize / shuffle playlist
-pn        - skip to the next song
+pn NUM    - skips NUM songs
 ps SPEED  - set the playback speed to SPEED
 pv VOLUME - set the playback volume to VOLUME
 pl        - loop the remaining songs

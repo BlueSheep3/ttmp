@@ -33,6 +33,18 @@ pub fn next_song(sink: &Sink) {
 	sink.stop();
 }
 
+pub fn skip_songs(sink: &Sink, config: &mut Config, count: &str) -> Result<()> {
+	let count = count.parse::<usize>()?;
+	if count == 0 {
+		return Ok(());
+	}
+	config.remaining.drain(..count);
+	// calling next_song() only actually skips over a song if it was just playing, and since
+	// we just drained at least the first song, it will play the first song in the list
+	next_song(sink);
+	Ok(())
+}
+
 pub fn set_speed(config: &mut Config, sink: &Sink, speed: &str) -> Result<()> {
 	let s = speed.parse::<f32>()?;
 	config.speed = s;
