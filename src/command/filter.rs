@@ -99,7 +99,7 @@ pub fn filepath_starts_with(config: &mut Config, sink: &Sink, search: &[&str]) {
 
 	config
 		.remaining
-		.retain(|file| file.to_string_lossy().starts_with(&search));
+		.retain(|file| file.to_string_lossy().to_lowercase().starts_with(&search));
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
 		next_song(sink);
