@@ -26,7 +26,7 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> Result<Comm
 
 	match input.as_slice() {
 		["h" | "?" | "help"] => help::general(),
-		["h" | "?" | "help", command] => help::specific(command)?,
+		["h" | "?" | "help", command] => help::specific(command, config)?,
 		["q"] => return Ok(CommandReturn::Quit),
 		["q!"] => return Ok(CommandReturn::QuitNoSave),
 		["s"] => config.save()?,

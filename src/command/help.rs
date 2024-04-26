@@ -1,6 +1,13 @@
 //! handles all commands that show the user information
 //! about commands and the program itself
 
+use std::{
+	fs::{self, DirEntry},
+	path::PathBuf,
+};
+
+use crate::config::{self, Config};
+
 use super::error::{CommandError::NoHelpAvailable, Result};
 
 pub fn general() {
@@ -23,17 +30,19 @@ p          - modify playing songs
 f          - filter the remaining songs
 t          - tags to filter songs
 g          - goto a time in the song
-m          - macros to easily do common things"
+m          - macros to easily do common things
+d          - show folders in the directory"
 	);
 }
 
-pub fn specific(command: &str) -> Result<()> {
+pub fn specific(command: &str, config: &mut config::Config) -> Result<()> {
 	match command {
 		"p" => play(),
 		"f" => filter(),
 		"t" => tags(),
 		"g" => goto(),
 		"m" => macros(),
+		"d" => folders(config),
 		_ => return Err(NoHelpAvailable(command.to_owned())),
 	}
 	Ok(())
@@ -97,4 +106,43 @@ mc NAME STR - change an existing Macro with NAME to run STR
 ml          - lists all Macros
 <nothing>   - run the \"default\" Macro"
 	);
+}
+
+fn folders(config: &mut Config) {
+	if let Some(folder_name) = &config.parent_path.file_name() {
+		println!("{}", folder_name.to_string_lossy());
+	}
+	folders_recursive(&config.parent_path, "", false, &mut 21);
+}
+
+fn folders_recursive(path: &PathBuf, layers: &str, is_ending: bool, max: &mut i32) {
+	if let Ok(entries) = fs::read_dir(path) {
+		let mut subdirs: Vec<DirEntry> = entries
+			.filter_map(|res| res.ok())
+			.filter(|entry| entry.path().is_dir())
+			.collect();
+		subdirs.sort_by_key(|a| a.path());
+
+		let count = subdirs.len();
+		for (index, entry) in subdirs.into_iter().enumerate() {
+			if *max == 0 {
+				return;
+			}
+			*max -= 1;
+			let is_last = index == count - 1;
+			let new_layer = if is_last { "└── " } else { "├── " };
+			if let Some(folder_name) = entry.path().file_name() {
+				println!(
+					"{}{}",
+					layers.to_owned() + new_layer,
+					folder_name.to_string_lossy()
+				);
+			}
+			let is_ending = is_last || is_ending;
+			let new_layer = if is_ending { "    " } else { "│   " };
+			let new_layers = layers.to_owned() + new_layer;
+			let subpath = entry.path();
+			folders_recursive(&subpath, &new_layers, is_ending, max);
+		}
+	}
 }
