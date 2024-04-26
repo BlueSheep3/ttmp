@@ -23,8 +23,8 @@ pub enum CommandError {
 	NoHelpAvailable(String),
 	#[error("No File currently playing")]
 	NoFilePlaying,
-	#[error("No Songs Remaining")]
-	NoSongsRemaining,
+	#[error("Not enough Songs in the List")]
+	NotEnoughSongsRemaining,
 	#[error("Song not in Files list")]
 	NotInFiles(PathBuf),
 	#[error("Macro already exists: {0}")]

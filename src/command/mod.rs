@@ -1,4 +1,5 @@
 mod error;
+mod files;
 mod filter;
 mod goto;
 mod help;
@@ -26,22 +27,18 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> Result<Comm
 
 	match input.as_slice() {
 		["h" | "?" | "help"] => help::general(),
-		["h" | "?" | "help", command] => help::specific(command, config)?,
+		["h" | "?" | "help", command] => help::specific(command)?,
 		["q"] => return Ok(CommandReturn::Quit),
 		["q!"] => return Ok(CommandReturn::QuitNoSave),
 		["s"] => config.save()?,
 		["r"] => misc::reset_remaining(config, sink),
-		["rf"] => misc::reload_files(config)?,
-		["del"] => misc::delete_current(config, sink)?,
-		["max", max] => misc::enforce_max(config, max)?,
-		["fm", destination @ ..] => misc::move_file(config, destination),
-		["fp"] => misc::show_full_path(config)?,
 		["p"] => play::toggle_playing(sink),
 		["p+"] => play::start_playing(sink),
 		["p-"] => play::pause_playing(sink),
 		["pr"] => play::randomize(config, sink),
 		["pn"] => play::next_song(sink),
 		["pn", num] => play::skip_songs(sink, config, num)?,
+		["pm", max] => play::enforce_max(config, max)?,
 		["ps", speed] => play::set_speed(config, sink, speed)?,
 		["pv", volume] => play::set_volume(config, sink, volume)?,
 		["pv"] => play::set_volume(config, sink, "100")?,
@@ -69,6 +66,11 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> Result<Comm
 		["mr", name] => macros::remove_macro(config, name)?,
 		["mc", name, commands @ ..] => macros::change_macro(config, name, commands)?,
 		["ml"] => macros::show_macros(config),
+		["dr"] => files::reload_files(config)?,
+		["del"] => files::delete_current(config, sink)?,
+		["dm", destination @ ..] => files::move_file(config, destination)?,
+		["dp"] => files::show_full_path(config)?,
+		["ds"] => files::show_directories(config)?,
 		[""] => return macros::run_macro(config, sink, "default", &[]),
 		[macro_name, args @ ..] if config.macros.contains_key(*macro_name) => {
 			return macros::run_macro(config, sink, macro_name, args);

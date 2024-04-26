@@ -1,7 +1,7 @@
 //! commands that act on the playing songs
 
 use super::error::{
-	CommandError::{NoSongsRemaining, VolumeTooHigh, VolumeTooLow},
+	CommandError::{NoFilePlaying, NotEnoughSongsRemaining, VolumeTooHigh, VolumeTooLow},
 	Result,
 };
 use crate::config::Config;
@@ -35,6 +35,10 @@ pub fn next_song(sink: &Sink) {
 
 pub fn skip_songs(sink: &Sink, config: &mut Config, count: &str) -> Result<()> {
 	let count = count.parse::<usize>()?;
+	let max = config.remaining.len();
+	if count > max {
+		return Err(NotEnoughSongsRemaining);
+	}
 	if count == 0 {
 		return Ok(());
 	}
@@ -42,6 +46,12 @@ pub fn skip_songs(sink: &Sink, config: &mut Config, count: &str) -> Result<()> {
 	// calling next_song() only actually skips over a song if it was just playing, and since
 	// we just drained at least the first song, it will play the first song in the list
 	next_song(sink);
+	Ok(())
+}
+
+pub fn enforce_max(config: &mut Config, max: &str) -> Result<()> {
+	let max = max.parse::<usize>()?;
+	config.remaining.truncate(max);
 	Ok(())
 }
 
@@ -67,7 +77,7 @@ pub fn set_volume(config: &mut Config, sink: &Sink, volume: &str) -> Result<()> 
 
 pub fn loop_remaining(config: &mut Config) -> Result<()> {
 	if config.remaining.is_empty() {
-		return Err(NoSongsRemaining);
+		return Err(NoFilePlaying);
 	}
 	config.looping_songs = config.remaining.clone();
 	Ok(())
