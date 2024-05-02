@@ -53,6 +53,7 @@ pub fn move_file(config: &mut Config, destination_folder: &[&str]) -> Result<()>
 		.join(destination_folder)
 		.join(song_name.clone());
 
+	let new_folder = fs::metadata(destination_full.clone()).is_err();
 	fs::rename(config.parent_path.join(file_name), destination_full.clone())?;
 
 	let destination = destination_folder.join(song_name.clone());
@@ -60,6 +61,14 @@ pub fn move_file(config: &mut Config, destination_folder: &[&str]) -> Result<()>
 	let current = &destination;
 	if let Some(file_data) = config.files.remove(current) {
 		config.files.insert(destination, file_data);
+	}
+	if new_folder {
+		println!("Succesfully moved File");
+	} else {
+		println!(
+			"Created new Folder to move file to {}",
+			destination_full.to_string_lossy()
+		);
 	}
 	Ok(())
 }
