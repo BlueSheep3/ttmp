@@ -48,7 +48,8 @@ ps SPEED  - set the playback speed to SPEED
 pv VOLUME - set the playback volume to VOLUME
 pl        - loop the remaining songs
 pl-       - stop looping
-po        - order / sort the remaining songs"
+po        - order / sort the remaining songs
+pd NUM    - Repeat the currently playing song"
 	);
 }
 

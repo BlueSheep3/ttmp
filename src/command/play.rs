@@ -1,7 +1,7 @@
 //! commands that act on the playing songs
 
 use super::error::{
-	CommandError::{NoFilePlaying, NotEnoughSongsRemaining, VolumeTooHigh, VolumeTooLow},
+	CommandError::{NotEnoughSongsRemaining, VolumeTooHigh, VolumeTooLow},
 	Result,
 };
 use crate::config::Config;
@@ -75,12 +75,8 @@ pub fn set_volume(config: &mut Config, sink: &Sink, volume: &str) -> Result<()> 
 	Ok(())
 }
 
-pub fn loop_remaining(config: &mut Config) -> Result<()> {
-	if config.remaining.is_empty() {
-		return Err(NoFilePlaying);
-	}
+pub fn loop_remaining(config: &mut Config) {
 	config.looping_songs = config.remaining.clone();
-	Ok(())
 }
 
 pub fn stop_looping(config: &mut Config) {
