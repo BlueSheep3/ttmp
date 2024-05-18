@@ -3,3 +3,4 @@
   - allow for any skipping during song
 - mp4 implementation fix (it just closes the program)
 - proper version numbers maybe?
+- cache song length
