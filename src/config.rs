@@ -15,13 +15,19 @@ pub struct Config {
 	/// the folder that all the files are in
 	pub parent_path: PathBuf,
 	/// how far you are into the current song
-	pub current_progress: Duration,
+	pub progress: Duration,
+	/// the time you last skipped to, to ensure that the song length doesn't get
+	/// updated with a time that was just skipped to, and isn't the actual duration.
+	pub last_skipped_to: Duration,
 	/// the speed of the music
 	pub speed: f32,
 	/// the volume of the music
 	pub volume: f32,
 	/// whether the music should start playing as soon as the program starts
 	pub start_playing_immediately: bool,
+	/// whether to always show the current progress,
+	/// this does mean it will redraw on every frame
+	pub show_song_progress: bool,
 	/// type "m NAME" to run all commands listed under the macro
 	#[serde(serialize_with = "serializer::sorted_hashmap")]
 	pub macros: HashMap<String, String>,
@@ -38,15 +44,18 @@ pub struct Config {
 pub struct FileData {
 	#[serde(serialize_with = "serializer::sorted_hashset")]
 	pub tags: HashSet<String>,
-}
-
-pub fn load() -> Result<Config> {
-	let config_string = fs::read_to_string(get_config_path())?;
-	let config = ron::from_str(&config_string).map_err(Box::new)?;
-	Ok(config)
+	/// a cache of how long the song is.
+	/// this gets updated when a song finishes playing.
+	pub duration: Option<Duration>,
 }
 
 impl Config {
+	pub fn load() -> Result<Self> {
+		let config_string = fs::read_to_string(get_config_path())?;
+		let config = ron::from_str(&config_string).map_err(Box::new)?;
+		Ok(config)
+	}
+
 	pub fn save(&self) -> Result<()> {
 		let mut pretty_config = PrettyConfig::new();
 		pretty_config.indentor = "\t".to_owned();
@@ -83,6 +92,12 @@ impl Config {
 		}
 
 		Ok(())
+	}
+
+	pub fn get_current_duration(&self) -> Option<Duration> {
+		let first = self.remaining.first()?;
+		let song = self.files.get(first)?;
+		song.duration
 	}
 }
 

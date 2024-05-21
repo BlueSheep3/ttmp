@@ -10,7 +10,7 @@ use std::iter;
 pub fn reset_remaining(config: &mut Config, sink: &Sink) {
 	config.remaining = config.files.keys().cloned().collect();
 	config.looping_songs.clear();
-	config.current_progress = Duration::ZERO;
+	config.progress = Duration::ZERO;
 	next_song(sink);
 	if config.start_playing_immediately {
 		play::start_playing(sink)

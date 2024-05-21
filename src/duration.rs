@@ -44,7 +44,16 @@ pub fn parse_duration(duration_str: &str) -> Result<Duration, DurationParseError
 pub fn display_duration(duration: Duration) -> String {
 	let s = duration.as_secs_f32();
 	let secs = s % 60.;
-	let mins = (s / 60.) % 60.;
-	let hours = (s / 3600.) % 60.;
+	let mins = ((s / 60.) % 60.).floor();
+	let hours = ((s / 3600.) % 60.).floor();
 	format!("{:02.0}:{:02.0}:{:05.2}", hours, mins, secs)
+}
+
+pub fn display_duration_out_of(duration: Duration, out_of: Duration) -> String {
+	let secs1 = duration.as_secs_f32();
+	let secs2 = out_of.as_secs_f32();
+	let percent = ((secs1 / secs2) * 100.).clamp(0., 100.);
+	let s1 = display_duration(duration);
+	let s2 = display_duration(out_of);
+	format!("{:03.0}%  =  {}  /  {}", percent, s1, s2)
 }

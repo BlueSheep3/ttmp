@@ -1,6 +1,7 @@
 use crate::{
 	command::{match_input, CommandReturn},
-	config::{load as load_config, Config},
+	config::Config,
+	duration::{display_duration, display_duration_out_of},
 	input_thread::INPUT_Y,
 };
 use crossterm::{
@@ -13,7 +14,7 @@ use std::{
 	ffi::OsString,
 	fs::File,
 	io::{stdout, BufReader},
-	path::PathBuf,
+	path::{Path, PathBuf},
 	sync::mpsc::Receiver,
 	thread::sleep,
 	time::{Duration, Instant},
@@ -24,13 +25,13 @@ const SLEEP_TIME: u64 = 250;
 // Function to update and render changing information in a separate thread
 pub fn main(receiver: &Receiver<String>) {
 	// load config
-	let mut config = load_config().expect("config should be valid RON");
+	let mut config = Config::load().expect("config should be valid RON");
 
 	// prepend first song if opened with command line args
 	let args = std::env::args_os().collect::<Vec<OsString>>();
 	if args.len() > 1 {
 		config.remaining.insert(0, PathBuf::from(args[1].clone()));
-		config.current_progress = Duration::ZERO;
+		config.progress = Duration::ZERO;
 	}
 
 	// setup sink
@@ -98,16 +99,19 @@ pub fn main(receiver: &Receiver<String>) {
 
 		// update progress time
 		if !sink.is_paused() {
-			config.current_progress += last_loop_time.elapsed();
+			config.progress += last_loop_time.elapsed();
 		}
 
 		// go to the next song if the current one is finished
 		if sink.empty() && !config.remaining.is_empty() {
-			if current_song == config.remaining[0] {
+			let first = config.remaining[0].clone();
+			if current_song == first {
+				try_update_song_duration(&mut config, &first);
 				config.remaining.remove(0);
 			}
 
-			config.current_progress = Duration::ZERO;
+			config.progress = Duration::ZERO;
+			config.last_skipped_to = Duration::ZERO;
 			if config.remaining.is_empty() {
 				remaining_songs_ended(&mut config, &sink, &mut current_song_name);
 			}
@@ -120,6 +124,10 @@ pub fn main(receiver: &Receiver<String>) {
 				);
 			}
 			print_song_info(&current_song_name, &config);
+		}
+
+		if config.show_song_progress {
+			print_song_progress(&config);
 		}
 
 		// move the cursor back to allow for user input to not be glitchy
@@ -140,6 +148,16 @@ fn print_song_info(current_song_name: &String, config: &Config) {
 	execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
 	println!("Songs Remaining: {}", config.remaining.len());
 	execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
+}
+
+fn print_song_progress(config: &Config) {
+	execute!(stdout(), MoveTo(0, 2), Clear(ClearType::CurrentLine)).unwrap();
+	if let Some(song_duration) = config.get_current_duration() {
+		let s = display_duration_out_of(config.progress, song_duration);
+		println!("{}", s);
+	} else {
+		println!("{}", display_duration(config.progress));
+	}
 }
 
 // TODO handle errors of the following functions better
@@ -206,16 +224,27 @@ pub fn load_first_song(config: &mut Config, sink: &Sink) {
 	#[cfg(not(feature = "mp4"))]
 	let decoder = Decoder::new(file).expect("unable to convert file to a music file");
 
-	let source = decoder.skip_duration(config.current_progress);
+	let source = decoder.skip_duration(config.progress);
 	sink.append(source);
 }
 
 fn remaining_songs_ended(config: &mut Config, sink: &Sink, current_song_name: &mut String) {
 	if !config.looping_songs.is_empty() {
 		config.remaining = config.looping_songs.clone();
-		config.current_progress = Duration::ZERO;
+		config.progress = Duration::ZERO;
 	} else {
 		sink.pause();
 		*current_song_name = "[No Songs Remaining]".to_owned();
+	}
+}
+
+fn try_update_song_duration(config: &mut Config, first: &Path) {
+	let d1 = config.progress.as_secs_f32();
+	let d2 = config.last_skipped_to.as_secs_f32();
+	let time_since_skip = (d1 - d2).abs();
+	if time_since_skip > 1. {
+		if let Some(file) = config.files.get_mut(first) {
+			file.duration = Some(config.progress);
+		}
 	}
 }
