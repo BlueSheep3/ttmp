@@ -147,11 +147,13 @@ fn print_song_info(current_song_name: &String, config: &Config) {
 	println!("Music: {}", current_song_name);
 	execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
 	println!("Songs Remaining: {}", config.remaining.len());
+	// clear the line of the song length to make sure it renders correctly
 	execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
 }
 
 fn print_song_progress(config: &Config) {
-	execute!(stdout(), MoveTo(0, 2), Clear(ClearType::CurrentLine)).unwrap();
+	// this intentionally does not clear the line, to avoid flickering
+	execute!(stdout(), MoveTo(0, 2)).unwrap();
 	if let Some(song_duration) = config.get_current_duration() {
 		let s = display_duration_out_of(config.progress, song_duration);
 		println!("{}", s);
