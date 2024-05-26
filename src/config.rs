@@ -18,7 +18,8 @@ pub struct Config {
 	pub progress: Duration,
 	/// the time you last skipped to, to ensure that the song length doesn't get
 	/// updated with a time that was just skipped to, and isn't the actual duration.
-	pub last_skipped_to: Duration,
+	/// also used when skipping songs.
+	pub dont_save_at: Duration,
 	/// the speed of the music
 	pub speed: f32,
 	/// the volume of the music

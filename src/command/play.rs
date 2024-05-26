@@ -10,7 +10,7 @@ use rodio::Sink;
 
 pub fn randomize(config: &mut Config, sink: &Sink) {
 	config.remaining.shuffle(&mut rand::thread_rng());
-	next_song(sink);
+	next_song(sink, config);
 }
 
 pub fn toggle_playing(sink: &Sink) {
@@ -29,7 +29,8 @@ pub fn pause_playing(sink: &Sink) {
 	sink.pause();
 }
 
-pub fn next_song(sink: &Sink) {
+pub fn next_song(sink: &Sink, config: &mut Config) {
+	config.dont_save_at = config.progress;
 	sink.stop();
 }
 
@@ -45,7 +46,7 @@ pub fn skip_songs(sink: &Sink, config: &mut Config, count: &str) -> Result<()> {
 	config.remaining.drain(..count);
 	// calling next_song() only actually skips over a song if it was just playing, and since
 	// we just drained at least the first song, it will play the first song in the list
-	next_song(sink);
+	next_song(sink, config);
 	Ok(())
 }
 
@@ -91,6 +92,6 @@ pub fn sort(config: &mut Config, sink: &Sink) {
 	config.remaining.sort();
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		next_song(sink);
+		next_song(sink, config);
 	}
 }

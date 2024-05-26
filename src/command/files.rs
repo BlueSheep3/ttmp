@@ -29,7 +29,7 @@ pub fn delete_current(config: &mut Config, sink: &Sink) -> Result<()> {
 	config.files.remove(current);
 	fs::remove_file(config.parent_path.join(current))?;
 	println!("File deleted successfully.");
-	next_song(sink);
+	next_song(sink, config);
 	Ok(())
 }
 

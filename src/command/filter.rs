@@ -23,7 +23,7 @@ pub fn tag_exists(config: &mut Config, sink: &Sink, tags: &[&str]) {
 	});
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		next_song(sink);
+		next_song(sink, config);
 	}
 }
 
@@ -38,7 +38,7 @@ pub fn tag_all(config: &mut Config, sink: &Sink, tags: &[&str]) {
 	});
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		next_song(sink);
+		next_song(sink, config);
 	}
 }
 
@@ -53,7 +53,7 @@ pub fn no_tags(config: &mut Config, sink: &Sink) {
 	});
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		next_song(sink);
+		next_song(sink, config);
 	}
 }
 
@@ -68,7 +68,7 @@ pub fn search_full(config: &mut Config, sink: &Sink, search: &[&str]) {
 		.retain(|file| file.to_string_lossy().to_lowercase().contains(&search));
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		next_song(sink);
+		next_song(sink, config);
 	}
 }
 
@@ -87,7 +87,7 @@ pub fn search_file_name(config: &mut Config, sink: &Sink, search: &[&str]) {
 	});
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		next_song(sink);
+		next_song(sink, config);
 	}
 }
 
@@ -102,6 +102,6 @@ pub fn filepath_starts_with(config: &mut Config, sink: &Sink, search: &[&str]) {
 		.retain(|file| file.to_string_lossy().to_lowercase().starts_with(&search));
 
 	if config.remaining.is_empty() || prev_current != config.remaining[0] {
-		next_song(sink);
+		next_song(sink, config);
 	}
 }

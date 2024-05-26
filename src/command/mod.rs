@@ -36,7 +36,7 @@ pub fn match_input(input: &str, sink: &Sink, config: &mut Config) -> Result<Comm
 		["p+"] => play::start_playing(sink),
 		["p-"] => play::pause_playing(sink),
 		["pr"] => play::randomize(config, sink),
-		["pn"] => play::next_song(sink),
+		["pn"] => play::next_song(sink, config),
 		["pn", num] => play::skip_songs(sink, config, num)?,
 		["pm", max] => play::enforce_max(config, max)?,
 		["ps", speed] => play::set_speed(config, sink, speed)?,

@@ -111,7 +111,7 @@ pub fn main(receiver: &Receiver<String>) {
 			}
 
 			config.progress = Duration::ZERO;
-			config.last_skipped_to = Duration::ZERO;
+			config.dont_save_at = Duration::ZERO;
 			if config.remaining.is_empty() {
 				remaining_songs_ended(&mut config, &sink, &mut current_song_name);
 			}
@@ -242,7 +242,7 @@ fn remaining_songs_ended(config: &mut Config, sink: &Sink, current_song_name: &m
 
 fn try_update_song_duration(config: &mut Config, first: &Path) {
 	let d1 = config.progress.as_secs_f32();
-	let d2 = config.last_skipped_to.as_secs_f32();
+	let d2 = config.dont_save_at.as_secs_f32();
 	let time_since_skip = (d1 - d2).abs();
 	if time_since_skip > 1. {
 		if let Some(file) = config.files.get_mut(first) {

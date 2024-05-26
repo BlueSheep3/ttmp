@@ -9,7 +9,7 @@ use rodio::Sink;
 pub fn jump_to(config: &mut Config, sink: &Sink, duration: &[&str]) -> Result<()> {
 	let duration = parse_duration(&duration.join(" "))?;
 	config.progress = duration;
-	config.last_skipped_to = config.progress;
+	config.dont_save_at = config.progress;
 	update_thread::load_first_song(config, sink);
 	Ok(())
 }
@@ -17,7 +17,7 @@ pub fn jump_to(config: &mut Config, sink: &Sink, duration: &[&str]) -> Result<()
 pub fn jump_forward(config: &mut Config, sink: &Sink, duration: &[&str]) -> Result<()> {
 	let duration = parse_duration(&duration.join(" "))?;
 	config.progress += duration;
-	config.last_skipped_to = config.progress;
+	config.dont_save_at = config.progress;
 	update_thread::load_first_song(config, sink);
 	Ok(())
 }
