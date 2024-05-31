@@ -57,7 +57,8 @@ pub fn main(receiver: &Receiver<String>) {
 	}
 
 	// starting sink values
-	if config.start_playing_immediately || args.len() > 1 {
+	let insta_start = config.start_playing_immediately && !config.remaining.is_empty();
+	if insta_start || args.len() > 1 {
 		sink.play();
 	} else {
 		sink.pause();
@@ -149,6 +150,9 @@ fn print_song_info(current_song_name: &String, config: &Config) {
 	println!("Songs Remaining: {}", config.remaining.len());
 	// clear the line of the song length to make sure it renders correctly
 	execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
+	// clear the line below the song length, because text can easily glitch to there
+	println!();
+	execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
 }
 
 fn print_song_progress(config: &Config) {
@@ -237,6 +241,7 @@ fn remaining_songs_ended(config: &mut Config, sink: &Sink, current_song_name: &m
 	} else {
 		sink.pause();
 		*current_song_name = "[No Songs Remaining]".to_owned();
+		config.progress = Duration::ZERO;
 	}
 }
 
