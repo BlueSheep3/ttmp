@@ -206,7 +206,7 @@ pub fn load_first_song(config: &mut Config, sink: &Sink) {
 	let file = match File::open(path.clone()) {
 		Ok(file) => file,
 		Err(_) => {
-			println!("Failed to load song: {}", config.remaining[0].display());
+			println!("Failed to load song: {}", first.display());
 			config.remaining.remove(0);
 			load_first_song(config, sink);
 			return;
@@ -228,10 +228,25 @@ pub fn load_first_song(config: &mut Config, sink: &Sink) {
 	};
 
 	#[cfg(not(feature = "mp4"))]
-	let decoder = Decoder::new(file).expect("unable to convert file to a music file");
+	let mut decoder = Decoder::new(file).expect("unable to convert file to a music file");
 
-	let source = decoder.skip_duration(config.progress);
-	sink.append(source);
+	// update the cached duration to be accurate if the decoder type supports it
+	if let Some(total) = decoder.total_duration() {
+		if let Some(file) = config.files.get_mut(&first) {
+			file.duration = Some(total);
+		}
+	}
+
+	// `try_seek` is a faster alternative to `skip_duration`,
+	// but isn't supported for all file formats
+	if decoder.try_seek(config.progress).is_ok() {
+		sink.append(decoder);
+	} else {
+		// logging the error value of `try_seek` would be nice here,
+		// but in many cases this would print text over other "ui" elements.
+		let source = decoder.skip_duration(config.progress);
+		sink.append(source);
+	}
 }
 
 fn remaining_songs_ended(config: &mut Config, sink: &Sink, current_song_name: &mut String) {
