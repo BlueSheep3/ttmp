@@ -1,11 +1,17 @@
+#![allow(clippy::assigning_clones)]
+#![warn(clippy::infinite_loop)]
+#![warn(clippy::undocumented_unsafe_blocks)]
+#![deny(unsafe_op_in_unsafe_fn)]
+#![deny(clippy::multiple_unsafe_ops_per_block)]
+
 mod command;
 mod config;
+mod duration;
 mod input_thread;
 mod macros;
 mod pause_thread;
 mod serializer;
 mod update_thread;
-mod duration;
 
 use std::{sync::mpsc::channel, thread};
 
