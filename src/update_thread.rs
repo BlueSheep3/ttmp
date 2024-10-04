@@ -1,5 +1,5 @@
 use crate::{
-	command::{match_input, CommandReturn},
+	command::{match_input, run_macro, CommandReturn},
 	data::{context::Context, playlist::Playlist},
 	duration::{display_duration, display_duration_out_of},
 	input_thread::INPUT_Y,
@@ -22,6 +22,18 @@ use std::{
 };
 
 const SLEEP_TIME: u64 = 250;
+
+// this must be used inside the main loop
+macro_rules! handle_command_return {
+	($command_return:expr) => {
+		match $command_return {
+			Ok(CommandReturn::Nothing) => (),
+			Ok(CommandReturn::Quit) => break,
+			Ok(CommandReturn::QuitNoSave) => return,
+			Err(e) => println!("Error: {}", e),
+		}
+	};
+}
 
 // Function to update and render changing information in a separate thread
 pub fn main(receiver: &Receiver<String>) {
@@ -62,13 +74,7 @@ pub fn main(receiver: &Receiver<String>) {
 			)
 			.expect("Failed to execute cursor movement and clear.");
 
-			let state = match_input(&input, &mut ctx);
-			match state {
-				Ok(CommandReturn::Nothing) => (),
-				Ok(CommandReturn::Quit) => break,
-				Ok(CommandReturn::QuitNoSave) => return,
-				Err(e) => println!("Error: {}", e),
-			}
+			handle_command_return!(match_input(&input, &mut ctx));
 
 			if ctx.playlist.remaining.is_empty() {
 				remaining_songs_ended(&mut ctx, &mut current_song_name);
@@ -87,14 +93,17 @@ pub fn main(receiver: &Receiver<String>) {
 			let first = ctx.playlist.remaining[0].clone();
 			try_update_song_duration(&mut ctx, &first);
 			ctx.playlist.remaining.remove(0);
+			handle_command_return!(run_macro(&mut ctx, "@song_end", &[]));
 
 			ctx.playlist.progress = Duration::ZERO;
 			ctx.playlist.dont_save_at = Duration::ZERO;
 			if ctx.playlist.remaining.is_empty() {
 				remaining_songs_ended(&mut ctx, &mut current_song_name);
+				handle_command_return!(run_macro(&mut ctx, "@list_end", &[]));
 			}
 			if !ctx.playlist.remaining.is_empty() {
 				load_first_song_and_set_name(&mut ctx, &mut current_song_name, &mut current_song);
+				handle_command_return!(run_macro(&mut ctx, "@song_start", &[]));
 			}
 			print_song_info(&current_song_name, &ctx.playlist);
 		}

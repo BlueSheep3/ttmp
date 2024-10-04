@@ -16,6 +16,10 @@ pub fn reset_remaining(ctx: &mut Context) {
 	}
 }
 
+pub fn echo(text: &[&str]) {
+	println!("{}", text.join(" "));
+}
+
 pub fn repeat_song(list: &mut Playlist, amount: &str) -> Result<()> {
 	let amount = amount.parse::<usize>()?;
 	let current_song = list.remaining.first().cloned().ok_or(NoFilePlaying)?;

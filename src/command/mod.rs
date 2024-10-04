@@ -11,7 +11,10 @@ mod tag;
 use self::error::{CommandError::UknownOrInvalidCommand, Result};
 use crate::data::context::Context;
 
+pub use self::macros::run_macro;
+
 /// information to give the update thread after doing a Command
+#[must_use]
 #[derive(Debug, Default, Clone, PartialEq)]
 pub enum CommandReturn {
 	#[default]
@@ -31,6 +34,7 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["q!"] => return Ok(CommandReturn::QuitNoSave),
 		["s"] => misc::save(ctx)?,
 		["r"] => misc::reset_remaining(ctx),
+		["echo", text @ ..] => misc::echo(text),
 		["p"] => play::toggle_playing(ctx),
 		["p+"] => play::start_playing(ctx),
 		["p-"] => play::pause_playing(ctx),
@@ -69,7 +73,7 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["dm", destination @ ..] => files::move_file(ctx, destination)?,
 		["dp"] => files::show_full_path(ctx)?,
 		["ds"] => files::show_directories(&ctx.config)?,
-		[""] => return macros::run_macro(ctx, "default", &[]),
+		[""] => return macros::run_macro(ctx, "@cmd_empty", &[]),
 		[macro_name, args @ ..] if ctx.config.macros.contains_key(*macro_name) => {
 			return macros::run_macro(ctx, macro_name, args);
 		}

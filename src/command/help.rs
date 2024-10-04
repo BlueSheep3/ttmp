@@ -12,6 +12,7 @@ help, h, ? - Show this help
 q          - Quit the Program
 s          - Save the Config
 r          - Reset the Playlist (put all files in it)
+echo TEXT  - print out TEXT. usefull for debugging
 
 Categories of Subcommands:
 p          - modify playing songs
@@ -19,6 +20,7 @@ f          - filter the remaining songs
 t          - tags to filter songs
 g          - goto a time in the song
 m          - macros to easily do common things
+em         - special macro names that get called automatically
 d          - commands concerning the file system"
 	);
 }
@@ -30,6 +32,7 @@ pub fn specific(command: &str) -> Result<()> {
 		"t" => tags(),
 		"g" => goto(),
 		"m" => macros(),
+		"em" => event_macros(),
 		"d" => file_system(),
 		_ => return Err(NoHelpAvailable(command.to_owned())),
 	}
@@ -87,12 +90,26 @@ fn macros() {
 and all instances of $0, $1, ... will be replaced with the arguments
 $a will insert all arguments seperated by spaces
 
+Event Macros' names start with an @ symbol. Use 'help em' for more info.
+
 m NAME ARGS - run Macro with NAME and arguments ARGS
 ma NAME STR - add a Macro with NAME that runs STR
 mr NAME     - remove a Macro with NAME
 mc NAME STR - change an existing Macro with NAME to run STR
-ml          - lists all Macros
-<nothing>   - run the \"default\" Macro"
+ml          - lists all Macros"
+	);
+}
+
+fn event_macros() {
+	println!(
+		"An Event Macro is a special kind of macro that starts with an @ symbol.
+Event Macros will automatically be called by the program, but can also be called manually.
+They must have on of the following names:
+
+@cmd_empty   - entered an empty command
+@song_start  - any song started
+@song_end    - any song ended (called before @song_start)
+@list_end    - the entire playlist ended (called after @song_end)"
 	);
 }
 
