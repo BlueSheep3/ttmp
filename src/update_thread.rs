@@ -144,20 +144,21 @@ pub fn main(receiver: &Receiver<String>) {
 }
 
 fn print_song_info(current_song_name: &String, config: &Config) {
-	execute!(stdout(), MoveTo(0, 0), Clear(ClearType::CurrentLine)).unwrap();
+	execute!(stdout(), MoveTo(0, 0), Clear(ClearType::CurrentLine))
+		.expect("Failed moving cursor to the top");
 	println!("Music: {}", current_song_name);
-	execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
+	execute!(stdout(), Clear(ClearType::CurrentLine)).expect("Failed clearing line");
 	println!("Songs Remaining: {}", config.remaining.len());
 	// clear the line of the song length to make sure it renders correctly
-	execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
+	execute!(stdout(), Clear(ClearType::CurrentLine)).expect("Failed clearing line");
 	// clear the line below the song length, because text can easily glitch to there
 	println!();
-	execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
+	execute!(stdout(), Clear(ClearType::CurrentLine)).expect("Failed clearing line");
 }
 
 fn print_song_progress(config: &Config) {
 	// this intentionally does not clear the line, to avoid flickering
-	execute!(stdout(), MoveTo(0, 2)).unwrap();
+	execute!(stdout(), MoveTo(0, 2)).expect("Failed moving cursor");
 	if let Some(song_duration) = config.get_current_duration() {
 		let s = display_duration_out_of(config.progress, song_duration);
 		println!("{}", s);
@@ -193,7 +194,7 @@ pub fn load_first_song(config: &mut Config, sink: &Sink) {
 	sink.stop();
 
 	let Some(first) = config.remaining.first().cloned() else {
-		println!("Tried playing the first song without a Playlist");
+		println!("Tried playing the first song with an empty Playlist");
 		return;
 	};
 	let path = {
@@ -217,7 +218,7 @@ pub fn load_first_song(config: &mut Config, sink: &Sink) {
 	#[cfg(feature = "mp4")]
 	let decoder = if path
 		.file_name()
-		.unwrap()
+		.expect("unable to get file name of current song")
 		.to_string_lossy()
 		.ends_with(".mp4")
 	{
