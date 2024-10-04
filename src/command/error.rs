@@ -40,4 +40,6 @@ pub enum CommandError {
 	VolumeTooLow(f32),
 	#[error("Volume can't be more than 300%, to protect your ears, but got: {0}")]
 	VolumeTooHigh(f32),
+	#[error("Can't save in this mode")]
+	SaveInWrongMode,
 }

@@ -85,10 +85,8 @@ pub fn main(receiver: &Receiver<String>) {
 		// go to the next song if the current one is finished
 		if ctx.sink.empty() && !ctx.playlist.remaining.is_empty() {
 			let first = ctx.playlist.remaining[0].clone();
-			if current_song == first {
-				try_update_song_duration(&mut ctx, &first);
-				ctx.playlist.remaining.remove(0);
-			}
+			try_update_song_duration(&mut ctx, &first);
+			ctx.playlist.remaining.remove(0);
 
 			ctx.playlist.progress = Duration::ZERO;
 			ctx.playlist.dont_save_at = Duration::ZERO;
@@ -114,13 +112,18 @@ pub fn main(receiver: &Receiver<String>) {
 		sleep(Duration::from_millis(SLEEP_TIME));
 	}
 
-	ctx.config.save().expect("Failed to save config.");
+	if ctx.program_mode.can_save() {
+		ctx.config.save().expect("Failed to save config.");
+		ctx.playlist
+			.save(&ctx.config.current_playlist)
+			.expect("Failed to save playlist.");
+	}
 }
 
 fn print_song_info(current_song_name: &String, playlist: &Playlist) {
 	execute!(stdout(), MoveTo(0, 0), Clear(ClearType::CurrentLine))
 		.expect("Failed moving cursor to the top");
-	println!("Music: {}", current_song_name);
+	println!("Song: {}", current_song_name);
 	execute!(stdout(), Clear(ClearType::CurrentLine)).expect("Failed clearing line");
 	println!("Songs Remaining: {}", playlist.remaining.len());
 	// clear the line of the song length to make sure it renders correctly

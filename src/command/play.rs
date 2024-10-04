@@ -4,34 +4,55 @@ use super::error::{
 	CommandError::{NotEnoughSongsRemaining, VolumeTooHigh, VolumeTooLow},
 	Result,
 };
-use crate::data::{context::Context, playlist::Playlist};
+use crate::data::{config::StartPlayState, context::Context, playlist::Playlist};
 use rand::seq::SliceRandom;
-use rodio::Sink;
 
 pub fn randomize(ctx: &mut Context) {
 	ctx.playlist.remaining.shuffle(&mut rand::thread_rng());
-	next_song(ctx);
+	reload_current_song(ctx);
 }
 
-pub fn toggle_playing(sink: &Sink) {
-	if sink.is_paused() {
-		sink.play();
+pub fn toggle_playing(ctx: &mut Context) {
+	if ctx.sink.is_paused() {
+		ctx.sink.play();
+		if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
+			*p = true;
+		}
 	} else {
-		sink.pause();
+		ctx.sink.pause();
+		if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
+			*p = false;
+		}
 	}
 }
 
-pub fn start_playing(sink: &Sink) {
-	sink.play();
+pub fn start_playing(ctx: &mut Context) {
+	ctx.sink.play();
+	if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
+		*p = true;
+	}
 }
 
-pub fn pause_playing(sink: &Sink) {
-	sink.pause();
+pub fn pause_playing(ctx: &mut Context) {
+	ctx.sink.pause();
+	if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
+		*p = false;
+	}
 }
 
 pub fn next_song(ctx: &mut Context) {
 	ctx.playlist.dont_save_at = ctx.playlist.progress;
 	ctx.sink.stop();
+}
+
+pub fn reload_current_song(ctx: &mut Context) {
+	// insert garbage data into first song, that will be instantly skipped by `next_song`.
+	// spamming this function can make this song actually get recognized,
+	// so by making it an actual song from the files, no garbage file data will be made.
+	if let Some(first) = ctx.config.files.keys().next().cloned() {
+		ctx.playlist.remaining.insert(0, first);
+	}
+	next_song(ctx);
 }
 
 pub fn skip_songs(ctx: &mut Context, count: &str) -> Result<()> {
@@ -92,6 +113,6 @@ pub fn sort(ctx: &mut Context) {
 	ctx.playlist.remaining.sort();
 
 	if ctx.playlist.remaining.is_empty() || prev_current != ctx.playlist.remaining[0] {
-		next_song(ctx);
+		reload_current_song(ctx);
 	}
 }

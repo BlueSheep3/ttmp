@@ -46,8 +46,6 @@ pn NUM    - skips NUM songs
 pm NUM    - set the maximum number of files to be played
 ps SPEED  - set the playback speed to SPEED
 pv VOLUME - set the playback volume to VOLUME
-pl        - loop the remaining songs
-pl-       - stop looping
 po        - order / sort the remaining songs
 pd NUM    - Repeat the currently playing song"
 	);

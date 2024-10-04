@@ -25,8 +25,8 @@ pub struct Config {
 	/// whether to always show the current progress,
 	/// this does mean it will redraw on every frame
 	pub show_song_progress: bool,
-	/// the current playlist used in the [Main MetaMode](super::context::MetaMode::Main)
-	pub main_playlist: String,
+	/// the name of the current playlist
+	pub current_playlist: String,
 	/// type "m NAME" to run all commands listed under the macro
 	#[serde(serialize_with = "serializer::sorted_hashmap")]
 	pub macros: HashMap<String, String>,

@@ -13,8 +13,8 @@ pub struct Context {
 	pub sink: Sink,
 
 	// these are just here, so the music doesnt stop, due to them being dropped
-	stream: OutputStream,
-	stream_handle: OutputStreamHandle,
+	_stream: OutputStream,
+	_stream_handle: OutputStreamHandle,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -26,11 +26,20 @@ pub enum ProgramMode {
 	Temp,
 }
 
+impl ProgramMode {
+	pub fn can_save(&self) -> bool {
+		match self {
+			Self::Main => true,
+			Self::Temp => false,
+		}
+	}
+}
+
 impl Context {
 	pub fn new_main() -> Result<Self> {
 		let program_mode = ProgramMode::Main;
 		let config = Config::load()?;
-		let playlist = Playlist::load(&config.main_playlist)?;
+		let playlist = Playlist::load(&config.current_playlist)?;
 		let (stream, stream_handle) = OutputStream::try_default()?;
 		let sink = Sink::try_new(&stream_handle)?;
 
@@ -39,8 +48,8 @@ impl Context {
 			config,
 			playlist,
 			sink,
-			stream,
-			stream_handle,
+			_stream: stream,
+			_stream_handle: stream_handle,
 		};
 		ctx.init_sink();
 		Ok(ctx)
@@ -65,8 +74,8 @@ impl Context {
 			config,
 			playlist,
 			sink,
-			stream,
-			stream_handle,
+			_stream: stream,
+			_stream_handle: stream_handle,
 		};
 		ctx.init_sink();
 		Ok(ctx)
@@ -98,11 +107,11 @@ type Result<T> = result::Result<T, ContextError>;
 #[derive(Error, Debug)]
 pub enum ContextError {
 	#[error("{0}")]
-	ConfigError(#[from] ConfigError),
+	Config(#[from] ConfigError),
 	#[error("{0}")]
-	PlaylistError(#[from] PlaylistError),
+	Playlist(#[from] PlaylistError),
 	#[error("{0}")]
-	StreamError(#[from] StreamError),
+	Stream(#[from] StreamError),
 	#[error("{0}")]
-	PlayError(#[from] PlayError),
+	Play(#[from] PlayError),
 }
