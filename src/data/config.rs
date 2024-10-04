@@ -49,6 +49,16 @@ pub enum StartPlayState {
 	Remember(bool),
 }
 
+impl StartPlayState {
+	pub fn should_play(self) -> bool {
+		match self {
+			Self::Always => true,
+			Self::Never => false,
+			Self::Remember(play) => play,
+		}
+	}
+}
+
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct FileData {
 	#[serde(serialize_with = "serializer::sorted_hashset")]

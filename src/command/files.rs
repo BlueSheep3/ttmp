@@ -2,8 +2,10 @@ use super::{
 	error::{CommandError::NoFilePlaying, Result},
 	play::next_song,
 };
-use crate::{command::files::fs::DirEntry, config::Config};
-use rodio::Sink;
+use crate::{
+	command::files::fs::DirEntry,
+	data::{config::Config, context::Context},
+};
 use std::{
 	fs,
 	path::{Path, PathBuf},
@@ -14,47 +16,44 @@ pub fn reload_files(config: &mut Config) -> Result<()> {
 	Ok(())
 }
 
-pub fn show_full_path(config: &Config) -> Result<()> {
-	let current = config.remaining.first().ok_or(NoFilePlaying)?;
+pub fn show_full_path(ctx: &Context) -> Result<()> {
+	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
 	if current.is_absolute() {
 		println!("{}", current.display());
 	} else {
-		println!("{}", config.parent_path.join(current).display());
+		println!("{}", ctx.config.path.join(current).display());
 	}
 	Ok(())
 }
 
-pub fn delete_current(config: &mut Config, sink: &Sink) -> Result<()> {
-	let current = config.remaining.first().ok_or(NoFilePlaying)?;
-	config.files.remove(current);
-	fs::remove_file(config.parent_path.join(current))?;
+pub fn delete_current(ctx: &mut Context) -> Result<()> {
+	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
+	ctx.config.files.remove(current);
+	fs::remove_file(ctx.config.path.join(current))?;
 	println!("File deleted successfully.");
-	next_song(sink, config);
+	next_song(ctx);
 	Ok(())
 }
 
-pub fn move_file(config: &mut Config, destination_folder: &[&str]) -> Result<()> {
+pub fn move_file(ctx: &mut Context, destination_folder: &[&str]) -> Result<()> {
 	let input = destination_folder.join(" ");
 	let destination_folder = Path::new(&input);
-	let file_name = config.remaining.first().cloned().ok_or(NoFilePlaying)?;
+	let file_name = ctx.playlist.remaining.first_mut().ok_or(NoFilePlaying)?;
 	let song_name = file_name
 		.file_name()
 		.expect("Failed to get file name from the path.")
 		.to_string_lossy()
 		.to_string();
-	let destination_full = config
-		.parent_path
-		.join(destination_folder)
-		.join(song_name.clone());
+	let destination_full = ctx.config.path.join(destination_folder).join(&song_name);
 
-	let new_folder = fs::metadata(destination_full.clone()).is_err();
-	fs::rename(config.parent_path.join(file_name), destination_full.clone())?;
+	let new_folder = fs::metadata(&destination_full).is_err();
+	fs::rename(ctx.config.path.join(&file_name), &destination_full)?;
 
-	let destination = destination_folder.join(song_name.clone());
-	config.remaining[0] = destination.clone();
+	let destination = destination_folder.join(&song_name);
+	*file_name = destination.clone();
 	let current = &destination;
-	if let Some(file_data) = config.files.remove(current) {
-		config.files.insert(destination, file_data);
+	if let Some(file_data) = ctx.config.files.remove(current) {
+		ctx.config.files.insert(destination, file_data);
 	}
 	if new_folder {
 		println!("Succesfully moved File");
@@ -67,11 +66,11 @@ pub fn move_file(config: &mut Config, destination_folder: &[&str]) -> Result<()>
 	Ok(())
 }
 
-pub fn show_directories(config: &mut Config) -> Result<()> {
-	if let Some(folder_name) = &config.parent_path.file_name() {
+pub fn show_directories(config: &Config) -> Result<()> {
+	if let Some(folder_name) = &config.path.file_name() {
 		println!("{}", folder_name.to_string_lossy());
 	}
-	folders_recursive(&config.parent_path, "", false, &mut 21)
+	folders_recursive(&config.path, "", false, &mut 21)
 }
 
 fn folders_recursive(path: &PathBuf, layers: &str, is_ending: bool, max: &mut i32) -> Result<()> {

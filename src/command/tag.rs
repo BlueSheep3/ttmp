@@ -5,13 +5,14 @@ use crate::{
 		CommandError::{NoFilePlaying, NotInFiles},
 		Result,
 	},
-	config::Config,
+	data::context::Context,
 };
 use std::collections::HashSet;
 
-pub fn show_current_tags(config: &Config) -> Result<()> {
-	let current = config.remaining.first().ok_or(NoFilePlaying)?;
-	let tags = &config
+pub fn show_current_tags(ctx: &Context) -> Result<()> {
+	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
+	let tags = &ctx
+		.config
 		.files
 		.get(current)
 		.ok_or(NotInFiles(current.clone()))?
@@ -21,8 +22,9 @@ pub fn show_current_tags(config: &Config) -> Result<()> {
 	Ok(())
 }
 
-pub fn show_all_tags(config: &Config) {
-	let tags = config
+pub fn show_all_tags(ctx: &Context) {
+	let tags = ctx
+		.config
 		.files
 		.iter()
 		.flat_map(|(_, data)| data.tags.iter())
@@ -33,9 +35,10 @@ pub fn show_all_tags(config: &Config) {
 	println!("all tags: {}", tags.join(", "));
 }
 
-pub fn add_tag_current(config: &mut Config, tag: &str) -> Result<()> {
-	let current = config.remaining.first().ok_or(NoFilePlaying)?;
-	let tags = &mut config
+pub fn add_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
+	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
+	let tags = &mut ctx
+		.config
 		.files
 		.get_mut(current)
 		.ok_or(NotInFiles(current.clone()))?
@@ -44,9 +47,10 @@ pub fn add_tag_current(config: &mut Config, tag: &str) -> Result<()> {
 	Ok(())
 }
 
-pub fn remove_tag_current(config: &mut Config, tag: &str) -> Result<()> {
-	let current = config.remaining.first().ok_or(NoFilePlaying)?;
-	let tags = &mut config
+pub fn remove_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
+	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
+	let tags = &mut ctx
+		.config
 		.files
 		.get_mut(current)
 		.ok_or(NotInFiles(current.clone()))?
@@ -57,9 +61,10 @@ pub fn remove_tag_current(config: &mut Config, tag: &str) -> Result<()> {
 	Ok(())
 }
 
-pub fn add_tag_remaining(config: &mut Config, tag: &str) -> Result<()> {
-	for file in &mut config.remaining {
-		let tags = &mut config
+pub fn add_tag_remaining(ctx: &mut Context, tag: &str) -> Result<()> {
+	for file in &mut ctx.playlist.remaining {
+		let tags = &mut ctx
+			.config
 			.files
 			.get_mut(file)
 			.ok_or(NotInFiles(file.clone()))?
@@ -69,9 +74,10 @@ pub fn add_tag_remaining(config: &mut Config, tag: &str) -> Result<()> {
 	Ok(())
 }
 
-pub fn remove_tag_remaining(config: &mut Config, tag: &str) -> Result<()> {
-	for file in &mut config.remaining {
-		let tags = &mut config
+pub fn remove_tag_remaining(ctx: &mut Context, tag: &str) -> Result<()> {
+	for file in &mut ctx.playlist.remaining {
+		let tags = &mut ctx
+			.config
 			.files
 			.get_mut(file)
 			.ok_or(NotInFiles(file.clone()))?

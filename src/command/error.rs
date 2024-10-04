@@ -1,4 +1,7 @@
-use crate::{config, duration};
+use crate::{
+	data::{config, playlist},
+	duration,
+};
 use std::{io, path::PathBuf};
 use thiserror::Error;
 
@@ -8,6 +11,8 @@ pub type Result<T> = std::result::Result<T, CommandError>;
 pub enum CommandError {
 	#[error("config error: {0}")]
 	Config(#[from] config::ConfigError),
+	#[error("playlist error: {0}")]
+	Playlist(#[from] playlist::PlaylistError),
 	#[error("io error: {0}")]
 	Io(#[from] io::Error),
 	#[error("Failed while parsing Integer: {0}")]

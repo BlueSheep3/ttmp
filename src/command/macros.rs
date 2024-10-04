@@ -7,17 +7,11 @@ use super::{
 	},
 	CommandReturn,
 };
-use crate::config::Config;
-use rodio::Sink;
+use crate::data::{config::Config, context::Context};
 
 // returns true, if the program should quit
-pub fn run_macro(
-	config: &mut Config,
-	sink: &Sink,
-	name: &str,
-	args: &[&str],
-) -> Result<CommandReturn> {
-	let Some(commands) = config.macros.get(name) else {
+pub fn run_macro(ctx: &mut Context, name: &str, args: &[&str]) -> Result<CommandReturn> {
+	let Some(commands) = ctx.config.macros.get(name) else {
 		return Err(MacroDoesNotExist(name.to_owned()));
 	};
 
@@ -38,7 +32,7 @@ pub fn run_macro(
 		.collect::<Vec<_>>();
 
 	for cmd in commands {
-		let state = super::match_input(&cmd, sink, config)?;
+		let state = super::match_input(&cmd, ctx)?;
 		match state {
 			CommandReturn::Nothing => (),
 			CommandReturn::Quit => return Ok(state),

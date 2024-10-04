@@ -1,6 +1,6 @@
 use crate::{
 	command::{match_input, CommandReturn},
-	data::{config::Config, context::Context, playlist::Playlist},
+	data::{context::Context, playlist::Playlist},
 	duration::{display_duration, display_duration_out_of},
 	input_thread::INPUT_Y,
 };
@@ -9,7 +9,7 @@ use crossterm::{
 	execute,
 	terminal::{Clear, ClearType},
 };
-use rodio::{Decoder, OutputStream, Sink, Source};
+use rodio::{Decoder, Source};
 use std::{
 	env,
 	ffi::OsString,
@@ -26,40 +26,27 @@ const SLEEP_TIME: u64 = 250;
 // Function to update and render changing information in a separate thread
 pub fn main(receiver: &Receiver<String>) {
 	let args = env::args_os().collect::<Vec<OsString>>();
-	let ctx = if let [_, file, ..] = args.as_slice() {
+	let mut ctx = if let [_, file, ..] = args.as_slice() {
 		Context::new_temp(Path::new(file))
 	} else {
 		Context::new_main()
 	}
 	.expect("could not load context");
 
-	let mut ctx @ Context {
-		program_mode,
-		config,
-		playlist,
-		sink,
-		..
-	} = ctx;
-
 	// load in first song
 	let mut last_loop_time = Instant::now();
 	let mut current_song_name = String::new();
 	let mut current_song = PathBuf::new();
 
-	if playlist.remaining.is_empty() {
-		remaining_songs_ended(&mut config, &sink, &mut current_song_name);
+	if ctx.playlist.remaining.is_empty() {
+		remaining_songs_ended(&mut ctx, &mut current_song_name);
 	}
-	if !playlist.remaining.is_empty() {
-		load_first_song_and_set_name(
-			&mut config,
-			&sink,
-			&mut current_song_name,
-			&mut current_song,
-		);
+	if !ctx.playlist.remaining.is_empty() {
+		load_first_song_and_set_name(&mut ctx, &mut current_song_name, &mut current_song);
 	}
 
 	execute!(stdout(), SavePosition).expect("Failed to save cursor position.");
-	print_song_info(&current_song_name, &config);
+	print_song_info(&current_song_name, &ctx.playlist);
 	execute!(stdout(), RestorePosition).expect("Failed to restore cursor position.");
 
 	// Update and render loop
@@ -75,7 +62,7 @@ pub fn main(receiver: &Receiver<String>) {
 			)
 			.expect("Failed to execute cursor movement and clear.");
 
-			let state = match_input(&input, &sink, &mut config);
+			let state = match_input(&input, &mut ctx);
 			match state {
 				Ok(CommandReturn::Nothing) => (),
 				Ok(CommandReturn::Quit) => break,
@@ -83,44 +70,39 @@ pub fn main(receiver: &Receiver<String>) {
 				Err(e) => println!("Error: {}", e),
 			}
 
-			if config.remaining.is_empty() {
-				remaining_songs_ended(&mut config, &sink, &mut current_song_name);
+			if ctx.playlist.remaining.is_empty() {
+				remaining_songs_ended(&mut ctx, &mut current_song_name);
 			}
 
-			print_song_info(&current_song_name, &config);
+			print_song_info(&current_song_name, &ctx.playlist);
 		}
 
 		// update progress time
-		if !sink.is_paused() {
-			config.progress += last_loop_time.elapsed();
+		if !ctx.sink.is_paused() {
+			ctx.playlist.progress += last_loop_time.elapsed();
 		}
 
 		// go to the next song if the current one is finished
-		if sink.empty() && !config.remaining.is_empty() {
-			let first = config.remaining[0].clone();
+		if ctx.sink.empty() && !ctx.playlist.remaining.is_empty() {
+			let first = ctx.playlist.remaining[0].clone();
 			if current_song == first {
-				try_update_song_duration(&mut config, &first);
-				config.remaining.remove(0);
+				try_update_song_duration(&mut ctx, &first);
+				ctx.playlist.remaining.remove(0);
 			}
 
-			config.progress = Duration::ZERO;
-			config.dont_save_at = Duration::ZERO;
-			if config.remaining.is_empty() {
-				remaining_songs_ended(&mut config, &sink, &mut current_song_name);
+			ctx.playlist.progress = Duration::ZERO;
+			ctx.playlist.dont_save_at = Duration::ZERO;
+			if ctx.playlist.remaining.is_empty() {
+				remaining_songs_ended(&mut ctx, &mut current_song_name);
 			}
-			if !config.remaining.is_empty() {
-				load_first_song_and_set_name(
-					&mut config,
-					&sink,
-					&mut current_song_name,
-					&mut current_song,
-				);
+			if !ctx.playlist.remaining.is_empty() {
+				load_first_song_and_set_name(&mut ctx, &mut current_song_name, &mut current_song);
 			}
-			print_song_info(&current_song_name, &config);
+			print_song_info(&current_song_name, &ctx.playlist);
 		}
 
-		if config.show_song_progress {
-			print_song_progress(&config);
+		if ctx.config.show_song_progress {
+			print_song_progress(&ctx);
 		}
 
 		// move the cursor back to allow for user input to not be glitchy
@@ -132,7 +114,7 @@ pub fn main(receiver: &Receiver<String>) {
 		sleep(Duration::from_millis(SLEEP_TIME));
 	}
 
-	config.save().expect("Failed to save config.");
+	ctx.config.save().expect("Failed to save config.");
 }
 
 fn print_song_info(current_song_name: &String, playlist: &Playlist) {
