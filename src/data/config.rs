@@ -1,3 +1,4 @@
+use super::get_savedata_path;
 use crate::serializer;
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
@@ -12,33 +13,40 @@ use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
-	/// the folder that all the files are in
-	pub parent_path: PathBuf,
-	/// how far you are into the current song
-	pub progress: Duration,
-	/// the time you last skipped to, to ensure that the song length doesn't get
-	/// updated with a time that was just skipped to, and isn't the actual duration.
-	/// also used when skipping songs.
-	pub dont_save_at: Duration,
+	/// the folder that all the files are in,
+	/// or the single file that is currently playing
+	pub path: PathBuf,
 	/// the speed of the music
 	pub speed: f32,
 	/// the volume of the music
 	pub volume: f32,
-	/// whether the music should start playing as soon as the program starts
-	pub start_playing_immediately: bool,
+	/// what to do when songs are playable after not being playable
+	pub start_play_state: StartPlayState,
 	/// whether to always show the current progress,
 	/// this does mean it will redraw on every frame
 	pub show_song_progress: bool,
+	/// the current playlist used in the [Main MetaMode](super::context::MetaMode::Main)
+	pub main_playlist: String,
 	/// type "m NAME" to run all commands listed under the macro
 	#[serde(serialize_with = "serializer::sorted_hashmap")]
 	pub macros: HashMap<String, String>,
-	/// the remaining songs in order (current song included)
-	pub remaining: Vec<PathBuf>,
-	/// the songs to loop when `remaining` ends
-	pub looping_songs: Vec<PathBuf>,
 	/// all music files, paths should be relative to the parent folder
 	#[serde(serialize_with = "serializer::sorted_hashmap")]
 	pub files: HashMap<PathBuf, FileData>,
+}
+
+/// Represents what should happen when the program starts being able to play songs again.
+/// This can happen for example when the program is opened, or when the playlist
+/// is filled with songs after being empty.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StartPlayState {
+	/// always start playing when opening the program
+	Always,
+	/// never start playing when opening the program,
+	/// meaning you have to start it manually
+	Never,
+	/// remember whether the song was playing when you closed the program
+	Remember(bool),
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -52,7 +60,8 @@ pub struct FileData {
 
 impl Config {
 	pub fn load() -> Result<Self> {
-		let config_string = fs::read_to_string(get_config_path())?;
+		let path = get_savedata_path().join("config.ron");
+		let config_string = fs::read_to_string(path)?;
 		let config = ron::from_str(&config_string).map_err(Box::new)?;
 		Ok(config)
 	}
@@ -63,18 +72,19 @@ impl Config {
 		pretty_config.new_line = "\n".to_owned();
 
 		let config_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
-		fs::write(get_config_path(), config_string)?;
+		let path = get_savedata_path().join("config.ron");
+		fs::write(path, config_string)?;
 		Ok(())
 	}
 
 	/// add all files that are in the system, but not in the config,
 	/// and remove all files that are in the config but not in the system.
 	pub fn reload_files(&mut self) -> Result<()> {
-		let system_files = get_all_files_in(&self.parent_path)?;
+		let system_files = get_all_files_in(&self.path)?;
 
 		for full_path in &system_files {
 			let rel_path = full_path
-				.strip_prefix(&self.parent_path)
+				.strip_prefix(&self.path)
 				.unwrap_or_else(|_| unreachable!())
 				.to_path_buf();
 			self.files.entry(rel_path).or_default();
@@ -83,7 +93,7 @@ impl Config {
 		let mut files_to_remove = Vec::new();
 
 		for rel_path in self.files.keys() {
-			let full_path = self.parent_path.join(rel_path);
+			let full_path = self.path.join(rel_path);
 			if !system_files.contains(&full_path) {
 				files_to_remove.push(rel_path.clone());
 			}
@@ -93,12 +103,6 @@ impl Config {
 		}
 
 		Ok(())
-	}
-
-	pub fn get_current_duration(&self) -> Option<Duration> {
-		let first = self.remaining.first()?;
-		let song = self.files.get(first)?;
-		song.duration
 	}
 }
 
@@ -125,16 +129,6 @@ fn is_music_file(file_name: &str) -> bool {
 	[".mp3", ".wav", ".ogg" /*, ".mp4"*/]
 		.into_iter()
 		.any(|end| file_name.ends_with(end))
-}
-
-fn get_config_path() -> PathBuf {
-	#[cfg(not(target_os = "windows"))]
-	compile_error!("get_config_path() only works on windows");
-
-	let path = std::env::var("APPDATA").expect("APPDATA not found");
-	let path = PathBuf::from(path);
-	let path = path.parent().expect("appdata doesn't have a parent");
-	path.join("LocalLow/BlueSheep3/Music Player/config.ron")
 }
 
 type Result<T> = result::Result<T, ConfigError>;

@@ -7,7 +7,7 @@
 #![deny(clippy::unwrap_used)]
 
 mod command;
-mod config;
+mod data;
 mod duration;
 mod input_thread;
 mod macros;
