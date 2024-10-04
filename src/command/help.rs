@@ -15,25 +15,27 @@ r          - Reset the Playlist (put all files in it)
 echo TEXT  - print out TEXT. usefull for debugging
 
 Categories of Subcommands:
-p          - modify playing songs
-f          - filter the remaining songs
-t          - tags to filter songs
-g          - goto a time in the song
-m          - macros to easily do common things
-em         - special macro names that get called automatically
-d          - commands concerning the file system"
+p, play    - modify playing songs
+l, list    - modify differnt playlists
+f, filter  - filter the remaining songs
+t, tag     - tags to filter songs
+g, goto    - goto a time in the song
+m, macro   - macros to easily do common things
+em, event  - special macro names that get called automatically
+d, dir     - commands concerning the file system"
 	);
 }
 
 pub fn specific(command: &str) -> Result<()> {
 	match command {
-		"p" => play(),
-		"f" => filter(),
-		"t" => tags(),
-		"g" => goto(),
-		"m" => macros(),
-		"em" => event_macros(),
-		"d" => file_system(),
+		"p" | "play" => play(),
+		"l" | "list" => list(),
+		"f" | "filter" => filter(),
+		"t" | "tag" => tags(),
+		"g" | "goto" => goto(),
+		"m" | "macro" => macros(),
+		"em" | "event" => event_macros(),
+		"d" | "dir" => file_system(),
 		_ => return Err(NoHelpAvailable(command.to_owned())),
 	}
 	Ok(())
@@ -51,6 +53,17 @@ ps SPEED  - set the playback speed to SPEED
 pv VOLUME - set the playback volume to VOLUME
 po        - order / sort the remaining songs
 pd NUM    - Repeat the currently playing song"
+	);
+}
+
+fn list() {
+	println!(
+		"lg        - get the name of the current playlist
+ln NAME   - create a new empty list with NAME
+ld NAME   - duplicate all songs in the current playlist into the list NAME
+lc NAME   - replace the current songs with a copy from NAME
+lr NAME   - remove the list NAME
+ls NAME   - switch to the list NAME"
 	);
 }
 
@@ -94,9 +107,9 @@ $a will insert all arguments seperated by spaces
 Event Macros' names start with an @ symbol. Use 'help em' for more info.
 
 m NAME ARGS - run Macro with NAME and arguments ARGS
-ma NAME STR - add a Macro with NAME that runs STR
+ma NAME DEF - add a Macro with NAME that runs DEF
 mr NAME     - remove a Macro with NAME
-mc NAME STR - change an existing Macro with NAME to run STR
+mc NAME DEF - change an existing Macro with NAME to run DEF
 ml          - lists all Macros"
 	);
 }

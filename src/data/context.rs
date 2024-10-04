@@ -65,6 +65,7 @@ impl Context {
 		config.path = file.to_owned();
 		config.files = HashMap::from([(file.to_owned(), FileData::default())]);
 		config.start_play_state = StartPlayState::Always;
+		config.current_playlist = "temp".to_owned();
 		playlist.remaining = vec![file.to_owned()];
 		playlist.progress = Duration::ZERO;
 		playlist.dont_save_at = Duration::ZERO;

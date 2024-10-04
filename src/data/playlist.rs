@@ -34,6 +34,12 @@ impl Playlist {
 		fs::write(path, config_string)?;
 		Ok(())
 	}
+
+	pub fn remove(name: &str) -> Result<()> {
+		let path = get_savedata_path().join(format!("list/{}.ron", name));
+		fs::remove_file(path)?;
+		Ok(())
+	}
 }
 
 type Result<T> = result::Result<T, PlaylistError>;

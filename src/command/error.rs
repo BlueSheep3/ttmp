@@ -40,4 +40,8 @@ pub enum CommandError {
 	VolumeTooHigh(f32),
 	#[error("Can't save in this mode")]
 	SaveInWrongMode,
+	#[error("Can't save over the current playlist")]
+	SaveOverCurrentPlaylist,
+	#[error("Can't delete the current playlist")]
+	DeleteCurrentPlaylist,
 }

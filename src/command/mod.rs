@@ -3,6 +3,7 @@ mod files;
 mod filter;
 mod goto;
 mod help;
+mod list;
 mod macros;
 mod misc;
 mod play;
@@ -47,6 +48,12 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["pv"] => play::set_volume(ctx, "100")?,
 		["po"] => play::sort(ctx),
 		["pd", amount] => misc::repeat_song(&mut ctx.playlist, amount)?,
+		["lg"] => list::get_current_name(ctx),
+		["ln", name] => list::new_empty(ctx, name)?,
+		["ld", name] => list::duplicate(ctx, name)?,
+		["lc", name] => list::copy_from(ctx, name)?,
+		["lr", name] => list::remove(ctx, name)?,
+		["ls", name] => list::switch_to(ctx, name)?,
 		["fte", tags @ ..] => filter::tag_exists(ctx, tags),
 		["fta", tags @ ..] => filter::tag_all(ctx, tags),
 		["ftn"] => filter::no_tags(ctx),
