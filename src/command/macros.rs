@@ -9,14 +9,29 @@ use super::{
 };
 use crate::data::{config::Config, context::Context};
 
-// returns true, if the program should quit
 pub fn run_macro(ctx: &mut Context, name: &str, args: &[&str]) -> Result<CommandReturn> {
 	let Some(commands) = ctx.config.macros.get(name) else {
 		return Err(MacroDoesNotExist(name.to_owned()));
 	};
+	run_commands(ctx, commands.clone(), args)
+}
 
+pub fn run_macro_or(
+	ctx: &mut Context,
+	name: &str,
+	args: &[&str],
+	default: &str,
+) -> Result<CommandReturn> {
+	let commands = ctx.config.macros.get(name).map_or(default, |c| c);
+	run_commands(ctx, commands.to_owned(), args)
+}
+
+pub fn run_commands(
+	ctx: &mut Context,
+	mut commands: String,
+	args: &[&str],
+) -> Result<CommandReturn> {
 	// NOTE will do weird things when arguments contain $ symbols
-	let mut commands = commands.clone();
 	for (i, arg) in args.iter().enumerate().rev() {
 		commands = commands.replace(&format!("${}", i), arg);
 	}

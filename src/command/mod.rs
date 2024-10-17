@@ -11,7 +11,7 @@ mod tag;
 use self::error::{CommandError::UknownOrInvalidCommand, Result};
 use crate::data::context::Context;
 
-pub use self::macros::run_macro;
+pub use self::macros::run_macro_or;
 
 /// information to give the update thread after doing a Command
 #[must_use]
@@ -73,7 +73,7 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["dm", destination @ ..] => files::move_file(ctx, destination)?,
 		["dp"] => files::show_full_path(ctx)?,
 		["ds"] => files::show_directories(&ctx.config)?,
-		[""] => return macros::run_macro(ctx, "@cmd_empty", &[]),
+		[""] => return macros::run_macro_or(ctx, "@cmd_empty", &[], ""),
 		[macro_name, args @ ..] if ctx.config.macros.contains_key(*macro_name) => {
 			return macros::run_macro(ctx, macro_name, args);
 		}

@@ -1,5 +1,5 @@
 use crate::{
-	command::{match_input, run_macro, CommandReturn},
+	command::{match_input, run_macro_or, CommandReturn},
 	data::{context::Context, playlist::Playlist},
 	duration::{display_duration, display_duration_out_of},
 	input_thread::INPUT_Y,
@@ -93,17 +93,17 @@ pub fn main(receiver: &Receiver<String>) {
 			let first = ctx.playlist.remaining[0].clone();
 			try_update_song_duration(&mut ctx, &first);
 			ctx.playlist.remaining.remove(0);
-			handle_command_return!(run_macro(&mut ctx, "@song_end", &[]));
+			handle_command_return!(run_macro_or(&mut ctx, "@song_end", &[], ""));
 
 			ctx.playlist.progress = Duration::ZERO;
 			ctx.playlist.dont_save_at = Duration::ZERO;
 			if ctx.playlist.remaining.is_empty() {
 				remaining_songs_ended(&mut ctx, &mut current_song_name);
-				handle_command_return!(run_macro(&mut ctx, "@list_end", &[]));
+				handle_command_return!(run_macro_or(&mut ctx, "@list_end", &[], ""));
 			}
 			if !ctx.playlist.remaining.is_empty() {
 				load_first_song_and_set_name(&mut ctx, &mut current_song_name, &mut current_song);
-				handle_command_return!(run_macro(&mut ctx, "@song_start", &[]));
+				handle_command_return!(run_macro_or(&mut ctx, "@song_start", &[], ""));
 			}
 			print_song_info(&current_song_name, &ctx.playlist);
 		}
