@@ -1,7 +1,7 @@
 //! commands that act on the playing songs
 
 use super::error::{
-	CommandError::{NotEnoughSongsRemaining, VolumeTooHigh, VolumeTooLow},
+	CommandError::{VolumeTooHigh, VolumeTooLow},
 	Result,
 };
 use crate::data::{config::StartPlayState, context::Context, playlist::Playlist};
@@ -59,14 +59,16 @@ pub fn skip_songs(ctx: &mut Context, count: &str) -> Result<()> {
 	let count = count.parse::<usize>()?;
 	let max = ctx.playlist.remaining.len();
 	if count > max {
-		return Err(NotEnoughSongsRemaining);
+		ctx.playlist.remaining.clear();
+		next_song(ctx);
+		return Ok(());
 	}
 	if count == 0 {
 		return Ok(());
 	}
+	// next_song will skip one song, so we remove 1 less from the playlist
+	let count = count - 1;
 	ctx.playlist.remaining.drain(..count);
-	// calling next_song() only actually skips over a song if it was just playing, and since
-	// we just drained at least the first song, it will play the first song in the list
 	next_song(ctx);
 	Ok(())
 }
