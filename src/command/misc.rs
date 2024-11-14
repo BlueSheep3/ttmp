@@ -9,7 +9,7 @@ use crate::data::{context::Context, playlist::Playlist};
 use std::{iter, time::Duration};
 
 pub fn reset_remaining(ctx: &mut Context) -> CommandReturn {
-	ctx.playlist.remaining = ctx.config.files.keys().cloned().collect();
+	ctx.playlist.remaining = ctx.files.keys().cloned().collect();
 	if ctx.config.start_play_state.should_play() {
 		play::start_playing(ctx)
 	}
@@ -33,6 +33,7 @@ pub fn repeat_song(list: &mut Playlist, amount: &str) -> Result<()> {
 pub fn save(ctx: &mut Context) -> Result<()> {
 	if ctx.program_mode.can_save() {
 		ctx.config.save()?;
+		ctx.files.save()?;
 		ctx.playlist.save(&ctx.config.current_playlist)?;
 		Ok(())
 	} else {

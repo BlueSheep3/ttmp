@@ -17,7 +17,7 @@ pub fn tag_exists(ctx: &mut Context, tags: &[&str]) -> CommandReturn {
 	};
 
 	ctx.playlist.remaining.retain(|file| {
-		let file_tags = &ctx.config.files.entry(file.to_path_buf()).or_default().tags;
+		let file_tags = &ctx.files.entry(file.to_path_buf()).or_default().tags;
 		tags.iter().any(|tag| tag_matches(file_tags, tag))
 	});
 
@@ -34,7 +34,7 @@ pub fn tag_all(ctx: &mut Context, tags: &[&str]) -> CommandReturn {
 	};
 
 	ctx.playlist.remaining.retain(|file| {
-		let file_tags = &ctx.config.files.entry(file.to_path_buf()).or_default().tags;
+		let file_tags = &ctx.files.entry(file.to_path_buf()).or_default().tags;
 		tags.iter().all(|tag| tag_matches(file_tags, tag))
 	});
 
@@ -51,7 +51,7 @@ pub fn no_tags(ctx: &mut Context) -> CommandReturn {
 	};
 
 	ctx.playlist.remaining.retain(|file| {
-		let file_tags = &ctx.config.files.entry(file.to_path_buf()).or_default().tags;
+		let file_tags = &ctx.files.entry(file.to_path_buf()).or_default().tags;
 		file_tags.is_empty()
 	});
 

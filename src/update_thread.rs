@@ -145,6 +145,7 @@ pub fn main(receiver: &Receiver<String>) {
 
 	if ctx.program_mode.can_save() {
 		ctx.config.save().expect("Failed to save config.");
+		ctx.files.save().expect("Failed to save files.");
 		ctx.playlist
 			.save(&ctx.config.current_playlist)
 			.expect("Failed to save playlist.");
@@ -237,7 +238,7 @@ fn load_first_song(ctx: &mut Context) {
 
 	// update the cached duration to be accurate if the decoder type supports it
 	if let Some(total) = decoder.total_duration() {
-		if let Some(file) = ctx.config.files.get_mut(&first) {
+		if let Some(file) = ctx.files.get_mut(&first) {
 			file.duration = Some(total);
 		}
 	}
@@ -262,7 +263,7 @@ fn remaining_songs_ended(ctx: &mut Context, song_name: &mut String) {
 
 /// sets the cached duration of `song` to the progress of the current song
 fn try_update_song_duration(ctx: &mut Context, song: &Path) {
-	if let Some(file) = ctx.config.files.get_mut(song) {
+	if let Some(file) = ctx.files.get_mut(song) {
 		file.duration = Some(ctx.playlist.progress);
 	}
 }

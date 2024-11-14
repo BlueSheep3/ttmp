@@ -12,8 +12,8 @@ use std::{
 	path::{Path, PathBuf},
 };
 
-pub fn reload_files(config: &mut Config) -> Result<()> {
-	config.reload_files()?;
+pub fn reload_files(ctx: &mut Context) -> Result<()> {
+	ctx.files.reload_files(&ctx.config.path)?;
 	Ok(())
 }
 
@@ -29,7 +29,7 @@ pub fn show_full_path(ctx: &Context) -> Result<()> {
 
 pub fn delete_current(ctx: &mut Context) -> Result<CommandReturn> {
 	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
-	ctx.config.files.remove(current);
+	ctx.files.remove(current);
 	fs::remove_file(ctx.config.path.join(current))?;
 	println!("File deleted successfully.");
 	Ok(next_song(ctx))
@@ -52,8 +52,8 @@ pub fn move_file(ctx: &mut Context, destination_folder: &[&str]) -> Result<()> {
 	let destination = destination_folder.join(&song_name);
 	*file_name = destination.clone();
 	let current = &destination;
-	if let Some(file_data) = ctx.config.files.remove(current) {
-		ctx.config.files.insert(destination, file_data);
+	if let Some(file_data) = ctx.files.remove(current) {
+		ctx.files.insert(destination, file_data);
 	}
 	if new_folder {
 		println!("Succesfully moved File");

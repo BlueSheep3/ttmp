@@ -12,7 +12,6 @@ use std::collections::HashSet;
 pub fn show_current_tags(ctx: &Context) -> Result<()> {
 	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
 	let tags = &ctx
-		.config
 		.files
 		.get(current)
 		.ok_or(NotInFiles(current.clone()))?
@@ -24,7 +23,6 @@ pub fn show_current_tags(ctx: &Context) -> Result<()> {
 
 pub fn show_all_tags(ctx: &Context) {
 	let tags = ctx
-		.config
 		.files
 		.iter()
 		.flat_map(|(_, data)| data.tags.iter())
@@ -38,7 +36,6 @@ pub fn show_all_tags(ctx: &Context) {
 pub fn add_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
 	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
 	let tags = &mut ctx
-		.config
 		.files
 		.get_mut(current)
 		.ok_or(NotInFiles(current.clone()))?
@@ -50,7 +47,6 @@ pub fn add_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
 pub fn remove_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
 	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
 	let tags = &mut ctx
-		.config
 		.files
 		.get_mut(current)
 		.ok_or(NotInFiles(current.clone()))?
@@ -64,7 +60,6 @@ pub fn remove_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
 pub fn add_tag_remaining(ctx: &mut Context, tag: &str) -> Result<()> {
 	for file in &mut ctx.playlist.remaining {
 		let tags = &mut ctx
-			.config
 			.files
 			.get_mut(file)
 			.ok_or(NotInFiles(file.clone()))?
@@ -77,7 +72,6 @@ pub fn add_tag_remaining(ctx: &mut Context, tag: &str) -> Result<()> {
 pub fn remove_tag_remaining(ctx: &mut Context, tag: &str) -> Result<()> {
 	for file in &mut ctx.playlist.remaining {
 		let tags = &mut ctx
-			.config
 			.files
 			.get_mut(file)
 			.ok_or(NotInFiles(file.clone()))?

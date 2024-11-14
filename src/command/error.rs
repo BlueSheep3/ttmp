@@ -1,5 +1,5 @@
 use crate::{
-	data::{config, playlist},
+	data::{config, files, playlist},
 	duration,
 };
 use std::{io, path::PathBuf};
@@ -11,6 +11,8 @@ pub type Result<T> = std::result::Result<T, CommandError>;
 pub enum CommandError {
 	#[error("config error: {0}")]
 	Config(#[from] config::ConfigError),
+	#[error("files error: {0}")]
+	Files(#[from] files::FilesError),
 	#[error("playlist error: {0}")]
 	Playlist(#[from] playlist::PlaylistError),
 	#[error("io error: {0}")]

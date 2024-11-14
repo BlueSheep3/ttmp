@@ -80,7 +80,7 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["mr", name] => macros::remove_macro(&mut ctx.config, name)?,
 		["mc", name, commands @ ..] => macros::change_macro(&mut ctx.config, name, commands)?,
 		["ml"] => macros::show_macros(&ctx.config),
-		["dr"] => files::reload_files(&mut ctx.config)?,
+		["dr"] => files::reload_files(ctx)?,
 		["del"] => return files::delete_current(ctx),
 		["dm", destination @ ..] => files::move_file(ctx, destination)?,
 		["dp"] => files::show_full_path(ctx)?,
