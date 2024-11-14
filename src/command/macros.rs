@@ -43,7 +43,7 @@ pub fn run_commands(
 
 	let commands = commands
 		.split("; ")
-		.map(|s| s.to_owned())
+		.map(replace_semicolon_specials)
 		.collect::<Vec<_>>();
 
 	let mut should_reload = false;
@@ -61,6 +61,15 @@ pub fn run_commands(
 	} else {
 		Ok(CommandReturn::Nothing)
 	}
+}
+
+// allows defining multiline macros inside other macros.
+fn replace_semicolon_specials(cmd: &str) -> String {
+	// NOTE this isnt done very smart, but i dont think
+	// anyone will really need any more depth than this.
+	cmd.replace(";1 ", "; ")
+		.replace(";2 ", ";1 ")
+		.replace(";3 ", ";2 ")
 }
 
 pub fn add_macro(config: &mut Config, name: &str, commands: &[&str]) -> Result<()> {
