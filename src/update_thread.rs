@@ -25,11 +25,12 @@ const SLEEP_TIME: u64 = 250;
 
 // this must be used inside the main loop
 macro_rules! handle_command_return {
-	($command_return:expr) => {
+	($ctx:expr, $csn:expr, $cs:expr, $command_return:expr) => {
 		match $command_return {
 			Ok(CommandReturn::Nothing) => (),
 			Ok(CommandReturn::Quit) => break,
 			Ok(CommandReturn::QuitNoSave) => return,
+			Ok(CommandReturn::ReloadFirstSong) => load_first_song_and_set_name($ctx, $csn, $cs),
 			Err(e) => println!("Error: {}", e),
 		}
 	};
@@ -74,10 +75,23 @@ pub fn main(receiver: &Receiver<String>) {
 			)
 			.expect("Failed to execute cursor movement and clear.");
 
-			handle_command_return!(match_input(&input, &mut ctx));
+			let was_not_empty = !ctx.playlist.remaining.is_empty();
+
+			handle_command_return! {
+				&mut ctx, &mut current_song_name, &mut current_song,
+				match_input(&input, &mut ctx)
+			};
 
 			if ctx.playlist.remaining.is_empty() {
+				ctx.sink.pause();
+			}
+
+			if was_not_empty && ctx.playlist.remaining.is_empty() {
 				remaining_songs_ended(&mut ctx, &mut current_song_name);
+				handle_command_return! {
+					&mut ctx, &mut current_song_name, &mut current_song,
+					run_macro_or(&mut ctx, "@list_end", &[], "")
+				};
 			}
 
 			print_song_info(&current_song_name, &ctx.playlist);
@@ -93,17 +107,25 @@ pub fn main(receiver: &Receiver<String>) {
 			let first = ctx.playlist.remaining[0].clone();
 			try_update_song_duration(&mut ctx, &first);
 			ctx.playlist.remaining.remove(0);
-			handle_command_return!(run_macro_or(&mut ctx, "@song_end", &[], ""));
+			handle_command_return! {
+				&mut ctx, &mut current_song_name, &mut current_song,
+				run_macro_or(&mut ctx, "@song_end", &[], "")
+			};
 
 			ctx.playlist.progress = Duration::ZERO;
-			ctx.playlist.dont_save_at = Duration::ZERO;
 			if ctx.playlist.remaining.is_empty() {
 				remaining_songs_ended(&mut ctx, &mut current_song_name);
-				handle_command_return!(run_macro_or(&mut ctx, "@list_end", &[], ""));
+				handle_command_return! {
+					&mut ctx, &mut current_song_name, &mut current_song,
+					run_macro_or(&mut ctx, "@list_end", &[], "")
+				};
 			}
 			if !ctx.playlist.remaining.is_empty() {
 				load_first_song_and_set_name(&mut ctx, &mut current_song_name, &mut current_song);
-				handle_command_return!(run_macro_or(&mut ctx, "@song_start", &[], ""));
+				handle_command_return! {
+					&mut ctx, &mut current_song_name, &mut current_song,
+					run_macro_or(&mut ctx, "@song_start", &[], "")
+				};
 			}
 			print_song_info(&current_song_name, &ctx.playlist);
 		}
@@ -159,7 +181,9 @@ fn load_first_song_and_set_name(ctx: &mut Context, song_name: &mut String, song:
 	load_first_song(ctx);
 
 	let Some(first) = ctx.playlist.remaining.first().cloned() else {
-		panic!("Tried playing the first song without a Playlist");
+		// cant call @list_end event here, since we are not in the main loop
+		remaining_songs_ended(ctx, song_name);
+		return;
 	};
 
 	*song = first.clone();
@@ -171,11 +195,10 @@ fn load_first_song_and_set_name(ctx: &mut Context, song_name: &mut String, song:
 		.to_string();
 }
 
-pub fn load_first_song(ctx: &mut Context) {
+fn load_first_song(ctx: &mut Context) {
 	ctx.sink.stop();
 
 	let Some(first) = ctx.playlist.remaining.first().cloned() else {
-		println!("Tried playing the first song with an empty Playlist");
 		return;
 	};
 	let path = {
@@ -231,20 +254,15 @@ pub fn load_first_song(ctx: &mut Context) {
 	}
 }
 
-fn remaining_songs_ended(ctx: &mut Context, current_song_name: &mut String) {
+fn remaining_songs_ended(ctx: &mut Context, song_name: &mut String) {
 	ctx.sink.pause();
-	*current_song_name = "[No Songs Remaining]".to_owned();
+	*song_name = "[No Songs Remaining]".to_owned();
 	ctx.playlist.progress = Duration::ZERO;
 }
 
 /// sets the cached duration of `song` to the progress of the current song
 fn try_update_song_duration(ctx: &mut Context, song: &Path) {
-	let d1 = ctx.playlist.progress.as_secs_f32();
-	let d2 = ctx.playlist.dont_save_at.as_secs_f32();
-	let time_since_skip = (d1 - d2).abs();
-	if time_since_skip > 1. {
-		if let Some(file) = ctx.config.files.get_mut(song) {
-			file.duration = Some(ctx.playlist.progress);
-		}
+	if let Some(file) = ctx.config.files.get_mut(song) {
+		file.duration = Some(ctx.playlist.progress);
 	}
 }

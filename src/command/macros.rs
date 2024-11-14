@@ -46,15 +46,21 @@ pub fn run_commands(
 		.map(|s| s.to_owned())
 		.collect::<Vec<_>>();
 
+	let mut should_reload = false;
 	for cmd in commands {
 		let state = super::match_input(&cmd, ctx)?;
 		match state {
 			CommandReturn::Nothing => (),
 			CommandReturn::Quit => return Ok(state),
 			CommandReturn::QuitNoSave => return Ok(state),
+			CommandReturn::ReloadFirstSong => should_reload = true,
 		}
 	}
-	Ok(CommandReturn::Nothing)
+	if should_reload {
+		Ok(CommandReturn::ReloadFirstSong)
+	} else {
+		Ok(CommandReturn::Nothing)
+	}
 }
 
 pub fn add_macro(config: &mut Config, name: &str, commands: &[&str]) -> Result<()> {

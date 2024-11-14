@@ -1,15 +1,18 @@
 //! commands that act on the playing songs
 
-use super::error::{
-	CommandError::{VolumeTooHigh, VolumeTooLow},
-	Result,
+use super::{
+	error::{
+		CommandError::{VolumeTooHigh, VolumeTooLow},
+		Result,
+	},
+	misc, CommandReturn,
 };
 use crate::data::{config::StartPlayState, context::Context, playlist::Playlist};
 use rand::seq::SliceRandom;
 
-pub fn randomize(ctx: &mut Context) {
+pub fn randomize(ctx: &mut Context) -> CommandReturn {
 	ctx.playlist.remaining.shuffle(&mut rand::thread_rng());
-	reload_current_song(ctx);
+	misc::load_in_first_song(ctx)
 }
 
 pub fn toggle_playing(ctx: &mut Context) {
@@ -39,37 +42,24 @@ pub fn pause_playing(ctx: &mut Context) {
 	}
 }
 
-pub fn next_song(ctx: &mut Context) {
-	ctx.playlist.dont_save_at = ctx.playlist.progress;
-	ctx.sink.stop();
-}
-
-pub fn reload_current_song(ctx: &mut Context) {
-	// insert garbage data into first song, that will be instantly skipped by `next_song`.
-	// spamming this function can make this song actually get recognized,
-	// so by making it an actual song from the files, no garbage file data will be made.
-	if let Some(first) = ctx.config.files.keys().next().cloned() {
-		ctx.playlist.remaining.insert(0, first);
+pub fn next_song(ctx: &mut Context) -> CommandReturn {
+	if !ctx.playlist.remaining.is_empty() {
+		ctx.playlist.remaining.remove(0);
+		misc::load_in_first_song(ctx)
+	} else {
+		CommandReturn::Nothing
 	}
-	next_song(ctx);
 }
 
-pub fn skip_songs(ctx: &mut Context, count: &str) -> Result<()> {
+pub fn skip_songs(ctx: &mut Context, count: &str) -> Result<CommandReturn> {
 	let count = count.parse::<usize>()?;
-	let max = ctx.playlist.remaining.len();
-	if count > max {
-		ctx.playlist.remaining.clear();
-		next_song(ctx);
-		return Ok(());
-	}
+	let len = ctx.playlist.remaining.len();
+	let count = count.min(len);
 	if count == 0 {
-		return Ok(());
+		return Ok(CommandReturn::Nothing);
 	}
-	// next_song will skip one song, so we remove 1 less from the playlist
-	let count = count - 1;
 	ctx.playlist.remaining.drain(..count);
-	next_song(ctx);
-	Ok(())
+	Ok(misc::load_in_first_song(ctx))
 }
 
 pub fn enforce_max(list: &mut Playlist, max: &str) -> Result<()> {
@@ -98,22 +88,16 @@ pub fn set_volume(ctx: &mut Context, volume: &str) -> Result<()> {
 	Ok(())
 }
 
-// pub fn loop_remaining(list: &mut Playlist) {
-// 	list.looping_songs = list.remaining.clone();
-// }
-
-// pub fn stop_looping(list: &mut Playlist) {
-// 	list.looping_songs.clear();
-// }
-
-pub fn sort(ctx: &mut Context) {
+pub fn sort(ctx: &mut Context) -> CommandReturn {
 	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
-		return;
+		return CommandReturn::Nothing;
 	};
 
 	ctx.playlist.remaining.sort();
 
 	if ctx.playlist.remaining.is_empty() || prev_current != ctx.playlist.remaining[0] {
-		reload_current_song(ctx);
+		misc::load_in_first_song(ctx)
+	} else {
+		CommandReturn::Nothing
 	}
 }

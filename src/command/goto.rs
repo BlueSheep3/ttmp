@@ -1,32 +1,25 @@
-use super::error::Result;
+use super::{error::Result, CommandReturn};
 use crate::{
 	data::context::Context,
 	duration::{display_duration, display_duration_out_of, parse_duration},
-	update_thread,
 };
 
-pub fn jump_to(ctx: &mut Context, duration: &[&str]) -> Result<()> {
+pub fn jump_to(ctx: &mut Context, duration: &[&str]) -> Result<CommandReturn> {
 	let duration = parse_duration(&duration.join(" "))?;
 	ctx.playlist.progress = duration;
-	ctx.playlist.dont_save_at = ctx.playlist.progress;
-	update_thread::load_first_song(ctx);
-	Ok(())
+	Ok(CommandReturn::ReloadFirstSong)
 }
 
-pub fn jump_forward(ctx: &mut Context, duration: &[&str]) -> Result<()> {
+pub fn jump_forward(ctx: &mut Context, duration: &[&str]) -> Result<CommandReturn> {
 	let duration = parse_duration(&duration.join(" "))?;
 	ctx.playlist.progress += duration;
-	ctx.playlist.dont_save_at = ctx.playlist.progress;
-	update_thread::load_first_song(ctx);
-	Ok(())
+	Ok(CommandReturn::ReloadFirstSong)
 }
 
-pub fn jump_backward(ctx: &mut Context, duration: &[&str]) -> Result<()> {
+pub fn jump_backward(ctx: &mut Context, duration: &[&str]) -> Result<CommandReturn> {
 	let duration = parse_duration(&duration.join(" "))?;
 	ctx.playlist.progress = ctx.playlist.progress.saturating_sub(duration);
-	ctx.playlist.dont_save_at = ctx.playlist.progress;
-	update_thread::load_first_song(ctx);
-	Ok(())
+	Ok(CommandReturn::ReloadFirstSong)
 }
 
 pub fn display_progress(ctx: &Context) {

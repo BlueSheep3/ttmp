@@ -3,17 +3,17 @@ use super::{
 		CommandError::{NoFilePlaying, SaveInWrongMode},
 		Result,
 	},
-	play,
+	play, CommandReturn,
 };
 use crate::data::{context::Context, playlist::Playlist};
-use std::iter;
+use std::{iter, time::Duration};
 
-pub fn reset_remaining(ctx: &mut Context) {
+pub fn reset_remaining(ctx: &mut Context) -> CommandReturn {
 	ctx.playlist.remaining = ctx.config.files.keys().cloned().collect();
-	play::reload_current_song(ctx);
 	if ctx.config.start_play_state.should_play() {
 		play::start_playing(ctx)
 	}
+	load_in_first_song(ctx)
 }
 
 pub fn echo(text: &[&str]) {
@@ -38,4 +38,13 @@ pub fn save(ctx: &mut Context) -> Result<()> {
 	} else {
 		Err(SaveInWrongMode)
 	}
+}
+
+/// Loads in the song at index 0 in the remaining song list as if it was just newly
+/// loaded in, meaning for example the current progress is set back to 0.
+/// This is different from just returning [`CommandReturn::ReloadFirstSong`],
+/// which treats it as if the song had been played before it was returned.
+pub fn load_in_first_song(ctx: &mut Context) -> CommandReturn {
+	ctx.playlist.progress = Duration::ZERO;
+	CommandReturn::ReloadFirstSong
 }

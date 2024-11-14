@@ -118,6 +118,7 @@ fn event_macros() {
 	println!(
 		"An Event Macro is a special kind of macro that starts with an @ symbol.
 Event Macros will automatically be called by the program, but can also be called manually.
+Triggering an Event from inside another Event Macro is not supported.
 They must have on of the following names:
 
 @cmd_empty   - entered an empty command

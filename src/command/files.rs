@@ -1,6 +1,7 @@
 use super::{
 	error::{CommandError::NoFilePlaying, Result},
 	play::next_song,
+	CommandReturn,
 };
 use crate::{
 	command::files::fs::DirEntry,
@@ -26,13 +27,12 @@ pub fn show_full_path(ctx: &Context) -> Result<()> {
 	Ok(())
 }
 
-pub fn delete_current(ctx: &mut Context) -> Result<()> {
+pub fn delete_current(ctx: &mut Context) -> Result<CommandReturn> {
 	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
 	ctx.config.files.remove(current);
 	fs::remove_file(ctx.config.path.join(current))?;
 	println!("File deleted successfully.");
-	next_song(ctx);
-	Ok(())
+	Ok(next_song(ctx))
 }
 
 pub fn move_file(ctx: &mut Context, destination_folder: &[&str]) -> Result<()> {

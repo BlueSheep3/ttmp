@@ -1,6 +1,6 @@
 //! commands that filter the playlist based on some condition like tags or length
 
-use super::play::reload_current_song;
+use super::{misc, CommandReturn};
 use crate::data::context::Context;
 use std::collections::HashSet;
 
@@ -11,9 +11,9 @@ fn tag_matches(file_tags: &HashSet<String>, match_tag: &str) -> bool {
 	)
 }
 
-pub fn tag_exists(ctx: &mut Context, tags: &[&str]) {
+pub fn tag_exists(ctx: &mut Context, tags: &[&str]) -> CommandReturn {
 	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
-		return;
+		return CommandReturn::Nothing;
 	};
 
 	ctx.playlist.remaining.retain(|file| {
@@ -22,13 +22,15 @@ pub fn tag_exists(ctx: &mut Context, tags: &[&str]) {
 	});
 
 	if ctx.playlist.remaining.is_empty() || prev_current != ctx.playlist.remaining[0] {
-		reload_current_song(ctx);
+		misc::load_in_first_song(ctx)
+	} else {
+		CommandReturn::Nothing
 	}
 }
 
-pub fn tag_all(ctx: &mut Context, tags: &[&str]) {
+pub fn tag_all(ctx: &mut Context, tags: &[&str]) -> CommandReturn {
 	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
-		return;
+		return CommandReturn::Nothing;
 	};
 
 	ctx.playlist.remaining.retain(|file| {
@@ -37,13 +39,15 @@ pub fn tag_all(ctx: &mut Context, tags: &[&str]) {
 	});
 
 	if ctx.playlist.remaining.is_empty() || prev_current != ctx.playlist.remaining[0] {
-		reload_current_song(ctx);
+		misc::load_in_first_song(ctx)
+	} else {
+		CommandReturn::Nothing
 	}
 }
 
-pub fn no_tags(ctx: &mut Context) {
+pub fn no_tags(ctx: &mut Context) -> CommandReturn {
 	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
-		return;
+		return CommandReturn::Nothing;
 	};
 
 	ctx.playlist.remaining.retain(|file| {
@@ -52,13 +56,15 @@ pub fn no_tags(ctx: &mut Context) {
 	});
 
 	if ctx.playlist.remaining.is_empty() || prev_current != ctx.playlist.remaining[0] {
-		reload_current_song(ctx);
+		misc::load_in_first_song(ctx)
+	} else {
+		CommandReturn::Nothing
 	}
 }
 
-pub fn search_full(ctx: &mut Context, search: &[&str]) {
+pub fn search_full(ctx: &mut Context, search: &[&str]) -> CommandReturn {
 	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
-		return;
+		return CommandReturn::Nothing;
 	};
 	let search = search.join(" ").to_lowercase();
 
@@ -67,13 +73,15 @@ pub fn search_full(ctx: &mut Context, search: &[&str]) {
 		.retain(|file| file.to_string_lossy().to_lowercase().contains(&search));
 
 	if ctx.playlist.remaining.is_empty() || prev_current != ctx.playlist.remaining[0] {
-		reload_current_song(ctx);
+		misc::load_in_first_song(ctx)
+	} else {
+		CommandReturn::Nothing
 	}
 }
 
-pub fn search_file_name(ctx: &mut Context, search: &[&str]) {
+pub fn search_file_name(ctx: &mut Context, search: &[&str]) -> CommandReturn {
 	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
-		return;
+		return CommandReturn::Nothing;
 	};
 	let search = search.join(" ").to_lowercase();
 
@@ -86,13 +94,15 @@ pub fn search_file_name(ctx: &mut Context, search: &[&str]) {
 	});
 
 	if ctx.playlist.remaining.is_empty() || prev_current != ctx.playlist.remaining[0] {
-		reload_current_song(ctx);
+		misc::load_in_first_song(ctx)
+	} else {
+		CommandReturn::Nothing
 	}
 }
 
-pub fn filepath_starts_with(ctx: &mut Context, search: &[&str]) {
+pub fn filepath_starts_with(ctx: &mut Context, search: &[&str]) -> CommandReturn {
 	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
-		return;
+		return CommandReturn::Nothing;
 	};
 	let search = search.join(" ").to_lowercase();
 
@@ -101,6 +111,8 @@ pub fn filepath_starts_with(ctx: &mut Context, search: &[&str]) {
 		.retain(|file| file.to_string_lossy().to_lowercase().starts_with(&search));
 
 	if ctx.playlist.remaining.is_empty() || prev_current != ctx.playlist.remaining[0] {
-		reload_current_song(ctx);
+		misc::load_in_first_song(ctx)
+	} else {
+		CommandReturn::Nothing
 	}
 }

@@ -7,7 +7,7 @@ use super::{
 		CommandError::{DeleteCurrentPlaylist, SaveOverCurrentPlaylist},
 		Result,
 	},
-	play,
+	CommandReturn,
 };
 use crate::data::{context::Context, playlist::Playlist};
 
@@ -32,11 +32,9 @@ pub fn duplicate(ctx: &Context, name: &str) -> Result<()> {
 	Ok(())
 }
 
-// FIXME loading in new songs like this has weird behaviour
-pub fn copy_from(ctx: &mut Context, name: &str) -> Result<()> {
+pub fn copy_from(ctx: &mut Context, name: &str) -> Result<CommandReturn> {
 	ctx.playlist = Playlist::load(name)?;
-	play::reload_current_song(ctx);
-	Ok(())
+	Ok(CommandReturn::ReloadFirstSong)
 }
 
 pub fn remove(ctx: &Context, name: &str) -> Result<()> {
@@ -47,11 +45,9 @@ pub fn remove(ctx: &Context, name: &str) -> Result<()> {
 	Ok(())
 }
 
-// FIXME loading in new songs like this has weird behaviour
-pub fn switch_to(ctx: &mut Context, name: &str) -> Result<()> {
+pub fn switch_to(ctx: &mut Context, name: &str) -> Result<CommandReturn> {
 	ctx.playlist.save(&ctx.config.current_playlist)?;
 	ctx.playlist = Playlist::load(name)?;
 	ctx.config.current_playlist = name.to_owned();
-	play::reload_current_song(ctx);
-	Ok(())
+	Ok(CommandReturn::ReloadFirstSong)
 }

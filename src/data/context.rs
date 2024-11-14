@@ -68,7 +68,6 @@ impl Context {
 		config.current_playlist = "temp".to_owned();
 		playlist.remaining = vec![file.to_owned()];
 		playlist.progress = Duration::ZERO;
-		playlist.dont_save_at = Duration::ZERO;
 
 		let ctx = Self {
 			program_mode,
