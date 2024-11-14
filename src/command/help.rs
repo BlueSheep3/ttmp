@@ -80,6 +80,7 @@ fn goto() {
 	println!(
 		"g   TIME - go to TIME in the current Song
 gf  TIME - jumps forward by TIME
+gb  TIME - jumps backward by TIME
 gd       - display the progress of the current Song"
 	);
 }

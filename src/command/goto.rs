@@ -21,6 +21,14 @@ pub fn jump_forward(ctx: &mut Context, duration: &[&str]) -> Result<()> {
 	Ok(())
 }
 
+pub fn jump_backward(ctx: &mut Context, duration: &[&str]) -> Result<()> {
+	let duration = parse_duration(&duration.join(" "))?;
+	ctx.playlist.progress = ctx.playlist.progress.saturating_sub(duration);
+	ctx.playlist.dont_save_at = ctx.playlist.progress;
+	update_thread::load_first_song(ctx);
+	Ok(())
+}
+
 pub fn display_progress(ctx: &Context) {
 	if try_display_progress_out_of(ctx).is_none() {
 		println!("{}", display_duration(ctx.playlist.progress));

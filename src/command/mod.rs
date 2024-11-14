@@ -62,6 +62,7 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["g"] => goto::jump_to(ctx, &["0"])?,
 		["g", duration @ ..] => goto::jump_to(ctx, duration)?,
 		["gf", duration @ ..] => goto::jump_forward(ctx, duration)?,
+		["gb", duration @ ..] => goto::jump_backward(ctx, duration)?,
 		["gd"] => goto::display_progress(ctx),
 		["m", name, args @ ..] => return macros::run_macro(ctx, name, args),
 		["ma", name, commands @ ..] => macros::add_macro(&mut ctx.config, name, commands)?,

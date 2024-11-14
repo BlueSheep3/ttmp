@@ -15,14 +15,13 @@ pub fn randomize(ctx: &mut Context) {
 pub fn toggle_playing(ctx: &mut Context) {
 	if ctx.sink.is_paused() {
 		ctx.sink.play();
-		if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
-			*p = true;
-		}
 	} else {
 		ctx.sink.pause();
-		if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
-			*p = false;
-		}
+	}
+	// swapping the remembered play/pause state independantly of the sink's
+	// play state, because the sink is always paused when no songs remain
+	if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
+		*p ^= true;
 	}
 }
 
