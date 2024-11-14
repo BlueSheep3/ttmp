@@ -12,7 +12,7 @@ help, h, ? - Show this help
 q          - Quit the Program
 s          - Save the Config
 r          - Reset the Playlist (put all files in it)
-echo TEXT  - print out TEXT. usefull for debugging
+echo TEXT  - print out TEXT
 
 Categories of Subcommands:
 p, play    - modify playing songs
@@ -21,7 +21,7 @@ f, filter  - filter the remaining songs
 t, tag     - tags to filter songs
 g, goto    - goto a time in the song
 m, macro   - macros to easily do common things
-em, event  - special macro names that get called automatically
+e, event   - special macro names that get called automatically
 d, dir     - commands concerning the file system"
 	);
 }
@@ -34,7 +34,7 @@ pub fn specific(command: &str) -> Result<()> {
 		"t" | "tag" => tags(),
 		"g" | "goto" => goto(),
 		"m" | "macro" => macros(),
-		"em" | "event" => event_macros(),
+		"e" | "event" => event_macros(),
 		"d" | "dir" => file_system(),
 		_ => return Err(NoHelpAvailable(command.to_owned())),
 	}
@@ -104,7 +104,7 @@ fn macros() {
 and all instances of $0, $1, ... will be replaced with the arguments
 $a will insert all arguments seperated by spaces
 
-Event Macros' names start with an @ symbol. Use 'help em' for more info.
+Event Macros' names start with an @ symbol. Use 'help event' for more info.
 
 m NAME ARGS - run Macro with NAME and arguments ARGS
 ma NAME DEF - add a Macro with NAME that runs DEF
