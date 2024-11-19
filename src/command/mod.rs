@@ -53,6 +53,7 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["po"] => return Ok(play::sort(ctx)),
 		["pd", amount] => misc::repeat_song(&mut ctx.playlist, amount)?,
 		["lg"] => list::get_current_name(ctx),
+		["la"] => list::get_all_names(ctx),
 		["ln", name] => list::new_empty(ctx, name)?,
 		["ld", name] => list::duplicate(ctx, name)?,
 		["lc", name] => return list::copy_from(ctx, name),

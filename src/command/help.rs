@@ -59,6 +59,7 @@ pd NUM    - Repeat the currently playing song"
 fn list() {
 	println!(
 		"lg        - get the name of the current playlist
+la        - get the names of all playlists
 ln NAME   - create a new empty list with NAME
 ld NAME   - duplicate all songs in the current playlist into the list NAME
 lc NAME   - replace the current songs with a copy from NAME
