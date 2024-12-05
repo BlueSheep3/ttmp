@@ -3,14 +3,8 @@ use super::{
 	play::next_song,
 	CommandReturn,
 };
-use crate::{
-	command::files::fs::DirEntry,
-	data::{config::Config, context::Context},
-};
-use std::{
-	fs,
-	path::{Path, PathBuf},
-};
+use crate::data::{config::Config, context::Context};
+use std::{fs, path::Path};
 
 pub fn reload_files(ctx: &mut Context) -> Result<()> {
 	ctx.files.reload_files(&ctx.config.path)?;
@@ -73,20 +67,19 @@ pub fn show_directories(config: &Config) -> Result<()> {
 	folders_recursive(&config.path, "", false, &mut 21)
 }
 
-fn folders_recursive(path: &PathBuf, layers: &str, is_ending: bool, max: &mut i32) -> Result<()> {
+fn folders_recursive(path: &Path, layers: &str, is_ending: bool, max: &mut i32) -> Result<()> {
 	let entries = fs::read_dir(path)?;
-	let subdirs: Vec<DirEntry> = entries
+	let mut subdirs = entries
 		.filter_map(|res| res.ok())
 		.filter(|entry| entry.path().is_dir())
-		.collect();
+		.peekable();
 
-	let count = subdirs.len();
-	for (index, entry) in subdirs.into_iter().enumerate() {
+	while let Some(entry) = subdirs.next() {
 		if *max == 0 {
 			return Ok(());
 		}
 		*max -= 1;
-		let is_last = index == count - 1;
+		let is_last = subdirs.peek().is_none();
 		let new_layer = if is_last { "└── " } else { "├── " };
 		if let Some(folder_name) = entry.path().file_name() {
 			println!(

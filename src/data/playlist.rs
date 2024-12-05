@@ -36,6 +36,21 @@ impl Playlist {
 		fs::remove_file(path)?;
 		Ok(())
 	}
+
+	/// Gets the names of all playlists in the `list` folder of the appdata,
+	/// in such a way that its usable in the [`Playlist::load`] function.
+	pub fn get_all_names() -> Result<Vec<String>> {
+		let mut names = Vec::new();
+		for list in fs::read_dir(get_savedata_path().join("list"))? {
+			let name = list?
+				.file_name()
+				.into_string()
+				.map_err(PlaylistError::FileNotUtf8Name)?;
+			let base = name.strip_suffix(".ron").unwrap_or(&name);
+			names.push(base.to_owned());
+		}
+		Ok(names)
+	}
 }
 
 type Result<T> = result::Result<T, PlaylistError>;
@@ -44,6 +59,8 @@ type Result<T> = result::Result<T, PlaylistError>;
 pub enum PlaylistError {
 	#[error("io error: {0}")]
 	Io(#[from] io::Error),
+	#[error("the file name {0:?} is not valid utf8")]
+	FileNotUtf8Name(std::ffi::OsString),
 
 	// these are wrapped in Box, because SpannedError is 88 bytes and Error is 72 bytes
 	#[error("ron spanned error: {0}")]

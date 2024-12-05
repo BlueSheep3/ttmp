@@ -11,24 +11,17 @@ use super::{
 };
 use crate::data::{context::Context, playlist::Playlist};
 
-pub fn get_current_name(ctx: &Context) {
-	println!("Current Playlist: {}", ctx.config.current_playlist);
-}
-
-pub fn get_all_names(ctx: &Context) {
-	for path in ctx.files.mappings.keys() {
-		let Some(name_os) = path.file_name() else {
-			eprintln!("Warning: path does not have a file name");
-			continue;
+pub fn get_list_names(ctx: &Context) -> Result<()> {
+	println!("All Playlist Names:");
+	for name in Playlist::get_all_names()? {
+		let first_char = if name == ctx.config.current_playlist {
+			'>'
+		} else {
+			'-'
 		};
-
-		let Some(name) = name_os.to_str() else {
-			eprintln!("Warning: file name could not be converted to a string");
-			continue;
-		};
-
-		println!("{}", name);
+		println!("{} {}", first_char, name);
 	}
+	Ok(())
 }
 
 pub fn new_empty(ctx: &Context, name: &str) -> Result<()> {
