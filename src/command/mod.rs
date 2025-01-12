@@ -80,11 +80,11 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["mr", name] => macros::remove_macro(&mut ctx.config, name)?,
 		["mc", name, commands @ ..] => macros::change_macro(&mut ctx.config, name, commands)?,
 		["ml"] => macros::show_macros(&ctx.config),
-		["dr"] => files::reload_files(ctx)?,
+		["dr"] => files::reload_files(&mut ctx.files)?,
 		["del"] => return files::delete_current(ctx),
 		["dm", destination @ ..] => files::move_file(ctx, destination)?,
 		["dp"] => files::show_full_path(ctx)?,
-		["ds"] => files::show_directories(&ctx.config)?,
+		["ds"] => files::show_directories(&ctx.files)?,
 		[""] => return macros::run_macro_or(ctx, "@cmd_empty", &[], ""),
 		[macro_name, args @ ..] if ctx.config.macros.contains_key(*macro_name) => {
 			return macros::run_macro(ctx, macro_name, args);

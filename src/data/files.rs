@@ -14,7 +14,10 @@ use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Files {
-	/// all music files, paths should be relative to the parent folder
+	/// the folder that all the files are in,
+	/// or the single file that is currently playing.
+	pub root: PathBuf,
+	/// all music files, paths should be relative to `root`.
 	#[serde(serialize_with = "serializer::sorted_hashmap")]
 	pub mappings: HashMap<PathBuf, FileData>,
 }
@@ -63,12 +66,12 @@ impl Files {
 
 	/// add all files that are in the system, but not in the config,
 	/// and remove all files that are in the config but not in the system.
-	pub fn reload_files(&mut self, path: &Path) -> Result<()> {
-		let system_files = get_all_files_in(path)?;
+	pub fn reload_files(&mut self) -> Result<()> {
+		let system_files = get_all_files_in(&self.root)?;
 
 		for full_path in &system_files {
 			let rel_path = full_path
-				.strip_prefix(path)
+				.strip_prefix(&self.root)
 				.unwrap_or_else(|_| unreachable!())
 				.to_path_buf();
 			self.mappings.entry(rel_path).or_default();
@@ -77,7 +80,7 @@ impl Files {
 		let mut files_to_remove = Vec::new();
 
 		for rel_path in self.mappings.keys() {
-			let full_path = path.join(rel_path);
+			let full_path = self.root.join(rel_path);
 			if !system_files.contains(&full_path) {
 				files_to_remove.push(rel_path.clone());
 			}

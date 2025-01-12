@@ -67,9 +67,9 @@ impl Context {
 		let (stream, stream_handle) = OutputStream::try_default()?;
 		let sink = Sink::try_new(&stream_handle)?;
 
-		config.path = file.to_owned();
 		config.start_play_state = StartPlayState::Always;
 		config.current_playlist = "temp".to_owned();
+		files.root = file.to_owned();
 		files.mappings = HashMap::from([(file.to_owned(), FileData::default())]);
 		playlist.remaining = vec![file.to_owned()];
 		playlist.progress = Duration::ZERO;

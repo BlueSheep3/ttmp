@@ -2,14 +2,11 @@ use super::get_savedata_path;
 use crate::serializer;
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fs, io, path::PathBuf, result};
+use std::{collections::HashMap, fs, io, result};
 use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
-	/// the folder that all the files are in,
-	/// or the single file that is currently playing
-	pub path: PathBuf,
 	/// the speed of the music
 	pub speed: f32,
 	/// the volume of the music

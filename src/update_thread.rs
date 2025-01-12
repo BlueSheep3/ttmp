@@ -206,7 +206,7 @@ fn load_first_song(ctx: &mut Context) {
 		if first.is_absolute() {
 			first.clone()
 		} else {
-			ctx.config.path.join(&first)
+			ctx.files.root.join(&first)
 		}
 	};
 	let file = match File::open(path.clone()) {
