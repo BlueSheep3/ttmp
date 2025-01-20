@@ -62,6 +62,7 @@ fn list() {
 ln NAME   - create a new empty list with NAME
 ld NAME   - duplicate all songs in the current playlist into the list NAME
 lc NAME   - replace the current songs with a copy from NAME
+la NAME   - append all songs from NAME to the end of the current playlist
 lr NAME   - remove the list NAME
 ls NAME   - switch to the list NAME"
 	);

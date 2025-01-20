@@ -46,4 +46,8 @@ pub enum CommandError {
 	SaveOverCurrentPlaylist,
 	#[error("Can't delete the current playlist")]
 	DeleteCurrentPlaylist,
+	#[error("A List Name must be non empty")]
+	ListNameEmpty,
+	#[error("A List Name must not contain the character: {0}")]
+	ListNameBadChar(char),
 }
