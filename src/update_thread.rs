@@ -3,6 +3,7 @@ use crate::{
 	data::{context::Context, playlist::Playlist},
 	duration::{display_duration, display_duration_out_of},
 	input_thread::INPUT_Y,
+	shmem_reader::FileReader,
 };
 use crossterm::{
 	cursor::{MoveTo, RestorePosition, SavePosition},
@@ -16,7 +17,7 @@ use std::{
 	fs::File,
 	io::{stdout, BufReader},
 	path::{Path, PathBuf},
-	sync::mpsc::Receiver,
+	sync::{mpsc::Receiver, Mutex},
 	thread::sleep,
 	time::{Duration, Instant},
 };
@@ -37,7 +38,7 @@ macro_rules! handle_command_return {
 }
 
 // Function to update and render changing information in a separate thread
-pub fn main(receiver: &Receiver<String>) {
+pub fn main(receiver: &Receiver<String>, server: &Mutex<FileReader>) {
 	let args = env::args_os().collect::<Vec<OsString>>();
 	let mut ctx = if let [_, file, ..] = args.as_slice() {
 		Context::new_temp(Path::new(file))
@@ -65,6 +66,13 @@ pub fn main(receiver: &Receiver<String>) {
 	// Update and render loop
 	loop {
 		execute!(stdout(), SavePosition).expect("Failed to save cursor position.");
+
+		// Recieve newly opened files
+		for path in server.lock().expect("").drain_file_list() {
+			if path.is_file() {
+				ctx.playlist.remaining.push(path);
+			}
+		}
 
 		// Receive user input (if any)
 		if let Ok(input) = receiver.try_recv() {
