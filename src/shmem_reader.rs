@@ -9,7 +9,9 @@ use std::{
 
 use memmap2::MmapMut;
 
-pub const SHM_SIZE: usize = 4096; // Shared memory size
+use crate::shmem_writer::read_length;
+
+pub const SHM_SIZE: usize = 0x4000; // Shared memory size
 
 pub fn get_shm_file_path() -> PathBuf {
 	const FILE_NAME: &str = "ipc_shmem_music_player_dfjvndiergnasinisdjvnf";
@@ -88,25 +90,16 @@ impl FileReader {
 			};
 
 			loop {
-				// Read the contents of shared memory
-				let buffer: String = mmap
-					.iter()
-					.filter(|&&c| c != 0)
-					.map(|&c| c as char)
-					.collect();
-
-				// If there is new data, process it
-				if !buffer.is_empty() {
-					let new_files: Vec<PathBuf> = buffer.lines().map(PathBuf::from).collect();
-					{
-						let mut list = file_list_clone
-							.lock()
-							.expect("Failed to acquire file list lock in the server thread");
-						list.extend(new_files);
-						println!("Updated file list: {:?}", *list);
-					}
-					mmap.fill(0); // Clear shared memory after processing
+				// Collect the paths given by the writer
+				let new_files: Vec<PathBuf> = read_paths_from_shared_memory(&mmap);
+				if !new_files.is_empty() {
+					let mut list = file_list_clone
+						.lock()
+						.expect("Failed to acquire file list lock in the server thread");
+					list.extend(new_files);
+					println!("Updated file list: {:?}", *list);
 				}
+				mmap.fill(0); // Clear shared memory after processing
 
 				let (lock, cvar) = &*shutdown_flag_clone;
 
@@ -158,4 +151,27 @@ impl FileReader {
 			.drain(..)
 			.collect()
 	}
+}
+
+fn read_paths_from_shared_memory(mmap: &MmapMut) -> Vec<PathBuf> {
+	let mut paths = Vec::new();
+	let mut read_pos = 0;
+
+	while read_pos < mmap.len() {
+		let length = read_length(mmap, &mut read_pos); // Read the length of the path
+		if length == 0 {
+			break; // No more paths to read
+		}
+
+		// Read the path bytes
+		let path_bytes = &mmap[read_pos..read_pos + length];
+		let path = PathBuf::from(String::from_utf8_lossy(path_bytes).to_string());
+
+		paths.push(path);
+
+		// Move the read position forward by the length of the path plus any size header
+		read_pos += length;
+	}
+
+	paths
 }

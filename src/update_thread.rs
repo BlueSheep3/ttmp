@@ -38,7 +38,7 @@ macro_rules! handle_command_return {
 }
 
 // Function to update and render changing information in a separate thread
-pub fn main(receiver: &Receiver<String>, server: &Mutex<FileReader>) {
+pub fn main(receiver: &Receiver<String>, server: &Mutex<Option<FileReader>>) {
 	let args = env::args_os().collect::<Vec<OsString>>();
 	let mut ctx = if let [_, file, ..] = args.as_slice() {
 		Context::new_temp(Path::new(file))
@@ -68,13 +68,16 @@ pub fn main(receiver: &Receiver<String>, server: &Mutex<FileReader>) {
 		execute!(stdout(), SavePosition).expect("Failed to save cursor position.");
 
 		// Recieve newly opened files
-		for path in server
+		if let Some(server) = server
 			.lock()
 			.expect("current thread is already holding server")
-			.drain_file_list()
+			.as_mut()
 		{
-			if path.is_file() {
-				ctx.playlist.remaining.push(path);
+			for path in server.drain_file_list() {
+				if path.is_file() {
+					ctx.playlist.remaining.push(path);
+					print_song_info(&current_song_name, &ctx.playlist);
+				}
 			}
 		}
 

@@ -41,25 +41,33 @@ impl FileWriter {
 			}
 		};
 
-		let message = file.to_string_lossy().to_string() + "\n";
+		let binding = file.to_string_lossy().to_string();
+		let message = binding.as_bytes();
+		let length = message.len();
+		if message.is_empty() {
+			panic!("Tried to send message with no data")
+		}
 		let mut write_pos = 0;
 
 		// Find the first available position in the shared memory
-		while write_pos + message.len() < SHM_SIZE {
-			if mmap[write_pos] == 0 {
+		while write_pos + length < SHM_SIZE {
+			let size = read_length(&mmap, &mut write_pos);
+			if size == 0 {
+				write_pos -= 1;
 				break;
 			}
-			write_pos += 1;
+			write_pos += size as usize;
 		}
 
 		// Ensure there is enough space to write the message
-		if write_pos + message.len() >= SHM_SIZE {
+		if write_pos + length >= SHM_SIZE {
 			eprintln!("Shared memory full!");
 			return false;
 		}
 
 		// Copy the message into shared memory
-		mmap[write_pos..(write_pos + message.len())].copy_from_slice(message.as_bytes());
+		write_length(&mut mmap, &mut write_pos, length);
+		mmap[write_pos..(write_pos + length)].copy_from_slice(message);
 
 		// Flush changes to ensure they are visible
 		if mmap.flush().is_err() {
@@ -69,4 +77,27 @@ impl FileWriter {
 
 		true
 	}
+}
+
+pub fn read_length(mmap: &MmapMut, pos: &mut usize) -> usize {
+	let mut size = mmap[*pos] as usize;
+	if size >= 0x100 {
+		size -= 0x100;
+		*pos += 1;
+		let next_bits = mmap[*pos] as usize;
+		size = (size << 8) | next_bits;
+	}
+	*pos += 1;
+	size
+}
+
+pub fn write_length(mmap: &mut MmapMut, pos: &mut usize, length: usize) {
+	if length >= 0x100 {
+		mmap[*pos] = ((length >> 8) & 0xFF) as u8;
+		*pos += 1;
+		mmap[*pos] = (length & 0xFF) as u8;
+	} else {
+		mmap[*pos] = length as u8;
+	}
+	*pos += 1;
 }
