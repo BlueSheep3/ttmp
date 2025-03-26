@@ -25,7 +25,7 @@ pub fn get_shm_file_path() -> PathBuf {
 
 pub struct FileReader {
 	file_list: Arc<Mutex<Vec<PathBuf>>>,
-	shutdown_flag: Arc<Mutex<bool>>, // Add shutdown flag
+	shutdown_flag: Arc<(Mutex<bool>, std::sync::Condvar)>,
 }
 
 impl FileReader {
@@ -40,21 +40,28 @@ impl FileReader {
 			.write(true)
 			.truncate(true)
 			.open(&shm_file)
-			.expect("Failed to create or open shared memory file");
+			.unwrap_or_else(|_| {
+				panic!(
+					"Failed to create or open shared memory file at {:?}",
+					shm_file
+				)
+			});
 
 		// Ensure the file has the correct size
 		file_handle
 			.set_len(SHM_SIZE as u64)
-			.expect("Failed to set shared memory file size");
+			.unwrap_or_else(|_| panic!("Failed to set shared memory file size at {:?}", shm_file));
 
 		// SAFETY: The file exists and has the correct size, so we can safely map it
-		let mut mmap =
-			unsafe { MmapMut::map_mut(&file_handle).expect("Failed to map shared memory file") };
+		let mut mmap = unsafe {
+			MmapMut::map_mut(&file_handle)
+				.unwrap_or_else(|_| panic!("Failed to map shared memory file at {:?}", shm_file))
+		};
 		mmap.fill(0); // Clear shared memory
 
 		Self {
 			file_list: Arc::new(Mutex::new(Vec::new())),
-			shutdown_flag: Arc::new(Mutex::new(false)), // Initialize shutdown flag
+			shutdown_flag: Arc::new((Mutex::new(false), std::sync::Condvar::new())),
 		}
 	}
 
@@ -71,22 +78,16 @@ impl FileReader {
 				.read(true)
 				.write(true)
 				.open(&shm_file)
-				.expect("Failed to open shared memory file in server");
+				.unwrap_or_else(|_| panic!("Failed to open shared memory file at {:?}", shm_file));
 
 			// SAFETY: We assume the file is valid and mapped correctly
 			let mut mmap = unsafe {
-				MmapMut::map_mut(&file_handle).expect("Failed to map shared memory in server")
+				MmapMut::map_mut(&file_handle).unwrap_or_else(|_| {
+					panic!("Failed to map shared memory file at {:?}", shm_file)
+				})
 			};
 
 			loop {
-				// Check if we should shutdown the server thread
-				if *shutdown_flag_clone
-					.lock()
-					.expect("Failed to lock shutdown flag")
-				{
-					break; // Exit the loop and stop the thread
-				}
-
 				// Read the contents of shared memory
 				let buffer: String = mmap
 					.iter()
@@ -100,13 +101,26 @@ impl FileReader {
 					{
 						let mut list = file_list_clone
 							.lock()
-							.expect("Failed to acquire file list lock");
+							.expect("Failed to acquire file list lock in the server thread");
 						list.extend(new_files);
 						println!("Updated file list: {:?}", *list);
 					}
 					mmap.fill(0); // Clear shared memory after processing
 				}
-				thread::sleep(Duration::from_secs(1));
+
+				let (lock, cvar) = &*shutdown_flag_clone;
+
+				let mut started = lock
+					.lock()
+					.expect("Failed to acquire shutdown lock in the server thread");
+				let result = cvar
+					.wait_timeout(started, Duration::from_millis(500))
+					.expect("Failed to wait on the condition variable in the server thread");
+				started = result.0;
+
+				if *started {
+					return;
+				}
 			}
 		});
 	}
@@ -114,24 +128,25 @@ impl FileReader {
 	pub fn close_server(&self) {
 		// Signal the server thread to stop
 		{
-			let mut shutdown_flag = self
-				.shutdown_flag
+			let (lock, cvar) = &*self.shutdown_flag;
+			let mut started = lock
 				.lock()
-				.expect("Failed to lock shutdown flag");
-			*shutdown_flag = true; // Set the shutdown flag to true
+				.expect("Failed to acquire shutdown lock in close_server");
+			*started = true;
+			cvar.notify_one(); // Wake the sleeping thread
 		}
-
-		// Wait for the server thread to stop (you might want a better mechanism for waiting in a real app)
-		thread::sleep(Duration::from_secs(1)); // Just a simple sleep, you might use a more efficient method like `join` if needed
 
 		// Get the correct shared memory file path for the platform
 		let shm_file = get_shm_file_path();
 
 		// Try to delete the shared memory file
 		if let Err(e) = std::fs::remove_file(&shm_file) {
-			eprintln!("Failed to delete shared memory file: {}", e);
+			eprintln!(
+				"Failed to delete shared memory file at {:?}: {}",
+				shm_file, e
+			);
 		} else {
-			println!("Shared memory file deleted successfully.");
+			println!("Shared memory file deleted successfully at {:?}", shm_file);
 		}
 	}
 
@@ -139,7 +154,7 @@ impl FileReader {
 		// Lock and drain the file list safely
 		self.file_list
 			.lock()
-			.expect("Failed to acquire file list lock")
+			.expect("Failed to acquire file list lock in drain_file_list")
 			.drain(..)
 			.collect()
 	}

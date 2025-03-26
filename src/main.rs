@@ -35,7 +35,10 @@ fn main() {
 
 	// Wrap the server in an Arc and Mutex for shared ownership
 	let server = Arc::new(Mutex::new(FileReader::new()));
-	server.lock().expect("").start_server();
+	server
+		.lock()
+		.expect("current thread is already holding server")
+		.start_server();
 
 	// Create channels for communication between threads
 	let (sender, receiver) = channel();
@@ -57,5 +60,8 @@ fn main() {
 	}
 
 	// Lock the server before stopping
-	server.lock().expect("").close_server();
+	server
+		.lock()
+		.expect("current thread is already holding server")
+		.close_server();
 }

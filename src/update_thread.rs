@@ -68,7 +68,11 @@ pub fn main(receiver: &Receiver<String>, server: &Mutex<FileReader>) {
 		execute!(stdout(), SavePosition).expect("Failed to save cursor position.");
 
 		// Recieve newly opened files
-		for path in server.lock().expect("").drain_file_list() {
+		for path in server
+			.lock()
+			.expect("current thread is already holding server")
+			.drain_file_list()
+		{
 			if path.is_file() {
 				ctx.playlist.remaining.push(path);
 			}
