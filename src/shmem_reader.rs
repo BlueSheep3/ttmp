@@ -1,177 +1,85 @@
-use std::{
-	env,
-	fs::OpenOptions,
-	path::PathBuf,
-	sync::{Arc, Mutex},
-	thread,
-	time::Duration,
-};
-
-use memmap2::MmapMut;
-
-use crate::shmem_writer::read_length;
-
-pub const SHM_SIZE: usize = 0x4000; // Shared memory size
-
-pub fn get_shm_file_path() -> PathBuf {
-	const FILE_NAME: &str = "ipc_shmem_music_player_dfjvndiergnasinisdjvnf";
-	if cfg!(target_os = "windows") {
-		// Use a path that works on Windows (for example, in the current user's temp directory)
-		let temp_dir = env::temp_dir();
-		temp_dir.join(FILE_NAME)
-	} else {
-		// Use a Unix-like path on non-Windows platforms
-		PathBuf::from(format!("/tmp/{}", FILE_NAME))
-	}
-}
+use interprocess::os::windows::named_pipe::pipe_mode::{Bytes, Messages};
+use interprocess::os::windows::named_pipe::{PipeListener, PipeListenerOptions, PipeMode};
+use std::io::{BufReader, Read};
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 pub struct FileReader {
 	file_list: Arc<Mutex<Vec<PathBuf>>>,
-	shutdown_flag: Arc<(Mutex<bool>, std::sync::Condvar)>,
+	listener_thread: Option<thread::JoinHandle<()>>,
 }
 
 impl FileReader {
+	// Constructor to initialize FileReader
 	pub fn new() -> Self {
-		// Get the correct shared memory file path for the platform
-		let shm_file = get_shm_file_path();
-
-		// Create or truncate the shared memory file
-		let file_handle = OpenOptions::new()
-			.create(true)
-			.read(true)
-			.write(true)
-			.truncate(true)
-			.open(&shm_file)
-			.unwrap_or_else(|_| {
-				panic!(
-					"Failed to create or open shared memory file at {:?}",
-					shm_file
-				)
-			});
-
-		// Ensure the file has the correct size
-		file_handle
-			.set_len(SHM_SIZE as u64)
-			.unwrap_or_else(|_| panic!("Failed to set shared memory file size at {:?}", shm_file));
-
-		// SAFETY: The file exists and has the correct size, so we can safely map it
-		let mut mmap = unsafe {
-			MmapMut::map_mut(&file_handle)
-				.unwrap_or_else(|_| panic!("Failed to map shared memory file at {:?}", shm_file))
-		};
-		mmap.fill(0); // Clear shared memory
-
 		Self {
 			file_list: Arc::new(Mutex::new(Vec::new())),
-			shutdown_flag: Arc::new((Mutex::new(false), std::sync::Condvar::new())),
+			listener_thread: None,
 		}
 	}
 
-	pub fn start_server(&self) {
-		let file_list_clone = Arc::clone(&self.file_list);
-		let shutdown_flag_clone = Arc::clone(&self.shutdown_flag);
+	// Function to drain the file list
+	pub fn drain_file_list(&self) -> Vec<PathBuf> {
+		let mut file_list = self.file_list.lock().expect("Failed to lock file list");
+		file_list.drain(..).collect() // Collect and clear the list
+	}
 
-		thread::spawn(move || {
-			// Get the correct shared memory file path for the platform
-			let shm_file = get_shm_file_path();
+	// Function to start receiving file paths in a separate thread
+	pub fn start_receiving(&mut self, pipe_name: &str) {
+		let pipe_name = pipe_name.to_owned();
+		let file_list = Arc::clone(&self.file_list);
 
-			// Attempt to open the shared memory file
-			let file_handle = OpenOptions::new()
-				.read(true)
-				.write(true)
-				.open(&shm_file)
-				.unwrap_or_else(|_| panic!("Failed to open shared memory file at {:?}", shm_file));
+		let handle = thread::spawn(move || {
+			// Create the named pipe
+			let listener: PipeListener<Bytes, Messages> = PipeListenerOptions::new()
+				.path(&*pipe_name)
+				.mode(PipeMode::Messages)
+				.create()
+				.expect("Failed to create named pipe");
 
-			// SAFETY: We assume the file is valid and mapped correctly
-			let mut mmap = unsafe {
-				MmapMut::map_mut(&file_handle).unwrap_or_else(|_| {
-					panic!("Failed to map shared memory file at {:?}", shm_file)
-				})
-			};
+			println!("Waiting for client connections...");
 
 			loop {
-				// Collect the paths given by the writer
-				let new_files: Vec<PathBuf> = read_paths_from_shared_memory(&mmap);
-				if !new_files.is_empty() {
-					let mut list = file_list_clone
-						.lock()
-						.expect("Failed to acquire file list lock in the server thread");
-					list.extend(new_files);
-					println!("Updated file list: {:?}", *list);
-				}
-				mmap.fill(0); // Clear shared memory after processing
+				// Accept a client connection
+				match listener.accept() {
+					Ok(connection) => {
+						// For each connection, spawn a new thread to handle it
+						let file_list = Arc::clone(&file_list);
+						thread::spawn(move || {
+							let mut reader = BufReader::new(connection);
+							let mut buffer = String::new();
 
-				let (lock, cvar) = &*shutdown_flag_clone;
+							// Read the message sent by the client
+							reader
+								.read_to_string(&mut buffer)
+								.expect("Failed to read message");
 
-				let mut started = lock
-					.lock()
-					.expect("Failed to acquire shutdown lock in the server thread");
-				let result = cvar
-					.wait_timeout(started, Duration::from_millis(500))
-					.expect("Failed to wait on the condition variable in the server thread");
-				started = result.0;
+							// Convert the string into a PathBuf and store it
+							let path = PathBuf::from(buffer.trim());
+							let mut file_list = file_list.lock().expect("Failed to lock file list");
+							file_list.push(path);
 
-				if *started {
-					return;
+							println!("Received path: {}", buffer);
+						});
+					}
+					Err(e) => {
+						eprintln!("Failed to accept client connection: {}", e);
+						break;
+					}
 				}
 			}
 		});
-	}
 
-	pub fn close_server(&self) {
-		// Signal the server thread to stop
-		{
-			let (lock, cvar) = &*self.shutdown_flag;
-			let mut started = lock
-				.lock()
-				.expect("Failed to acquire shutdown lock in close_server");
-			*started = true;
-			cvar.notify_one(); // Wake the sleeping thread
-		}
-
-		// Get the correct shared memory file path for the platform
-		let shm_file = get_shm_file_path();
-
-		// Try to delete the shared memory file
-		if let Err(e) = std::fs::remove_file(&shm_file) {
-			eprintln!(
-				"Failed to delete shared memory file at {:?}: {}",
-				shm_file, e
-			);
-		} else {
-			println!("Shared memory file deleted successfully at {:?}", shm_file);
-		}
-	}
-
-	pub fn drain_file_list(&self) -> Vec<PathBuf> {
-		// Lock and drain the file list safely
-		self.file_list
-			.lock()
-			.expect("Failed to acquire file list lock in drain_file_list")
-			.drain(..)
-			.collect()
+		self.listener_thread = Some(handle);
 	}
 }
 
-fn read_paths_from_shared_memory(mmap: &MmapMut) -> Vec<PathBuf> {
-	let mut paths = Vec::new();
-	let mut read_pos = 0;
-
-	while read_pos < mmap.len() {
-		let length = read_length(mmap, &mut read_pos); // Read the length of the path
-		if length == 0 {
-			break; // No more paths to read
+impl Clone for FileReader {
+	fn clone(&self) -> Self {
+		Self {
+			file_list: Arc::clone(&self.file_list),
+			listener_thread: None, // Clones don't get the listener thread
 		}
-
-		// Read the path bytes
-		let path_bytes = &mmap[read_pos..read_pos + length];
-		let path = PathBuf::from(String::from_utf8_lossy(path_bytes).to_string());
-
-		paths.push(path);
-
-		// Move the read position forward by the length of the path plus any size header
-		read_pos += length;
 	}
-
-	paths
 }

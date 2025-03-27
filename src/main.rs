@@ -22,19 +22,20 @@ use shmem_writer::FileWriter;
 use std::sync::{Arc, Mutex};
 
 fn main() {
+	let pipe_name = r"\\.\pipe\ipc_music_player_xmyuiwqcoecmztrciqenasjkf";
 	let file = env::args_os().nth(1).map(PathBuf::from);
 
 	let mut server = Arc::new(Mutex::new(None));
 	// If another instance is running, send the file and exit
 	if let Some(file) = file {
 		let client = FileWriter::new();
-		if client.send_to_existing_instance(file) {
+		if client.send_to_existing_instance(pipe_name, file) {
 			exit(0);
 		}
 		// Wrap the server in an Arc and Mutex for shared ownership
 		server = Arc::new(Mutex::new(Some(FileReader::new())));
-		if let Some(s) = server.lock().unwrap().as_ref() {
-			s.start_server()
+		if let Some(s) = server.lock().unwrap().as_mut() {
+			s.start_receiving(pipe_name);
 		}
 	}
 
@@ -54,9 +55,4 @@ fn main() {
 		println!("Failed to join update thread: {:?}", e);
 		readln!();
 	}
-
-	// Lock the server before stopping
-	if let Some(s) = server.lock().expect("").as_ref() {
-		s.close_server()
-	};
 }
