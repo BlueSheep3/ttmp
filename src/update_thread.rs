@@ -1,6 +1,6 @@
 use crate::{
 	command::{match_input, run_macro_or, CommandReturn},
-	data::{context::Context, playlist::Playlist},
+	data::{context::Context, files::FileData, playlist::Playlist},
 	duration::{display_duration, display_duration_out_of},
 	input_thread::INPUT_Y,
 	shmem_reader::FileReader,
@@ -73,11 +73,18 @@ pub fn main(receiver: &Receiver<String>, server: &Mutex<Option<FileReader>>) {
 			.expect("current thread is already holding server")
 			.as_mut()
 		{
-			for path in server.drain_file_list() {
-				if path.is_file() {
-					ctx.playlist.remaining.push(path);
-					print_song_info(&current_song_name, &ctx.playlist);
+			let paths = server.drain_file_list();
+			if !paths.is_empty() {
+				println!("\n");
+				for path in paths.into_iter().filter(|p| p.is_file()) {
+					println!(
+						"Added Song: {}",
+						path.file_name().unwrap().to_string_lossy()
+					);
+					ctx.playlist.remaining.push(path.clone());
+					ctx.files.mappings.insert(path, FileData::default());
 				}
+				print_song_info(&current_song_name, &ctx.playlist);
 			}
 		}
 

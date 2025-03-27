@@ -15,19 +15,19 @@ mod shmem_reader;
 mod shmem_writer;
 mod update_thread;
 
-use std::{env, path::PathBuf, process::exit, sync::mpsc::channel, thread};
-
 use shmem_reader::FileReader;
 use shmem_writer::FileWriter;
 use std::sync::{Arc, Mutex};
+use std::{env, path::PathBuf, process::exit, sync::mpsc::channel, thread};
 
 fn main() {
-	let pipe_name = r"\\.\pipe\ipc_music_player_xmyuiwqcoecmztrciqenasjkf";
+	let pipe_name = "//./pipe/ipc_music_player_xmyuiwqcoecmztrciqenasjkf";
 	let file = env::args_os().nth(1).map(PathBuf::from);
 
 	let mut server = Arc::new(Mutex::new(None));
 	// If another instance is running, send the file and exit
 	if let Some(file) = file {
+		let file = file.canonicalize().unwrap();
 		let client = FileWriter::new();
 		if client.send_to_existing_instance(pipe_name, file) {
 			exit(0);

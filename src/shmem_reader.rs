@@ -38,8 +38,6 @@ impl FileReader {
 				.create()
 				.expect("Failed to create named pipe");
 
-			println!("Waiting for client connections...");
-
 			loop {
 				// Accept a client connection
 				match listener.accept() {
@@ -59,8 +57,6 @@ impl FileReader {
 							let path = PathBuf::from(buffer.trim());
 							let mut file_list = file_list.lock().expect("Failed to lock file list");
 							file_list.push(path);
-
-							println!("Received path: {}", buffer);
 						});
 					}
 					Err(e) => {
