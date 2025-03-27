@@ -14,8 +14,7 @@ use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Files {
-	/// the folder that all the files are in,
-	/// or the single file that is currently playing.
+	/// the folder that all the files are in.
 	pub root: PathBuf,
 	/// all music files, paths should be relative to `root`.
 	#[serde(serialize_with = "serializer::sorted_hashmap")]

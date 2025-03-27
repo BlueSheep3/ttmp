@@ -102,7 +102,9 @@ pub fn remove(ctx: &Context, name: &str) -> Result<()> {
 
 pub fn switch_to(ctx: &mut Context, name: &str) -> Result<CommandReturn> {
 	let name = force_str_format(name)?;
-	ctx.playlist.save(&ctx.config.current_playlist)?;
+	if ctx.program_mode.can_save() {
+		ctx.playlist.save(&ctx.config.current_playlist)?;
+	}
 	ctx.playlist = Playlist::load(&name)?;
 	ctx.config.current_playlist = name;
 	Ok(CommandReturn::ReloadFirstSong)
