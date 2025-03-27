@@ -223,24 +223,25 @@ fn load_first_song_and_set_name(ctx: &mut Context, song_name: &mut String, song:
 fn load_first_song(ctx: &mut Context) {
 	ctx.sink.stop();
 
-	let Some(first) = ctx.playlist.remaining.first().cloned() else {
-		return;
-	};
-	let path = {
-		if first.is_absolute() {
-			first.clone()
-		} else {
-			ctx.files.root.join(&first)
-		}
-	};
-	let file = match File::open(path.clone()) {
-		Ok(file) => file,
-		Err(_) => {
-			println!("Failed to load song: {}", first.display());
-			ctx.playlist.remaining.remove(0);
-			load_first_song(ctx);
+	let (file, first) = loop {
+		let Some(first) = ctx.playlist.remaining.first().cloned() else {
 			return;
-		}
+		};
+		let path = {
+			if first.is_absolute() {
+				first.clone()
+			} else {
+				ctx.files.root.join(&first)
+			}
+		};
+		match File::open(path) {
+			Ok(file) => break (file, first),
+			Err(_) => {
+				println!("Failed to load song: {}", first.display());
+				ctx.playlist.remaining.remove(0);
+				continue;
+			}
+		};
 	};
 	let file = BufReader::new(file);
 
