@@ -81,10 +81,12 @@ pub fn main(receiver: &Receiver<String>, server: &Mutex<Option<FileReader>>) {
 						"Added Song: {}",
 						path.file_name().unwrap().to_string_lossy()
 					);
-					ctx.playlist.remaining.push(path.clone());
+					ctx.playlist.remaining.insert(0, path.clone());
 					ctx.files.mappings.insert(path, FileData::default());
 				}
+				load_first_song_and_set_name(&mut ctx, &mut current_song_name, &mut current_song);
 				print_song_info(&current_song_name, &ctx.playlist);
+				ctx.sink.play();
 			}
 		}
 

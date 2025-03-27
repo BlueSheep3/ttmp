@@ -43,10 +43,9 @@ fn main() {
 	let (sender, receiver) = channel();
 	let sender_clone = sender.clone();
 
-	let server_clone = Arc::clone(&server);
 	// Spawn threads for user input and updating/rendering
 	let _input_thread = thread::spawn(move || input_thread::main(&sender));
-	let update_thread = thread::spawn(move || update_thread::main(&receiver, &server_clone));
+	let update_thread = thread::spawn(move || update_thread::main(&receiver, &server));
 	let _pause_thread = thread::spawn(move || pause_thread::main(&sender_clone));
 
 	// wait for update thread to finish before exiting
