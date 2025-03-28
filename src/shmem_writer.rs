@@ -12,7 +12,6 @@ impl FileWriter {
 	}
 
 	pub fn send_to_existing_instance(&self, pipe_name: &str, file_path: PathBuf) -> bool {
-		// Convert PathBuf to string first to fail early if path is invalid
 		let file_str = match file_path.to_str() {
 			Some(s) => s,
 			None => {
@@ -21,7 +20,6 @@ impl FileWriter {
 			}
 		};
 
-		// Open the named pipe with append mode to write
 		let file = match OpenOptions::new().write(true).open(pipe_name) {
 			Ok(f) => f,
 			Err(e) => {
@@ -30,11 +28,9 @@ impl FileWriter {
 			}
 		};
 
-		// Write to the pipe
 		let mut writer = BufWriter::new(file);
 		match writer.write_all(file_str.as_bytes()) {
 			Ok(_) => {
-				// Ensure the message is flushed
 				if let Err(e) = writer.flush() {
 					eprintln!("Failed to flush pipe: {}", e);
 					return false;
