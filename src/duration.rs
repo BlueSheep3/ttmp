@@ -46,7 +46,7 @@ pub fn display_duration(duration: Duration) -> String {
 	let secs = s % 60.;
 	let mins = ((s / 60.) % 60.).floor();
 	let hours = ((s / 3600.) % 60.).floor();
-	format!("{:02.0}:{:02.0}:{:05.2}", hours, mins, secs)
+	format!("{hours:02.0}:{mins:02.0}:{secs:05.2}")
 }
 
 pub fn display_duration_out_of(duration: Duration, out_of: Duration) -> String {
@@ -55,5 +55,5 @@ pub fn display_duration_out_of(duration: Duration, out_of: Duration) -> String {
 	let percent = ((secs1 / secs2) * 100.).clamp(0., 100.);
 	let s1 = display_duration(duration);
 	let s2 = display_duration(out_of);
-	format!("{:03.0}%  =  {}  /  {}", percent, s1, s2)
+	format!("{percent:03.0}%  =  {s1}  /  {s2}")
 }

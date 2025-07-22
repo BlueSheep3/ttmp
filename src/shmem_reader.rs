@@ -47,7 +47,7 @@ impl FileReader {
 						file_list.push(path);
 					}
 					Err(e) => {
-						eprintln!("Failed to accept client connection: {}", e);
+						eprintln!("Failed to accept client connection: {e}");
 						break;
 					}
 				}

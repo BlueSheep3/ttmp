@@ -17,7 +17,7 @@ pub fn show_current_tags(ctx: &Context) -> Result<()> {
 		.ok_or(NotInFiles(current.clone()))?
 		.tags;
 	let tags = tags.iter().cloned().collect::<Vec<_>>().join(", ");
-	println!("current tags: {}", tags);
+	println!("current tags: {tags}");
 	Ok(())
 }
 

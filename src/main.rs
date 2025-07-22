@@ -51,7 +51,7 @@ fn main() {
 	// wait for update thread to finish before exiting
 	// don't wait for input thread, because it only handles input, not quitting
 	if let Err(e) = update_thread.join() {
-		println!("Failed to join update thread: {:?}", e);
+		println!("Failed to join update thread: {e:?}");
 		readln!();
 	}
 }

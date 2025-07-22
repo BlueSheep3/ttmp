@@ -21,7 +21,7 @@ pub fn get_list_names(ctx: &Context) -> Result<()> {
 		} else {
 			'-'
 		};
-		println!("{} {}", first_char, name);
+		println!("{first_char} {name}");
 	}
 	Ok(())
 }

@@ -33,7 +33,7 @@ pub fn run_commands(
 ) -> Result<CommandReturn> {
 	// NOTE will do weird things when arguments contain $ symbols
 	for (i, arg) in args.iter().enumerate().rev() {
-		commands = commands.replace(&format!("${}", i), arg);
+		commands = commands.replace(&format!("${i}"), arg);
 	}
 	commands = commands.replace("$a", &args.join(" "));
 
@@ -102,6 +102,6 @@ pub fn show_macros(config: &Config) {
 	let mut macros = config.macros.iter().collect::<Vec<_>>();
 	macros.sort_by_key(|&(name, _commands)| name);
 	for (name, commands) in macros {
-		println!("{} = {}", name, commands);
+		println!("{name} = {commands}");
 	}
 }

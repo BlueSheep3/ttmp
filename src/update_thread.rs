@@ -179,7 +179,7 @@ pub fn main(receiver: &Receiver<String>, server: &Mutex<Option<FileReader>>) {
 fn print_song_info(current_song_name: &String, playlist: &Playlist) {
 	execute!(stdout(), MoveTo(0, 0), Clear(ClearType::CurrentLine))
 		.expect("Failed moving cursor to the top");
-	println!("Song: {}", current_song_name);
+	println!("Song: {current_song_name}");
 	execute!(stdout(), Clear(ClearType::CurrentLine)).expect("Failed clearing line");
 	println!("Songs Remaining: {}", playlist.remaining.len());
 	// clear the line of the song length to make sure it renders correctly
@@ -194,7 +194,7 @@ fn print_song_progress(ctx: &Context) {
 	execute!(stdout(), MoveTo(0, 2)).expect("Failed moving cursor");
 	if let Some(song_duration) = ctx.get_current_duration() {
 		let s = display_duration_out_of(ctx.playlist.progress, song_duration);
-		println!("{}", s);
+		println!("{s}");
 	} else {
 		println!("{}", display_duration(ctx.playlist.progress));
 	}

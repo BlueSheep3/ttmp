@@ -23,7 +23,7 @@ impl FileWriter {
 		let file = match OpenOptions::new().write(true).open(pipe_name) {
 			Ok(f) => f,
 			Err(e) => {
-				eprintln!("Failed to open pipe '{}': {}", pipe_name, e);
+				eprintln!("Failed to open pipe '{pipe_name}': {e}");
 				return false;
 			}
 		};
@@ -32,14 +32,14 @@ impl FileWriter {
 		match writer.write_all(file_str.as_bytes()) {
 			Ok(_) => {
 				if let Err(e) = writer.flush() {
-					eprintln!("Failed to flush pipe: {}", e);
+					eprintln!("Failed to flush pipe: {e}");
 					return false;
 				}
-				println!("Sent path: {}", file_str);
+				println!("Sent path: {file_str}");
 				true
 			}
 			Err(e) => {
-				eprintln!("Failed to write to pipe: {}", e);
+				eprintln!("Failed to write to pipe: {e}");
 				false
 			}
 		}

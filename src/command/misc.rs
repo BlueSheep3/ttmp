@@ -6,7 +6,7 @@ use super::{
 	play, CommandReturn,
 };
 use crate::data::{context::Context, playlist::Playlist};
-use std::{iter, time::Duration};
+use std::time::Duration;
 
 pub fn reset_remaining(ctx: &mut Context) -> CommandReturn {
 	ctx.playlist.remaining = ctx.files.keys().cloned().collect();
@@ -23,8 +23,7 @@ pub fn echo(text: &[&str]) {
 pub fn repeat_song(list: &mut Playlist, amount: &str) -> Result<()> {
 	let amount = amount.parse::<usize>()?;
 	let current_song = list.remaining.first().cloned().ok_or(NoFilePlaying)?;
-	list.remaining = iter::repeat(current_song)
-		.take(amount)
+	list.remaining = std::iter::repeat_n(current_song, amount)
 		.chain(list.remaining.clone())
 		.collect();
 	Ok(())
