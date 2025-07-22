@@ -113,7 +113,7 @@ fn get_all_files_in(path: &Path) -> result::Result<Vec<PathBuf>, io::Error> {
 }
 
 fn is_music_file(file_name: &str) -> bool {
-	[".mp3", ".wav", ".ogg" /*, ".mp4"*/]
+	[".mp3", ".wav", ".ogg", ".mp4"]
 		.into_iter()
 		.any(|end| file_name.ends_with(end))
 }

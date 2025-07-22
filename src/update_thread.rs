@@ -246,20 +246,6 @@ fn load_first_song(ctx: &mut Context) {
 	};
 	let file = BufReader::new(file);
 
-	#[cfg(feature = "mp4")]
-	let decoder = if path
-		.file_name()
-		.expect("unable to get file name of current song")
-		.to_string_lossy()
-		.ends_with(".mp4")
-	{
-		Decoder::new_mp4(file, rodio::decoder::Mp4Type::Mp4)
-			.expect("unable to convert mp4 file to a music file")
-	} else {
-		Decoder::new(file).expect("unable to convert file to a music file")
-	};
-
-	#[cfg(not(feature = "mp4"))]
 	let mut decoder = Decoder::new(file).expect("unable to convert file to a music file");
 
 	// update the cached duration to be accurate if the decoder type supports it
