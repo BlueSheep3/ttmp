@@ -1,7 +1,7 @@
 use super::get_savedata_path;
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
-use std::{fs, io, path::PathBuf, result, time::Duration};
+use std::{borrow::Cow, fs, io, path::PathBuf, result, time::Duration};
 use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -22,8 +22,8 @@ impl Playlist {
 
 	pub fn save(&self, name: &str) -> Result<()> {
 		let mut pretty_config = PrettyConfig::new();
-		pretty_config.indentor = "\t".to_owned();
-		pretty_config.new_line = "\n".to_owned();
+		pretty_config.indentor = Cow::Borrowed("\t");
+		pretty_config.new_line = Cow::Borrowed("\n");
 
 		let config_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
 		let path = get_savedata_path().join(format!("list/{name}.ron"));

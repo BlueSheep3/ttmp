@@ -11,7 +11,7 @@ use crate::data::{config::StartPlayState, context::Context, playlist::Playlist};
 use rand::seq::SliceRandom;
 
 pub fn randomize(ctx: &mut Context) -> CommandReturn {
-	ctx.playlist.remaining.shuffle(&mut rand::thread_rng());
+	ctx.playlist.remaining.shuffle(&mut rand::rng());
 	misc::load_in_first_song(ctx)
 }
 

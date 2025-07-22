@@ -3,7 +3,7 @@ use super::{
 	files::{FileData, Files, FilesError},
 	playlist::{Playlist, PlaylistError},
 };
-use rodio::{OutputStream, OutputStreamHandle, PlayError, Sink, StreamError};
+use rodio::{OutputStream, OutputStreamBuilder, PlayError, Sink, StreamError};
 use std::{collections::HashMap, path::Path, result, time::Duration};
 use thiserror::Error;
 
@@ -15,8 +15,7 @@ pub struct Context {
 	pub sink: Sink,
 
 	// these are just here, so the music doesnt stop, due to them being dropped
-	_stream: OutputStream,
-	_stream_handle: OutputStreamHandle,
+	_stream_handle: OutputStream,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -43,8 +42,8 @@ impl Context {
 		let config = Config::load()?;
 		let files = Files::load()?;
 		let playlist = Playlist::load(&config.current_playlist)?;
-		let (stream, stream_handle) = OutputStream::try_default()?;
-		let sink = Sink::try_new(&stream_handle)?;
+		let stream_handle = OutputStreamBuilder::open_default_stream()?;
+		let sink = Sink::connect_new(stream_handle.mixer());
 
 		let ctx = Self {
 			program_mode,
@@ -52,7 +51,6 @@ impl Context {
 			files,
 			playlist,
 			sink,
-			_stream: stream,
 			_stream_handle: stream_handle,
 		};
 		ctx.init_sink();
@@ -64,8 +62,8 @@ impl Context {
 		let mut config = Config::load()?;
 		let mut files = Files::load()?;
 		let mut playlist = Playlist::default();
-		let (stream, stream_handle) = OutputStream::try_default()?;
-		let sink = Sink::try_new(&stream_handle)?;
+		let stream_handle = OutputStreamBuilder::open_default_stream()?;
+		let sink = Sink::connect_new(stream_handle.mixer());
 
 		config.start_play_state = StartPlayState::Always;
 		config.current_playlist = "temp".to_owned();
@@ -79,7 +77,6 @@ impl Context {
 			files,
 			playlist,
 			sink,
-			_stream: stream,
 			_stream_handle: stream_handle,
 		};
 		ctx.init_sink();

@@ -2,7 +2,7 @@ use super::get_savedata_path;
 use crate::serializer;
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fs, io, result};
+use std::{borrow::Cow, collections::HashMap, fs, io, result};
 use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -57,8 +57,8 @@ impl Config {
 
 	pub fn save(&self) -> Result<()> {
 		let mut pretty_config = PrettyConfig::new();
-		pretty_config.indentor = "\t".to_owned();
-		pretty_config.new_line = "\n".to_owned();
+		pretty_config.indentor = Cow::Borrowed("\t");
+		pretty_config.new_line = Cow::Borrowed("\n");
 
 		let config_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
 		let path = get_savedata_path().join("config.ron");
