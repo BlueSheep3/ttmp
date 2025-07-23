@@ -5,23 +5,18 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
+#[derive(Default)]
 pub struct FileReader {
 	file_list: Arc<Mutex<Vec<PathBuf>>>,
 }
 
 impl FileReader {
-	pub fn new() -> Self {
-		Self {
-			file_list: Arc::new(Mutex::new(Vec::new())),
-		}
-	}
-
 	pub fn drain_file_list(&self) -> Vec<PathBuf> {
 		let mut file_list = self.file_list.lock().expect("Failed to lock file list");
 		file_list.drain(..).collect()
 	}
 
-	pub fn start_receiving(&mut self, pipe_name: &str) {
+	pub fn start_receiving(&self, pipe_name: &str) {
 		let pipe_name = pipe_name.to_owned();
 		let file_list = Arc::clone(&self.file_list);
 

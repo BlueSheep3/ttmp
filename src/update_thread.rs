@@ -1,6 +1,10 @@
 use crate::{
 	command::{match_input, run_macro_or, CommandReturn},
-	data::{context::Context, files::FileData, playlist::Playlist},
+	data::{
+		context::{Context, ProgramMode},
+		files::FileData,
+		playlist::Playlist,
+	},
 	duration::{display_duration, display_duration_out_of},
 	input_thread::INPUT_Y,
 	shmem_reader::FileReader,
@@ -17,7 +21,7 @@ use std::{
 	fs::File,
 	io::{stdout, BufReader},
 	path::{Path, PathBuf},
-	sync::{mpsc::Receiver, Mutex},
+	sync::mpsc::Receiver,
 	thread::sleep,
 	time::{Duration, Instant},
 };
@@ -38,7 +42,7 @@ macro_rules! handle_command_return {
 }
 
 // Function to update and render changing information in a separate thread
-pub fn main(receiver: &Receiver<String>, server: &Mutex<Option<FileReader>>) {
+pub fn main(receiver: &Receiver<String>, server: Option<FileReader>) {
 	let args = env::args_os().collect::<Vec<OsString>>();
 	let mut ctx = if let [_, file, ..] = args.as_slice() {
 		Context::new_temp(Path::new(file))
@@ -68,11 +72,7 @@ pub fn main(receiver: &Receiver<String>, server: &Mutex<Option<FileReader>>) {
 		execute!(stdout(), SavePosition).expect("Failed to save cursor position.");
 
 		// Recieve newly opened files
-		if let Some(server) = server
-			.lock()
-			.expect("current thread is already holding server")
-			.as_mut()
-		{
+		if let Some(server) = &server {
 			let paths = server.drain_file_list();
 			if !paths.is_empty() {
 				println!("\n");
@@ -228,12 +228,13 @@ fn load_first_song(ctx: &mut Context) {
 		let Some(first) = ctx.playlist.remaining.first().cloned() else {
 			return;
 		};
-		let path = {
-			if first.is_absolute() {
-				first.clone()
-			} else {
-				ctx.files.root.join(&first)
-			}
+		// you may have relative paths in temp mode that are not relative to
+		// ctx.files.root, because this program can be started with relative
+		// command line arguments to specify a music file.
+		let path = if first.is_absolute() || ctx.program_mode == ProgramMode::Temp {
+			first.clone()
+		} else {
+			ctx.files.root.join(&first)
 		};
 		match File::open(path) {
 			Ok(file) => break (file, first),

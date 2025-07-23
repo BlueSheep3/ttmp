@@ -15,29 +15,36 @@ mod shmem_reader;
 mod shmem_writer;
 mod update_thread;
 
+use crossterm::{
+	execute,
+	terminal::{EnterAlternateScreen, LeaveAlternateScreen},
+};
 use shmem_reader::FileReader;
-use shmem_writer::FileWriter;
-use std::sync::{Arc, Mutex};
-use std::{env, path::PathBuf, process::exit, sync::mpsc::channel, thread};
+use std::{env, io::stdout, path::PathBuf, sync::mpsc::channel, thread};
 
 fn main() {
 	let pipe_name = "//./pipe/ipc_music_player_xmyuiwqcoecmztrciqenasjkf";
 	let file = env::args_os().nth(1).map(PathBuf::from);
 
-	let mut server = Arc::new(Mutex::new(None));
-	// If another instance is running, send the file and exit
+	let mut server = None;
 	if let Some(file) = file {
-		let file = file.canonicalize().unwrap();
-		let client = FileWriter::new();
-		if client.send_to_existing_instance(pipe_name, file) {
-			exit(0);
-		}
-		// Wrap the server in an Arc and Mutex for shared ownership
-		server = Arc::new(Mutex::new(Some(FileReader::new())));
-		if let Some(s) = server.lock().unwrap().as_mut() {
-			s.start_receiving(pipe_name);
+		// if the path is relative, this was most likely manually started
+		// in a shell, in which case we want the process to be isolated
+		if file.is_absolute() {
+			let file = file.canonicalize().unwrap();
+
+			// if another instance is running, send the file and exit
+			if shmem_writer::try_send_to_pipe(pipe_name, file) {
+				return;
+			}
+
+			let reader = FileReader::default();
+			reader.start_receiving(pipe_name);
+			server = Some(reader);
 		}
 	}
+
+	execute!(stdout(), EnterAlternateScreen).expect("Failed to enter alternate screen.");
 
 	// Create channels for communication between threads
 	let (sender, receiver) = channel();
@@ -45,7 +52,7 @@ fn main() {
 
 	// Spawn threads for user input and updating/rendering
 	let _input_thread = thread::spawn(move || input_thread::main(&sender));
-	let update_thread = thread::spawn(move || update_thread::main(&receiver, &server));
+	let update_thread = thread::spawn(move || update_thread::main(&receiver, server));
 	let _pause_thread = thread::spawn(move || pause_thread::main(&sender_clone));
 
 	// wait for update thread to finish before exiting
@@ -54,4 +61,6 @@ fn main() {
 		println!("Failed to join update thread: {e:?}");
 		readln!();
 	}
+
+	execute!(stdout(), LeaveAlternateScreen).expect("Failed to leave alternate screen.");
 }
