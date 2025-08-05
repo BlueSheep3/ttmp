@@ -1,11 +1,9 @@
-use std::sync::mpsc::Sender;
-use std::thread;
-use std::time::Duration;
+use std::{sync::mpsc::Sender, thread, time::Duration};
 use winapi::um::winuser::{
 	GetAsyncKeyState as get_async_key_state, VK_MEDIA_PLAY_PAUSE, VK_VOLUME_MUTE,
 };
 
-pub fn main(sender: &Sender<String>) -> ! {
+pub fn main(sender: Sender<()>) -> ! {
 	let mut pause_pressed = false;
 	loop {
 		// SAFETY: The Windows API specifies that the input must be a virtual key,
@@ -19,9 +17,7 @@ pub fn main(sender: &Sender<String>) -> ! {
 		if play_state || mute_state {
 			if !pause_pressed {
 				pause_pressed = true;
-				sender
-					.send("p".to_owned())
-					.expect("Failed to send pause input");
+				sender.send(()).expect("Failed to send pause input");
 			}
 		} else {
 			pause_pressed = false;

@@ -1,12 +1,12 @@
 [package]
 name = "music_player"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-crossterm = "0.29"
 interprocess = "2.2.3"
 rand = "0.9"
+ratatui = "0.29"
 rodio = "0.21"
 ron = "0.10"
 serde = { version = "1", features = ["derive"] }

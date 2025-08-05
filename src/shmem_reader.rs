@@ -1,9 +1,13 @@
-use interprocess::os::windows::named_pipe::pipe_mode::{Bytes, Messages};
-use interprocess::os::windows::named_pipe::{PipeListener, PipeListenerOptions, PipeMode};
-use std::io::{BufReader, Read};
-use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
-use std::thread;
+use interprocess::os::windows::named_pipe::{
+	PipeListener, PipeListenerOptions, PipeMode,
+	pipe_mode::{Bytes, Messages},
+};
+use std::{
+	io::{BufReader, Read},
+	path::PathBuf,
+	sync::{Arc, Mutex},
+	thread,
+};
 
 #[derive(Default)]
 pub struct FileReader {

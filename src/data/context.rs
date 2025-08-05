@@ -4,7 +4,7 @@ use super::{
 	playlist::{Playlist, PlaylistError},
 };
 use rodio::{OutputStream, OutputStreamBuilder, PlayError, Sink, StreamError};
-use std::{collections::HashMap, path::Path, result, time::Duration};
+use std::{env::ArgsOs, ffi::OsString, result, time::Duration};
 use thiserror::Error;
 
 pub struct Context {
@@ -37,12 +37,25 @@ impl ProgramMode {
 }
 
 impl Context {
+	/// autoamitcally figures out which mode to initialize the context in
+	pub fn new_automatic(args: ArgsOs) -> Result<Self> {
+		let args = args.collect::<Vec<OsString>>();
+		if let [_, files @ ..] = args.as_slice()
+			&& !files.is_empty()
+		{
+			Self::new_temp(files)
+		} else {
+			Self::new_main()
+		}
+	}
+
 	pub fn new_main() -> Result<Self> {
 		let program_mode = ProgramMode::Main;
 		let config = Config::load()?;
 		let files = Files::load()?;
 		let playlist = Playlist::load(&config.current_playlist)?;
-		let stream_handle = OutputStreamBuilder::open_default_stream()?;
+		let mut stream_handle = OutputStreamBuilder::open_default_stream()?;
+		stream_handle.log_on_drop(false);
 		let sink = Sink::connect_new(stream_handle.mixer());
 
 		let ctx = Self {
@@ -57,18 +70,22 @@ impl Context {
 		Ok(ctx)
 	}
 
-	pub fn new_temp(file: &Path) -> Result<Self> {
+	pub fn new_temp(file_paths: &[OsString]) -> Result<Self> {
 		let program_mode = ProgramMode::Temp;
 		let mut config = Config::load()?;
 		let mut files = Files::load()?;
 		let mut playlist = Playlist::default();
-		let stream_handle = OutputStreamBuilder::open_default_stream()?;
+		let mut stream_handle = OutputStreamBuilder::open_default_stream()?;
+		stream_handle.log_on_drop(false);
 		let sink = Sink::connect_new(stream_handle.mixer());
 
 		config.start_play_state = StartPlayState::Always;
 		config.current_playlist = "temp".to_owned();
-		files.mappings = HashMap::from([(file.to_owned(), FileData::default())]);
-		playlist.remaining = vec![file.to_owned()];
+		files.mappings = file_paths
+			.iter()
+			.map(|f| (f.into(), FileData::default()))
+			.collect();
+		playlist.remaining = file_paths.iter().map(From::from).collect();
 		playlist.progress = Duration::ZERO;
 
 		let ctx = Self {

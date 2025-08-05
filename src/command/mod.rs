@@ -12,7 +12,7 @@ mod tag;
 use self::error::{CommandError::UknownOrInvalidCommand, Result};
 use crate::data::context::Context;
 
-pub use self::macros::run_macro_or;
+pub use self::{macros::run_macro_or, play::toggle_playing};
 
 /// information to give the update thread after doing a Command
 #[must_use]

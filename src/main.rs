@@ -7,60 +7,157 @@
 mod command;
 mod data;
 mod duration;
-mod input_thread;
+mod handle_event;
 mod macros;
 mod pause_thread;
 mod serializer;
 mod shmem_reader;
 mod shmem_writer;
-mod update_thread;
+mod update;
+mod view;
 
-use crossterm::{
-	execute,
-	terminal::{EnterAlternateScreen, LeaveAlternateScreen},
-};
+use self::data::context::{Context, ContextError};
 use shmem_reader::FileReader;
-use std::{env, io::stdout, path::PathBuf, sync::mpsc::channel, thread};
+use std::{
+	env,
+	error::Error,
+	fs,
+	ops::ControlFlow,
+	path::PathBuf,
+	process::ExitCode,
+	sync::mpsc::{self, Receiver},
+	thread,
+	time::Instant,
+};
 
-fn main() {
-	let pipe_name = "//./pipe/ipc_music_player_xmyuiwqcoecmztrciqenasjkf";
-	let file = env::args_os().nth(1).map(PathBuf::from);
+fn main() -> ExitCode {
+	match fallible_main() {
+		Ok(()) => ExitCode::SUCCESS,
+		Err(e) => {
+			eprintln!("{e}");
 
-	let mut server = None;
-	if let Some(file) = file {
-		// if the path is relative, this was most likely manually started
-		// in a shell, in which case we want the process to be isolated
-		if file.is_absolute() {
-			let file = file.canonicalize().unwrap();
-
-			// if another instance is running, send the file and exit
-			if shmem_writer::try_send_to_pipe(pipe_name, file) {
-				return;
+			// if this is not a terminal, then this window will instantly close after
+			// the main function, so we wait for input to allow you to read the error.
+			// TODO figure out a way to not read_line when `is_terminal`
+			if let Err(e) = std::io::stdin().read_line(&mut String::new()) {
+				eprintln!("\nFailed to read line: {e}");
 			}
 
-			let reader = FileReader::default();
-			reader.start_receiving(pipe_name);
-			server = Some(reader);
+			ExitCode::FAILURE
 		}
 	}
+}
 
-	execute!(stdout(), EnterAlternateScreen).expect("Failed to enter alternate screen.");
+// will always restore the regular screen before returning.
+fn fallible_main() -> Result<(), Box<dyn Error>> {
+	let server = match handle_shared_memory()? {
+		ControlFlow::Continue(s) => s,
+		ControlFlow::Break(()) => return Ok(()),
+	};
 
-	// Create channels for communication between threads
-	let (sender, receiver) = channel();
-	let sender_clone = sender.clone();
+	let (sender, receiver) = mpsc::channel();
+	let _pause_thread = thread::spawn(move || pause_thread::main(sender));
+	let ctx = Context::new_automatic(env::args_os())?;
 
-	// Spawn threads for user input and updating/rendering
-	let _input_thread = thread::spawn(move || input_thread::main(&sender));
-	let update_thread = thread::spawn(move || update_thread::main(&receiver, server));
-	let _pause_thread = thread::spawn(move || pause_thread::main(&sender_clone));
+	let mut terminal = ratatui::try_init()?;
+	let mut model = Model::new(ctx, receiver, server);
+	defer! { ratatui::restore(); }
 
-	// wait for update thread to finish before exiting
-	// don't wait for input thread, because it only handles input, not quitting
-	if let Err(e) = update_thread.join() {
-		println!("Failed to join update thread: {e:?}");
-		readln!();
+	loop {
+		terminal.draw(|f| view::view(&model, f))?;
+
+		// TODO periodically update by using `poll` instead of `read`
+		let event = ratatui::crossterm::event::read()?;
+		let mut message = handle_event::handle_event(&model, event);
+
+		while let Some(m) = message {
+			if let Message::Quit { save } = m {
+				if save {
+					maybe_save(&model.ctx)?;
+				}
+				return Ok(());
+			}
+
+			(model, message) = update::update(model, m)?;
+		}
 	}
+}
 
-	execute!(stdout(), LeaveAlternateScreen).expect("Failed to leave alternate screen.");
+struct Model {
+	currently_typing: String,
+	command_output: String,
+
+	ctx: Context,
+	last_update_time: Instant,
+	current_song_name: String,
+	current_song: PathBuf,
+
+	pause_receiver: Receiver<()>,
+	ipc_server: Option<FileReader>,
+}
+
+enum Message {
+	DoUpdateAgain,
+	Quit { save: bool },
+	Error,
+	Panic,
+	TypedChar(char),
+	Backspace,
+	Enter,
+}
+
+impl Model {
+	fn new(ctx: Context, pause_receiver: Receiver<()>, ipc_server: Option<FileReader>) -> Self {
+		Self {
+			currently_typing: String::new(),
+			command_output: String::new(),
+
+			ctx,
+			last_update_time: Instant::now(),
+			current_song_name: String::new(),
+			current_song: PathBuf::new(),
+
+			pause_receiver,
+			ipc_server,
+		}
+	}
+}
+
+/// Either sends over the file that you just opened (if you opened any),
+/// or starts listening to other processes sending over files.
+/// Returns `None` if this process should do no inter process communication.
+fn handle_shared_memory() -> Result<ControlFlow<(), Option<FileReader>>, Box<dyn Error>> {
+	const PIPE_NAME: &str = "//./pipe/ipc_music_player_xmyuiwqcoecmztrciqenasjkf";
+
+	// if this is not started in the terminal, there will only ever be a single arg
+	let file = env::args_os().nth(1).map(PathBuf::from);
+
+	// if the file path is relative, this process was most likely
+	// manually started in a terminal, in which case we want this to be isolated.
+	if let Some(file) = file
+		&& file.is_absolute()
+	{
+		let file = file.canonicalize()?;
+
+		// if another instance is running, send the file and exit
+		if fs::exists(PIPE_NAME)? {
+			shmem_writer::try_send_to_pipe(PIPE_NAME, file)?;
+			return Ok(ControlFlow::Break(()));
+		}
+
+		let reader = FileReader::default();
+		reader.start_receiving(PIPE_NAME);
+		Ok(ControlFlow::Continue(Some(reader)))
+	} else {
+		Ok(ControlFlow::Continue(None))
+	}
+}
+
+fn maybe_save(ctx: &Context) -> Result<(), ContextError> {
+	if ctx.program_mode.can_save() {
+		ctx.config.save()?;
+		ctx.files.save()?;
+		ctx.playlist.save(&ctx.config.current_playlist)?;
+	}
+	Ok(())
 }
