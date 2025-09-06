@@ -1,11 +1,11 @@
-use std::sync::mpsc::Sender;
-use std::thread;
-use std::time::Duration;
-use winapi::um::winuser::{
-	GetAsyncKeyState as get_async_key_state, VK_MEDIA_PLAY_PAUSE, VK_VOLUME_MUTE,
-};
+use std::{sync::mpsc::Sender, thread, time::Duration};
 
+#[cfg(target_os = "windows")]
 pub fn main(sender: &Sender<String>) -> ! {
+	use winapi::um::winuser::{
+		GetAsyncKeyState as get_async_key_state, VK_MEDIA_PLAY_PAUSE, VK_VOLUME_MUTE,
+	};
+
 	let mut pause_pressed = false;
 	loop {
 		// SAFETY: The Windows API specifies that the input must be a virtual key,
@@ -27,5 +27,15 @@ pub fn main(sender: &Sender<String>) -> ! {
 			pause_pressed = false;
 		}
 		thread::sleep(Duration::from_millis(50));
+	}
+}
+
+// replacement function for compiling to linux
+#[cfg(target_os = "linux")]
+pub fn main(_sender: &Sender<String>) -> ! {
+    // theres probably some way to do global hotkeys for linux,
+    // but i just want it to compile at all first.
+	loop {
+		thread::sleep(Duration::from_secs(1 << 30));
 	}
 }

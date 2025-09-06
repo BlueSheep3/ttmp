@@ -23,7 +23,10 @@ use shmem_reader::FileReader;
 use std::{env, io::stdout, path::PathBuf, sync::mpsc::channel, thread};
 
 fn main() {
-	let pipe_name = "//./pipe/ipc_music_player_xmyuiwqcoecmztrciqenasjkf";
+    if let Err(e) = data::create_default_savedata_if_not_present() {
+        panic!("failed to create inital savedata: {e}");
+    }
+
 	let file = env::args_os().nth(1).map(PathBuf::from);
 
 	let mut server = None;
@@ -31,15 +34,17 @@ fn main() {
 		// if the path is relative, this was most likely manually started
 		// in a shell, in which case we want the process to be isolated
 		if file.is_absolute() {
+			const PIPE_NAME: &str = "//./pipe/ipc_music_player_xmyuiwqcoecmztrciqenasjkf";
+
 			let file = file.canonicalize().unwrap();
 
 			// if another instance is running, send the file and exit
-			if shmem_writer::try_send_to_pipe(pipe_name, file) {
+			if shmem_writer::try_send_to_pipe(PIPE_NAME, file) {
 				return;
 			}
 
 			let reader = FileReader::default();
-			reader.start_receiving(pipe_name);
+			reader.start_receiving(PIPE_NAME);
 			server = Some(reader);
 		}
 	}

@@ -22,6 +22,15 @@ pub struct Files {
 	pub mappings: HashMap<PathBuf, FileData>,
 }
 
+impl Files {
+	pub fn empty_with_root(root: PathBuf) -> Self {
+		Self {
+			root,
+			mappings: HashMap::new(),
+		}
+	}
+}
+
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct FileData {
 	#[serde(serialize_with = "serializer::sorted_hashset")]
@@ -47,7 +56,9 @@ impl DerefMut for Files {
 
 impl Files {
 	pub fn load() -> Result<Self> {
-		let path = get_savedata_path().join("files.ron");
+		let path = get_savedata_path()
+			.ok_or(FilesError::CantFindConfigPath)?
+			.join("files.ron");
 		let files_string = fs::read_to_string(path)?;
 		let files = ron::from_str(&files_string).map_err(Box::new)?;
 		Ok(files)
@@ -59,7 +70,9 @@ impl Files {
 		pretty_config.new_line = Cow::Borrowed("\n");
 
 		let files_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
-		let path = get_savedata_path().join("files.ron");
+		let path = get_savedata_path()
+			.ok_or(FilesError::CantFindConfigPath)?
+			.join("files.ron");
 		fs::write(path, files_string)?;
 		Ok(())
 	}
@@ -130,4 +143,7 @@ pub enum FilesError {
 	RonSpanned(#[from] Box<ron::error::SpannedError>),
 	#[error("ron error: {0}")]
 	Ron(#[from] Box<ron::Error>),
+
+	#[error("can't find path for Music Player config")]
+	CantFindConfigPath,
 }

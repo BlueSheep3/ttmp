@@ -14,7 +14,9 @@ pub struct Playlist {
 
 impl Playlist {
 	pub fn load(name: &str) -> Result<Self> {
-		let path = get_savedata_path().join(format!("list/{name}.ron"));
+		let path = get_savedata_path()
+			.ok_or(PlaylistError::CantFindConfigPath)?
+			.join(format!("list/{name}.ron"));
 		let config_string = fs::read_to_string(path)?;
 		let config = ron::from_str(&config_string).map_err(Box::new)?;
 		Ok(config)
@@ -26,13 +28,17 @@ impl Playlist {
 		pretty_config.new_line = Cow::Borrowed("\n");
 
 		let config_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
-		let path = get_savedata_path().join(format!("list/{name}.ron"));
+		let path = get_savedata_path()
+			.ok_or(PlaylistError::CantFindConfigPath)?
+			.join(format!("list/{name}.ron"));
 		fs::write(path, config_string)?;
 		Ok(())
 	}
 
 	pub fn remove(name: &str) -> Result<()> {
-		let path = get_savedata_path().join(format!("list/{name}.ron"));
+		let path = get_savedata_path()
+			.ok_or(PlaylistError::CantFindConfigPath)?
+			.join(format!("list/{name}.ron"));
 		fs::remove_file(path)?;
 		Ok(())
 	}
@@ -41,7 +47,11 @@ impl Playlist {
 	/// in such a way that its usable in the [`Playlist::load`] function.
 	pub fn get_all_names() -> Result<Vec<String>> {
 		let mut names = Vec::new();
-		for list in fs::read_dir(get_savedata_path().join("list"))? {
+		for list in fs::read_dir(
+			get_savedata_path()
+				.ok_or(PlaylistError::CantFindConfigPath)?
+				.join("list"),
+		)? {
 			let name = list?
 				.file_name()
 				.into_string()
@@ -67,4 +77,7 @@ pub enum PlaylistError {
 	RonSpanned(#[from] Box<ron::error::SpannedError>),
 	#[error("ron error: {0}")]
 	Ron(#[from] Box<ron::Error>),
+
+	#[error("can't find path for Music Player config")]
+	CantFindConfigPath,
 }
