@@ -50,4 +50,6 @@ pub enum CommandError {
 	ListNameEmpty,
 	#[error("A List Name must not contain the character: {0}")]
 	ListNameBadChar(char),
+	#[error("Invalid file name: {0}")]
+	InvalidFileName(PathBuf),
 }

@@ -1,4 +1,4 @@
-use super::{error::Result, CommandReturn};
+use super::{CommandReturn, error::Result};
 use crate::{
 	data::context::Context,
 	duration::{display_duration, display_duration_out_of, parse_duration},
@@ -22,15 +22,17 @@ pub fn jump_backward(ctx: &mut Context, duration: &[&str]) -> Result<CommandRetu
 	Ok(CommandReturn::ReloadFirstSong)
 }
 
-pub fn display_progress(ctx: &Context) {
+pub fn display_progress(ctx: &mut Context) {
 	if try_display_progress_out_of(ctx).is_none() {
-		println!("{}", display_duration(ctx.playlist.progress));
+		ctx.cmd_out += &display_duration(ctx.playlist.progress);
+		ctx.cmd_out.push('\n');
 	}
 }
 
-fn try_display_progress_out_of(ctx: &Context) -> Option<()> {
+fn try_display_progress_out_of(ctx: &mut Context) -> Option<()> {
 	let song_duration = ctx.get_current_duration()?;
 	let current = ctx.playlist.progress;
-	println!("{}", display_duration_out_of(current, song_duration));
+	ctx.cmd_out += &display_duration_out_of(current, song_duration);
+	ctx.cmd_out.push('\n');
 	Some(())
 }

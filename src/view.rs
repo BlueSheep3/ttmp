@@ -28,8 +28,8 @@ fn command_window(model: &Model, frame: &mut Frame, area: Rect) {
 	let layout = Layout::default()
 		.direction(Direction::Vertical)
 		.constraints(vec![
-			Constraint::Min(1),
-			Constraint::Length(1),
+			Constraint::Max(2),
+			Constraint::Max(1),
 			Constraint::Fill(1),
 		])
 		.split(area);
@@ -39,7 +39,7 @@ fn command_window(model: &Model, frame: &mut Frame, area: Rect) {
 		Paragraph::new(format!("Command: {text}")).wrap(Wrap { trim: false }),
 		layout[0],
 	);
-	frame.render_widget(Text::raw(&model.command_output), layout[2]);
+	frame.render_widget(Text::raw(&model.ctx.cmd_out), layout[2]);
 }
 
 fn song_data(model: &Model, frame: &mut Frame, area: Rect) {

@@ -3,25 +3,25 @@
 //! but not: playing, pausing, skipping songs
 
 use super::{
+	CommandReturn,
 	error::{
 		CommandError::{
 			DeleteCurrentPlaylist, ListNameBadChar, ListNameEmpty, SaveOverCurrentPlaylist,
 		},
 		Result,
 	},
-	CommandReturn,
 };
 use crate::data::{context::Context, playlist::Playlist};
 
-pub fn get_list_names(ctx: &Context) -> Result<()> {
-	println!("All Playlist Names:");
+pub fn get_list_names(ctx: &mut Context) -> Result<()> {
+	ctx.cmd_out += "All Playlist Names:\n";
 	for name in Playlist::get_all_names()? {
 		let first_char = if name == ctx.config.current_playlist {
 			'>'
 		} else {
 			'-'
 		};
-		println!("{first_char} {name}");
+		ctx.cmd_out += &format!("{first_char} {name}\n");
 	}
 	Ok(())
 }

@@ -33,13 +33,13 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 	let input = input.split(' ').collect::<Vec<_>>();
 
 	match input.as_slice() {
-		["h" | "?" | "help"] => help::general(),
-		["h" | "?" | "help", command] => help::specific(command)?,
+		["h" | "?" | "help"] => help::general(&mut ctx.cmd_out),
+		["h" | "?" | "help", command] => help::specific(command, &mut ctx.cmd_out)?,
 		["q"] => return Ok(CommandReturn::Quit),
 		["q!"] => return Ok(CommandReturn::QuitNoSave),
 		["s"] => misc::save(ctx)?,
 		["r"] => return Ok(misc::reset_remaining(ctx)),
-		["echo", text @ ..] => misc::echo(text),
+		["echo", text @ ..] => misc::echo(text, &mut ctx.cmd_out),
 		["p"] => play::toggle_playing(ctx),
 		["p+"] => play::start_playing(ctx),
 		["p-"] => play::pause_playing(ctx),
@@ -80,12 +80,12 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["ma", name, commands @ ..] => macros::add_macro(&mut ctx.config, name, commands)?,
 		["mr", name] => macros::remove_macro(&mut ctx.config, name)?,
 		["mc", name, commands @ ..] => macros::change_macro(&mut ctx.config, name, commands)?,
-		["ml"] => macros::show_macros(&ctx.config),
+		["ml"] => macros::show_macros(&ctx.config, &mut ctx.cmd_out),
 		["dr"] => files::reload_files(&mut ctx.files)?,
 		["del"] => return files::delete_current(ctx),
 		["dm", destination @ ..] => files::move_file(ctx, destination)?,
 		["dp"] => files::show_full_path(ctx)?,
-		["ds"] => files::show_directories(&ctx.files)?,
+		["ds"] => files::show_directories(&ctx.files, &mut ctx.cmd_out)?,
 		[""] => return macros::run_macro_or(ctx, "@cmd_empty", &[], ""),
 		[macro_name, args @ ..] if ctx.config.macros.contains_key(*macro_name) => {
 			return macros::run_macro(ctx, macro_name, args);

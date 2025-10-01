@@ -1,11 +1,11 @@
 //! macros to make using commands less repetitive
 
 use super::{
+	CommandReturn,
 	error::{
 		CommandError::{MacroAlreadyExists, MacroDoesNotExist},
 		Result,
 	},
-	CommandReturn,
 };
 use crate::data::{config::Config, context::Context};
 
@@ -98,10 +98,10 @@ pub fn change_macro(config: &mut Config, name: &str, commands: &[&str]) -> Resul
 	Ok(())
 }
 
-pub fn show_macros(config: &Config) {
+pub fn show_macros(config: &Config, cmd_out: &mut String) {
 	let mut macros = config.macros.iter().collect::<Vec<_>>();
 	macros.sort_by_key(|&(name, _commands)| name);
 	for (name, commands) in macros {
-		println!("{name} = {commands}");
+		*cmd_out += &format!("{name} = {commands}\n");
 	}
 }

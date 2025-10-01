@@ -1,9 +1,10 @@
 use super::{
+	CommandReturn,
 	error::{
 		CommandError::{NoFilePlaying, SaveInWrongMode},
 		Result,
 	},
-	play, CommandReturn,
+	play,
 };
 use crate::data::{context::Context, playlist::Playlist};
 use std::time::Duration;
@@ -16,8 +17,9 @@ pub fn reset_remaining(ctx: &mut Context) -> CommandReturn {
 	load_in_first_song(ctx)
 }
 
-pub fn echo(text: &[&str]) {
-	println!("{}", text.join(" "));
+pub fn echo(text: &[&str], cmd_out: &mut String) {
+	*cmd_out += &text.join(" ");
+	cmd_out.push('\n');
 }
 
 pub fn repeat_song(list: &mut Playlist, amount: &str) -> Result<()> {

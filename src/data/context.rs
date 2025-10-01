@@ -9,6 +9,7 @@ use thiserror::Error;
 
 pub struct Context {
 	pub program_mode: ProgramMode,
+	pub cmd_out: String,
 	pub config: Config,
 	pub files: Files,
 	pub playlist: Playlist,
@@ -60,6 +61,7 @@ impl Context {
 
 		let ctx = Self {
 			program_mode,
+			cmd_out: String::new(),
 			config,
 			files,
 			playlist,
@@ -90,6 +92,7 @@ impl Context {
 
 		let ctx = Self {
 			program_mode,
+			cmd_out: String::new(),
 			config,
 			files,
 			playlist,

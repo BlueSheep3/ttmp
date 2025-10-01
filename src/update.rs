@@ -15,6 +15,19 @@ use std::{
 	time::{Duration, Instant},
 };
 
+pub fn init(model: &mut Model) {
+	if model.ctx.playlist.remaining.is_empty() {
+		remaining_songs_ended(&mut model.ctx, &mut model.current_song_name);
+	}
+	if !model.ctx.playlist.remaining.is_empty() {
+		load_first_song_and_set_name(
+			&mut model.ctx,
+			&mut model.current_song_name,
+			&mut model.current_song,
+		);
+	}
+}
+
 // TEMP temporary hacky solution to handle the CommandReturn values
 #[derive(Default)]
 struct UpdateTemp {
@@ -39,11 +52,13 @@ pub fn update(
 		Message::TypedChar(c) => model.currently_typing.push(c),
 		Message::Backspace => drop(model.currently_typing.pop()),
 		Message::Enter => {
+			model.ctx.cmd_out.clear();
+
 			let was_not_empty = !model.ctx.playlist.remaining.is_empty();
 
 			handle_command_return(
 				match_input(&model.currently_typing, &mut model.ctx),
-				&mut model.command_output,
+				&mut model.ctx.cmd_out,
 				&mut update_temp,
 			);
 
@@ -55,7 +70,7 @@ pub fn update(
 				remaining_songs_ended(&mut model.ctx, &mut model.current_song_name);
 				handle_command_return(
 					run_macro_or(&mut model.ctx, "@list_end", &[], ""),
-					&mut model.command_output,
+					&mut model.ctx.cmd_out,
 					&mut update_temp,
 				);
 			}
@@ -98,9 +113,9 @@ fn receive_files_over_ipc(model: &mut Model) {
 	if paths.is_empty() {
 		return;
 	}
-	model.command_output.push('\n');
+	model.ctx.cmd_out.push('\n');
 	for path in paths.into_iter().filter(|p| p.is_file()) {
-		model.command_output.push_str(&format!(
+		model.ctx.cmd_out.push_str(&format!(
 			"Added Song: {}",
 			path.file_name().unwrap().to_string_lossy()
 		));
@@ -127,7 +142,7 @@ fn maybe_goto_next_song(model: &mut Model, update_temp: &mut UpdateTemp) {
 	ctx.playlist.remaining.remove(0);
 	handle_command_return(
 		run_macro_or(ctx, "@song_end", &[], ""),
-		&mut model.command_output,
+		&mut ctx.cmd_out,
 		update_temp,
 	);
 
@@ -136,7 +151,7 @@ fn maybe_goto_next_song(model: &mut Model, update_temp: &mut UpdateTemp) {
 		remaining_songs_ended(ctx, &mut model.current_song_name);
 		handle_command_return(
 			run_macro_or(ctx, "@list_end", &[], ""),
-			&mut model.command_output,
+			&mut ctx.cmd_out,
 			update_temp,
 		);
 	}
@@ -144,7 +159,7 @@ fn maybe_goto_next_song(model: &mut Model, update_temp: &mut UpdateTemp) {
 		load_first_song_and_set_name(ctx, &mut model.current_song_name, &mut model.current_song);
 		handle_command_return(
 			run_macro_or(ctx, "@song_start", &[], ""),
-			&mut model.command_output,
+			&mut ctx.cmd_out,
 			update_temp,
 		);
 	}

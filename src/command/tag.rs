@@ -9,7 +9,7 @@ use crate::{
 };
 use std::collections::HashSet;
 
-pub fn show_current_tags(ctx: &Context) -> Result<()> {
+pub fn show_current_tags(ctx: &mut Context) -> Result<()> {
 	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
 	let tags = &ctx
 		.files
@@ -17,11 +17,11 @@ pub fn show_current_tags(ctx: &Context) -> Result<()> {
 		.ok_or(NotInFiles(current.clone()))?
 		.tags;
 	let tags = tags.iter().cloned().collect::<Vec<_>>().join(", ");
-	println!("current tags: {tags}");
+	ctx.cmd_out += &format!("current tags: {tags}\n");
 	Ok(())
 }
 
-pub fn show_all_tags(ctx: &Context) {
+pub fn show_all_tags(ctx: &mut Context) {
 	let tags = ctx
 		.files
 		.iter()
@@ -30,7 +30,7 @@ pub fn show_all_tags(ctx: &Context) {
 		.collect::<HashSet<_>>();
 	let mut tags = tags.into_iter().collect::<Vec<_>>();
 	tags.sort();
-	println!("all tags: {}", tags.join(", "));
+	ctx.cmd_out += &format!("all tags: {}\n", tags.join(", "));
 }
 
 pub fn add_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
@@ -52,7 +52,8 @@ pub fn remove_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
 		.ok_or(NotInFiles(current.clone()))?
 		.tags;
 	if !tags.remove(tag) {
-		println!("The current File does not have that tag");
+		// TODO should this be an error?
+		ctx.cmd_out += "The current File does not have that tag\n";
 	}
 	Ok(())
 }

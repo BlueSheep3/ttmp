@@ -1,7 +1,10 @@
 use super::{
-	error::{CommandError::NoFilePlaying, Result},
-	play::next_song,
 	CommandReturn,
+	error::{
+		CommandError::{InvalidFileName, NoFilePlaying},
+		Result,
+	},
+	play::next_song,
 };
 use crate::data::{context::Context, files::Files};
 use std::{fs, path::Path};
@@ -11,12 +14,14 @@ pub fn reload_files(files: &mut Files) -> Result<()> {
 	Ok(())
 }
 
-pub fn show_full_path(ctx: &Context) -> Result<()> {
+pub fn show_full_path(ctx: &mut Context) -> Result<()> {
 	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
 	if current.is_absolute() {
-		println!("{}", current.display());
+		ctx.cmd_out += &current.display().to_string();
+		ctx.cmd_out.push('\n');
 	} else {
-		println!("{}", ctx.files.root.join(current).display());
+		ctx.cmd_out += &ctx.files.root.join(current).display().to_string();
+		ctx.cmd_out.push('\n');
 	}
 	Ok(())
 }
@@ -25,7 +30,7 @@ pub fn delete_current(ctx: &mut Context) -> Result<CommandReturn> {
 	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
 	ctx.files.remove(current);
 	fs::remove_file(ctx.files.root.join(current))?;
-	println!("File deleted successfully.");
+	ctx.cmd_out += "File deleted successfully.\n";
 	Ok(next_song(ctx))
 }
 
@@ -35,7 +40,7 @@ pub fn move_file(ctx: &mut Context, destination_folder: &[&str]) -> Result<()> {
 	let file_name = ctx.playlist.remaining.first_mut().ok_or(NoFilePlaying)?;
 	let song_name = file_name
 		.file_name()
-		.expect("Failed to get file name from the path.")
+		.ok_or(InvalidFileName(file_name.clone()))?
 		.to_string_lossy()
 		.to_string();
 	let destination_full = ctx.files.root.join(destination_folder).join(&song_name);
@@ -50,24 +55,31 @@ pub fn move_file(ctx: &mut Context, destination_folder: &[&str]) -> Result<()> {
 		ctx.files.insert(destination, file_data);
 	}
 	if new_folder {
-		println!("Succesfully moved File");
+		ctx.cmd_out += "Succesfully moved File\n";
 	} else {
-		println!(
-			"Created new Folder to move file to {}",
+		ctx.cmd_out += &format!(
+			"Created new Folder to move file to {}\n",
 			destination_full.to_string_lossy()
 		);
 	}
 	Ok(())
 }
 
-pub fn show_directories(files: &Files) -> Result<()> {
+pub fn show_directories(files: &Files, cmd_out: &mut String) -> Result<()> {
 	if let Some(folder_name) = &files.root.file_name() {
-		println!("{}", folder_name.to_string_lossy());
+		*cmd_out += &folder_name.to_string_lossy();
+		cmd_out.push('\n');
 	}
-	folders_recursive(&files.root, "", false, &mut 21)
+	folders_recursive(cmd_out, &files.root, "", false, &mut 21)
 }
 
-fn folders_recursive(path: &Path, layers: &str, is_ending: bool, max: &mut i32) -> Result<()> {
+fn folders_recursive(
+	cmd_out: &mut String,
+	path: &Path,
+	layers: &str,
+	is_ending: bool,
+	max: &mut i32,
+) -> Result<()> {
 	let entries = fs::read_dir(path)?;
 	let mut subdirs = entries
 		.filter_map(|res| res.ok())
@@ -82,8 +94,8 @@ fn folders_recursive(path: &Path, layers: &str, is_ending: bool, max: &mut i32) 
 		let is_last = subdirs.peek().is_none();
 		let new_layer = if is_last { "└── " } else { "├── " };
 		if let Some(folder_name) = entry.path().file_name() {
-			println!(
-				"{}{}",
+			*cmd_out += &format!(
+				"{}{}\n",
 				layers.to_owned() + new_layer,
 				folder_name.to_string_lossy()
 			);
@@ -92,7 +104,7 @@ fn folders_recursive(path: &Path, layers: &str, is_ending: bool, max: &mut i32) 
 		let new_layer = if is_ending { "    " } else { "│   " };
 		let new_layers = layers.to_owned() + new_layer;
 		let subpath = entry.path();
-		folders_recursive(&subpath, &new_layers, is_ending, max)?;
+		folders_recursive(cmd_out, &subpath, &new_layers, is_ending, max)?;
 	}
 	Ok(())
 }

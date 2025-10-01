@@ -27,7 +27,7 @@ use std::{
 	process::ExitCode,
 	sync::mpsc::{self, Receiver},
 	thread,
-	time::Instant,
+	time::{Duration, Instant},
 };
 
 fn main() -> ExitCode {
@@ -63,12 +63,18 @@ fn fallible_main() -> Result<(), Box<dyn Error>> {
 	let mut model = Model::new(ctx, receiver, server);
 	defer! { ratatui::restore(); }
 
+	update::init(&mut model);
+
 	loop {
 		terminal.draw(|f| view::view(&model, f))?;
 
-		// TODO periodically update by using `poll` instead of `read`
-		let event = ratatui::crossterm::event::read()?;
-		let mut message = handle_event::handle_event(&model, event);
+		let event = ratatui::crossterm::event::poll(Duration::from_millis(300))?;
+		let mut message = if event {
+			let event = ratatui::crossterm::event::read()?;
+			handle_event::handle_event(&model, event)
+		} else {
+			Some(Message::DoUpdateAgain)
+		};
 
 		while let Some(m) = message {
 			if let Message::Quit { save } = m {
@@ -85,7 +91,6 @@ fn fallible_main() -> Result<(), Box<dyn Error>> {
 
 struct Model {
 	currently_typing: String,
-	command_output: String,
 
 	ctx: Context,
 	last_update_time: Instant,
@@ -110,7 +115,6 @@ impl Model {
 	fn new(ctx: Context, pause_receiver: Receiver<()>, ipc_server: Option<FileReader>) -> Self {
 		Self {
 			currently_typing: String::new(),
-			command_output: String::new(),
 
 			ctx,
 			last_update_time: Instant::now(),
