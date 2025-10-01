@@ -45,9 +45,7 @@ Give the path of the folder that contains all your Music.\
 }
 
 fn get_savedata_path() -> Option<PathBuf> {
-	let Some(config) = dirs::config_dir() else {
-		return None;
-	};
+	let config = dirs::config_dir()?;
 	let path = config.join("musicplayer");
 	Some(path)
 }

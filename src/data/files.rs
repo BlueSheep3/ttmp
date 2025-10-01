@@ -5,9 +5,11 @@ use serde::{Deserialize, Serialize};
 use std::{
 	borrow::Cow,
 	collections::{HashMap, HashSet},
+	ffi::OsStr,
 	fs, io,
 	ops::{Deref, DerefMut},
 	path::{Path, PathBuf},
+	process::{Command, Stdio},
 	result,
 	time::Duration,
 };
@@ -123,6 +125,36 @@ fn get_all_files_in(path: &Path) -> result::Result<Vec<PathBuf>, io::Error> {
 		}
 	}
 	Ok(files)
+}
+
+pub fn get_temp_mp4_filepath() -> Result<PathBuf> {
+	Ok(get_savedata_path()
+		.ok_or(FilesError::CantFindConfigPath)?
+		.join("tempmp4.mp3"))
+}
+
+pub fn make_temp_mp4_copy(absolute_path: &Path) -> Result<()> {
+	let output_path: PathBuf = get_temp_mp4_filepath()?;
+	if output_path.exists() {
+		fs::remove_file(&output_path)?;
+	}
+	Command::new("ffmpeg")
+		.args([
+			OsStr::new("-i"),
+			absolute_path.as_ref(),
+			"-vn".as_ref(),
+			"-acodec".as_ref(),
+			"libmp3lame".as_ref(),
+			output_path.as_ref(),
+		])
+		.stdout(Stdio::null())
+		.stderr(Stdio::null())
+		.status()?;
+	Ok(())
+}
+
+pub fn is_mp4_file(file_name: &str) -> bool {
+	file_name.ends_with(".mp4")
 }
 
 fn is_music_file(file_name: &str) -> bool {
