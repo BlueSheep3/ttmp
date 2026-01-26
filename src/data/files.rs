@@ -5,9 +5,11 @@ use serde::{Deserialize, Serialize};
 use std::{
 	borrow::Cow,
 	collections::{HashMap, HashSet},
+	ffi::OsStr,
 	fs, io,
 	ops::{Deref, DerefMut},
 	path::{Path, PathBuf},
+	process::{Command, Stdio},
 	result,
 	time::Duration,
 };
@@ -20,6 +22,15 @@ pub struct Files {
 	/// all music files, paths should be relative to `root`.
 	#[serde(serialize_with = "serializer::sorted_hashmap")]
 	pub mappings: HashMap<PathBuf, FileData>,
+}
+
+impl Files {
+	pub fn empty_with_root(root: PathBuf) -> Self {
+		Self {
+			root,
+			mappings: HashMap::new(),
+		}
+	}
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -47,7 +58,9 @@ impl DerefMut for Files {
 
 impl Files {
 	pub fn load() -> Result<Self> {
-		let path = get_savedata_path().join("files.ron");
+		let path = get_savedata_path()
+			.ok_or(FilesError::CantFindConfigPath)?
+			.join("files.ron");
 		let files_string = fs::read_to_string(path)?;
 		let files = ron::from_str(&files_string).map_err(Box::new)?;
 		Ok(files)
@@ -59,7 +72,9 @@ impl Files {
 		pretty_config.new_line = Cow::Borrowed("\n");
 
 		let files_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
-		let path = get_savedata_path().join("files.ron");
+		let path = get_savedata_path()
+			.ok_or(FilesError::CantFindConfigPath)?
+			.join("files.ron");
 		fs::write(path, files_string)?;
 		Ok(())
 	}
@@ -112,6 +127,36 @@ fn get_all_files_in(path: &Path) -> result::Result<Vec<PathBuf>, io::Error> {
 	Ok(files)
 }
 
+pub fn get_temp_mp4_filepath() -> Result<PathBuf> {
+	Ok(get_savedata_path()
+		.ok_or(FilesError::CantFindConfigPath)?
+		.join("tempmp4.mp3"))
+}
+
+pub fn make_temp_mp4_copy(absolute_path: &Path) -> Result<()> {
+	let output_path: PathBuf = get_temp_mp4_filepath()?;
+	if output_path.exists() {
+		fs::remove_file(&output_path)?;
+	}
+	Command::new("ffmpeg")
+		.args([
+			OsStr::new("-i"),
+			absolute_path.as_ref(),
+			"-vn".as_ref(),
+			"-acodec".as_ref(),
+			"libmp3lame".as_ref(),
+			output_path.as_ref(),
+		])
+		.stdout(Stdio::null())
+		.stderr(Stdio::null())
+		.status()?;
+	Ok(())
+}
+
+pub fn is_mp4_file(file_name: &str) -> bool {
+	file_name.ends_with(".mp4")
+}
+
 fn is_music_file(file_name: &str) -> bool {
 	[".mp3", ".wav", ".ogg", ".mp4"]
 		.into_iter()
@@ -130,4 +175,7 @@ pub enum FilesError {
 	RonSpanned(#[from] Box<ron::error::SpannedError>),
 	#[error("ron error: {0}")]
 	Ron(#[from] Box<ron::Error>),
+
+	#[error("can't find path for Music Player config")]
+	CantFindConfigPath,
 }

@@ -12,6 +12,7 @@ ron = "0.10"
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
 winapi = "0.3"
+dirs = "6"
 
 [build-dependencies]
 winres = "0.1"

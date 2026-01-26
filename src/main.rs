@@ -50,6 +50,8 @@ fn main() -> ExitCode {
 
 // will always restore the regular screen before returning.
 fn fallible_main() -> Result<(), Box<dyn Error>> {
+	data::create_default_savedata_if_not_present()?;
+
 	let server = match handle_shared_memory()? {
 		ControlFlow::Continue(s) => s,
 		ControlFlow::Break(()) => return Ok(()),

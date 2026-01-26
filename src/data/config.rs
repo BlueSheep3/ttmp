@@ -23,6 +23,27 @@ pub struct Config {
 	pub macros: HashMap<String, String>,
 }
 
+impl Default for Config {
+	fn default() -> Self {
+		Self {
+			speed: 1.0,
+			volume: 1.0,
+			start_play_state: StartPlayState::Never,
+			show_song_progress: true,
+			current_playlist: "main".to_owned(),
+			macros: HashMap::from(
+				[
+					("@cmd_empty", ""),
+					("@list_end", ""),
+					("@song_end", ""),
+					("@song_start", ""),
+				]
+				.map(|(l, r)| (l.to_owned(), r.to_owned())),
+			),
+		}
+	}
+}
+
 /// Represents what should happen when the program starts being able to play songs again.
 /// This can happen for example when the program is opened, or when the playlist
 /// is filled with songs after being empty.
@@ -49,7 +70,9 @@ impl StartPlayState {
 
 impl Config {
 	pub fn load() -> Result<Self> {
-		let path = get_savedata_path().join("config.ron");
+		let path = get_savedata_path()
+			.ok_or(ConfigError::CantFindConfigPath)?
+			.join("config.ron");
 		let config_string = fs::read_to_string(path)?;
 		let config = ron::from_str(&config_string).map_err(Box::new)?;
 		Ok(config)
@@ -61,7 +84,9 @@ impl Config {
 		pretty_config.new_line = Cow::Borrowed("\n");
 
 		let config_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
-		let path = get_savedata_path().join("config.ron");
+		let path = get_savedata_path()
+			.ok_or(ConfigError::CantFindConfigPath)?
+			.join("config.ron");
 		fs::write(path, config_string)?;
 		Ok(())
 	}
@@ -79,4 +104,7 @@ pub enum ConfigError {
 	RonSpanned(#[from] Box<ron::error::SpannedError>),
 	#[error("ron error: {0}")]
 	Ron(#[from] Box<ron::Error>),
+
+	#[error("can't find path for Music Player config")]
+	CantFindConfigPath,
 }

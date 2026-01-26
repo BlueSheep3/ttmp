@@ -1,7 +1,3 @@
-use interprocess::os::windows::named_pipe::{
-	PipeListener, PipeListenerOptions, PipeMode,
-	pipe_mode::{Bytes, Messages},
-};
 use std::{
 	io::{BufReader, Read},
 	path::PathBuf,
@@ -24,7 +20,18 @@ impl FileReader {
 		let pipe_name = pipe_name.to_owned();
 		let file_list = Arc::clone(&self.file_list);
 
+		// this uses a windows specific implementation of named pipes,
+		// and im currently too lazy to find a proper replacement for linux,
+		// so we just dont receive anything from the files list,
+		// which just means that starting a new temp instance of this
+		// will not send over its file to a single temp instance.
+		#[cfg(target_os = "windows")]
 		thread::spawn(move || {
+			use interprocess::os::windows::named_pipe::{
+				PipeListener, PipeListenerOptions, PipeMode,
+				pipe_mode::{Bytes, Messages},
+			};
+
 			let listener: PipeListener<Bytes, Messages> = PipeListenerOptions::new()
 				.path(&*pipe_name)
 				.mode(PipeMode::Messages)
