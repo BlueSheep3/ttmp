@@ -3,7 +3,7 @@ use crate::{
 	command::{self, CommandReturn, match_input, run_macro_or},
 	data::{
 		context::{Context, ProgramMode},
-		files::FileData,
+		files::{FileData, is_mp4_file, make_temp_mp4_copy},
 	},
 };
 use rodio::{Decoder, Source};
@@ -209,11 +209,21 @@ fn load_first_song(ctx: &mut Context) {
 		// you may have relative paths in temp mode that are not relative to
 		// ctx.files.root, because this program can be started with relative
 		// command line arguments to specify a music file.
-		let path = if first.is_absolute() || ctx.program_mode == ProgramMode::Temp {
+		let mut path = if first.is_absolute() || ctx.program_mode == ProgramMode::Temp {
 			first.clone()
 		} else {
 			ctx.files.root.join(&first)
 		};
+		if is_mp4_file(&path.to_string_lossy()) {
+			match make_temp_mp4_copy(&path) {
+				Ok(p) => path = p,
+				Err(_) => {
+					println!("Failed to convert song to mp3: {}", first.display());
+					ctx.playlist.remaining.remove(0);
+					continue;
+				}
+			}
+		}
 		match File::open(path) {
 			Ok(file) => break (file, first),
 			Err(_) => {

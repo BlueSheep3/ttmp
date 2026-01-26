@@ -127,13 +127,13 @@ fn get_all_files_in(path: &Path) -> result::Result<Vec<PathBuf>, io::Error> {
 	Ok(files)
 }
 
-pub fn get_temp_mp4_filepath() -> Result<PathBuf> {
+fn get_temp_mp4_filepath() -> Result<PathBuf> {
 	Ok(get_savedata_path()
 		.ok_or(FilesError::CantFindConfigPath)?
 		.join("tempmp4.mp3"))
 }
 
-pub fn make_temp_mp4_copy(absolute_path: &Path) -> Result<()> {
+pub fn make_temp_mp4_copy(absolute_path: &Path) -> Result<PathBuf> {
 	let output_path: PathBuf = get_temp_mp4_filepath()?;
 	if output_path.exists() {
 		fs::remove_file(&output_path)?;
@@ -150,7 +150,7 @@ pub fn make_temp_mp4_copy(absolute_path: &Path) -> Result<()> {
 		.stdout(Stdio::null())
 		.stderr(Stdio::null())
 		.status()?;
-	Ok(())
+	Ok(output_path)
 }
 
 pub fn is_mp4_file(file_name: &str) -> bool {
