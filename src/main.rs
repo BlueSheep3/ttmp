@@ -92,7 +92,7 @@ fn fallible_main() -> Result<(), Box<dyn Error>> {
 }
 
 struct Model {
-	currently_typing: String,
+	current_command: Option<String>,
 
 	ctx: Context,
 	last_update_time: Instant,
@@ -103,11 +103,16 @@ struct Model {
 	ipc_server: Option<FileReader>,
 }
 
+#[derive(Debug)]
 enum Message {
 	DoUpdateAgain,
+	GotoNormalMode,
+	GotoCommandMode,
+
 	Quit { save: bool },
-	Error,
-	Panic,
+	RunCommand(&'static str),
+	StartCommand(&'static str),
+
 	TypedChar(char),
 	Backspace,
 	Enter,
@@ -116,7 +121,7 @@ enum Message {
 impl Model {
 	fn new(ctx: Context, pause_receiver: Receiver<()>, ipc_server: Option<FileReader>) -> Self {
 		Self {
-			currently_typing: String::new(),
+			current_command: None,
 
 			ctx,
 			last_update_time: Instant::now(),

@@ -15,6 +15,8 @@ use std::{
 	time::{Duration, Instant},
 };
 
+type Result<T> = std::result::Result<T, Box<dyn Error>>;
+
 pub fn init(model: &mut Model) {
 	if model.ctx.playlist.remaining.is_empty() {
 		remaining_songs_ended(&mut model.ctx, &mut model.current_song_name);
@@ -36,47 +38,15 @@ struct UpdateTemp {
 	reload_first_song: bool,
 }
 
-pub fn update(
-	mut model: Model,
-	message: Message,
-) -> Result<(Model, Option<Message>), Box<dyn Error>> {
+pub fn update(mut model: Model, message: Message) -> Result<(Model, Option<Message>)> {
 	let mut update_temp = UpdateTemp::default();
 
 	receive_files_over_ipc(&mut model);
 
-	match message {
-		Message::DoUpdateAgain => (),
-		Message::Quit { .. } => (), // this gets handled in the main loop
-		Message::Error => Err("manually triggered error")?,
-		Message::Panic => panic!("manually triggered panic"),
-		Message::TypedChar(c) => model.currently_typing.push(c),
-		Message::Backspace => drop(model.currently_typing.pop()),
-		Message::Enter => {
-			model.ctx.cmd_out.clear();
-
-			let was_not_empty = !model.ctx.playlist.remaining.is_empty();
-
-			handle_command_return(
-				match_input(&model.currently_typing, &mut model.ctx),
-				&mut model.ctx.cmd_out,
-				&mut update_temp,
-			);
-
-			if model.ctx.playlist.remaining.is_empty() {
-				model.ctx.sink.pause();
-			}
-
-			if was_not_empty && model.ctx.playlist.remaining.is_empty() {
-				remaining_songs_ended(&mut model.ctx, &mut model.current_song_name);
-				handle_command_return(
-					run_macro_or(&mut model.ctx, "@list_end", &[], ""),
-					&mut model.ctx.cmd_out,
-					&mut update_temp,
-				);
-			}
-
-			model.currently_typing.clear();
-		}
+	if model.current_command.is_some() {
+		handle_message_command_mode(&mut model, message, &mut update_temp)?;
+	} else {
+		handle_message_normal_mode(&mut model, message, &mut update_temp)?;
 	}
 
 	if let Ok(()) = model.pause_receiver.try_recv() {
@@ -103,6 +73,83 @@ pub fn update(
 		() => None,
 	};
 	Ok((model, msg))
+}
+
+fn handle_message_normal_mode(
+	model: &mut Model,
+	message: Message,
+	update_temp: &mut UpdateTemp,
+) -> Result<()> {
+	match message {
+		Message::DoUpdateAgain => (),
+		Message::GotoNormalMode => model.ctx.cmd_out = String::new(),
+		Message::GotoCommandMode => model.current_command = Some(String::new()),
+
+		Message::Quit { .. } => (), // this gets handled in the main loop
+		Message::RunCommand(cmd) => run_command(model, update_temp, cmd)?,
+		Message::StartCommand(cmd) => model.current_command = Some(cmd.to_owned()),
+
+		Message::TypedChar(_) | Message::Backspace | Message::Enter => {
+			panic!("the message {message:?} should not be sent during normal mode")
+		}
+	}
+	Ok(())
+}
+
+fn handle_message_command_mode(
+	model: &mut Model,
+	message: Message,
+	update_temp: &mut UpdateTemp,
+) -> Result<()> {
+	let Some(cmd) = &mut model.current_command else {
+		panic!("current_command was None, despite being in command mode");
+	};
+
+	match message {
+		Message::DoUpdateAgain => (),
+		Message::GotoNormalMode => model.current_command = None,
+		Message::GotoCommandMode => (),
+		Message::Quit { .. } => (), // this gets handled in the main loop
+
+		Message::RunCommand(_) | Message::StartCommand(_) => {
+			panic!("the message {message:?} should not be sent during command mode")
+		}
+
+		Message::TypedChar(c) => cmd.push(c),
+		Message::Backspace => drop(cmd.pop()),
+		Message::Enter => {
+			let cmd_clone = cmd.clone();
+			run_command(model, update_temp, &cmd_clone)?;
+			model.current_command = None;
+		}
+	}
+	Ok(())
+}
+
+fn run_command(model: &mut Model, update_temp: &mut UpdateTemp, cmd: &str) -> Result<()> {
+	model.ctx.cmd_out.clear();
+
+	let was_not_empty = !model.ctx.playlist.remaining.is_empty();
+
+	handle_command_return(
+		match_input(cmd, &mut model.ctx),
+		&mut model.ctx.cmd_out,
+		update_temp,
+	);
+
+	if model.ctx.playlist.remaining.is_empty() {
+		model.ctx.sink.pause();
+	}
+
+	if was_not_empty && model.ctx.playlist.remaining.is_empty() {
+		remaining_songs_ended(&mut model.ctx, &mut model.current_song_name);
+		handle_command_return(
+			run_macro_or(&mut model.ctx, "@list_end", &[], ""),
+			&mut model.ctx.cmd_out,
+			update_temp,
+		);
+	}
+	Ok(())
 }
 
 fn receive_files_over_ipc(model: &mut Model) {
@@ -166,7 +213,7 @@ fn maybe_goto_next_song(model: &mut Model, update_temp: &mut UpdateTemp) {
 }
 
 fn handle_command_return(
-	cmd_return: Result<CommandReturn, impl Error>,
+	cmd_return: std::result::Result<CommandReturn, impl Error>,
 	command_output: &mut String,
 	update_temp: &mut UpdateTemp,
 ) {
@@ -238,10 +285,10 @@ fn load_first_song(ctx: &mut Context) {
 	let mut decoder = Decoder::new(file).expect("unable to convert file to a music file");
 
 	// update the cached duration to be accurate if the decoder type supports it
-	if let Some(total) = decoder.total_duration() {
-		if let Some(file) = ctx.files.get_mut(&first) {
-			file.duration = Some(total);
-		}
+	if let Some(total) = decoder.total_duration()
+		&& let Some(file) = ctx.files.get_mut(&first)
+	{
+		file.duration = Some(total);
 	}
 
 	// `try_seek` is a faster alternative to `skip_duration`,

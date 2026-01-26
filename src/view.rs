@@ -34,11 +34,12 @@ fn command_window(model: &Model, frame: &mut Frame, area: Rect) {
 		])
 		.split(area);
 
-	let text = &model.currently_typing;
-	frame.render_widget(
-		Paragraph::new(format!("Command: {text}")).wrap(Wrap { trim: false }),
-		layout[0],
-	);
+	if let Some(cmd) = &model.current_command {
+		frame.render_widget(
+			Paragraph::new(format!(":{cmd}")).wrap(Wrap { trim: false }),
+			layout[0],
+		);
+	}
 	frame.render_widget(Text::raw(&model.ctx.cmd_out), layout[2]);
 }
 
