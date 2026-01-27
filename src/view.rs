@@ -11,17 +11,91 @@ use ratatui::{
 };
 
 pub fn view(model: &Model, frame: &mut Frame) {
+	if model.ctx.config.dont_redraw_screen {
+		dont_draw_screen_replacement(frame, frame.area());
+		return;
+	}
+
 	let layout = Layout::default()
 		.direction(Direction::Vertical)
 		.constraints(vec![Constraint::Fill(1), Constraint::Length(4)])
 		.split(frame.area());
 
-	command_window(model, frame, layout[0]);
+	if model.current_command.is_some() || !model.ctx.cmd_out.is_empty() {
+		let layout = Layout::default()
+			.direction(Direction::Horizontal)
+			.constraints(vec![Constraint::Fill(1), Constraint::Fill(1)])
+			.split(layout[0]);
+
+		let right_block = Block::new().borders(Borders::LEFT);
+		let right_area = right_block.inner(layout[1]);
+		frame.render_widget(right_block, layout[1]);
+
+		playlist_window(model, frame, layout[0]);
+		command_window(model, frame, right_area);
+	} else {
+		playlist_window(model, frame, layout[0]);
+	}
 
 	let bottom_block = Block::new().borders(Borders::TOP);
 	let bottom_area = bottom_block.inner(layout[1]);
 	frame.render_widget(bottom_block, layout[1]);
 	song_data(model, frame, bottom_area);
+}
+
+fn dont_draw_screen_replacement(frame: &mut Frame, area: Rect) {
+	// TODO center this block
+	let center_block = Block::new().borders(Borders::ALL);
+	let center_area = center_block.inner(area);
+	frame.render_widget(center_block, area);
+
+	let para = Paragraph::new(vec![
+		Line::from("Rendering is currently disabled!"),
+		Line::from("Your inputs will still work though."),
+		Line::from("You can enable rendering by pressing <Ctrl + R>"),
+	]);
+	frame.render_widget(para, center_area);
+}
+
+fn playlist_window(model: &Model, frame: &mut Frame, area: Rect) {
+	let layout = Layout::default()
+		.direction(Direction::Vertical)
+		.constraints(vec![Constraint::Max(2), Constraint::Fill(1)])
+		.split(area);
+
+	let top_block = Block::new().borders(Borders::BOTTOM);
+	let top_area = top_block.inner(layout[0]);
+	frame.render_widget(top_block, layout[0]);
+	let top_line = Line::from(format!(
+		" list: {}      remaining: {}",
+		model.ctx.config.current_playlist,
+		model.ctx.playlist.remaining.len()
+	));
+	frame.render_widget(top_line, top_area);
+
+	let lines = model
+		.ctx
+		.playlist
+		.remaining
+		.iter()
+		.take(layout[1].height as usize)
+		.enumerate()
+		.map(|(i, file)| {
+			if i == layout[1].height as usize - 1 {
+				return Line::from("   ...");
+			}
+			let song_name = file
+				.file_name()
+				.expect("Failed to get file name from the path.")
+				.to_string_lossy();
+			let mut line = Line::from(format!("{i:2} {song_name}"));
+			if i == 0 {
+				line = line.style(Style::new().black().on_white());
+			}
+			line
+		})
+		.collect::<Vec<_>>();
+	frame.render_widget(Paragraph::new(lines), layout[1]);
 }
 
 fn command_window(model: &Model, frame: &mut Frame, area: Rect) {
@@ -72,13 +146,23 @@ fn song_data(model: &Model, frame: &mut Frame, area: Rect) {
 	} else {
 		display_duration(model.ctx.playlist.progress)
 	};
-	let remaining = model.ctx.playlist.remaining.len();
+
+	// FIXME displays the tags of the last song when there is no current song
+	let tags_str = model
+		.ctx
+		.files
+		.get(&model.current_song)
+		.map_or(String::new(), |f| {
+			let mut tags = f.tags.iter().cloned().collect::<Vec<_>>();
+			tags.sort();
+			tags.join(", ")
+		});
 
 	frame.render_widget(text, layout[0]);
 	frame.render_widget(
 		Paragraph::new(vec![
-			Line::raw(format!("Song: {}", model.current_song_name)),
-			Line::raw(format!("Remaining Songs: {remaining}")),
+			Line::raw(&model.current_song_name),
+			Line::raw(tags_str),
 			Line::raw(progress_str),
 		]),
 		layout[2],

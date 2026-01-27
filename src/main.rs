@@ -108,6 +108,7 @@ enum Message {
 	DoUpdateAgain,
 	GotoNormalMode,
 	GotoCommandMode,
+	ToggleScreenRedraws,
 
 	Quit { save: bool },
 	RunCommand(&'static str),

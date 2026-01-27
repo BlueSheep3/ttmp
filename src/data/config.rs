@@ -13,9 +13,9 @@ pub struct Config {
 	pub volume: f32,
 	/// what to do when songs are playable after not being playable
 	pub start_play_state: StartPlayState,
-	/// whether to always show the current progress,
-	/// this does mean it will redraw on every frame
-	pub show_song_progress: bool,
+	/// when this is true, the entire screen is replaced by a simple message,
+	/// which removes basically all the logic for redrawing the screen
+	pub dont_redraw_screen: bool,
 	/// the name of the current playlist
 	pub current_playlist: String,
 	/// type "m NAME" to run all commands listed under the macro
@@ -29,7 +29,7 @@ impl Default for Config {
 			speed: 1.0,
 			volume: 1.0,
 			start_play_state: StartPlayState::Never,
-			show_song_progress: true,
+			dont_redraw_screen: false,
 			current_playlist: "main".to_owned(),
 			macros: HashMap::from(
 				[

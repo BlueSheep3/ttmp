@@ -12,9 +12,11 @@ help, h, ? - Show this help
 q          - Quit the Program
 s          - Save the Config
 r          - Reset the Playlist (put all files in it)
+redraw     - Toggle whether screen redraws should happen
 echo TEXT  - print out TEXT
 
 Categories of Subcommands:
+n, normal  - commands you can run without pressing ':'
 p, play    - modify playing songs
 l, list    - modify differnt playlists
 f, filter  - filter the remaining songs
@@ -28,6 +30,7 @@ d, dir     - commands concerning the file system
 
 pub fn specific(command: &str, cmd_out: &mut String) -> Result<()> {
 	match command {
+		"n" | "normal" => normal(cmd_out),
 		"p" | "play" => play(cmd_out),
 		"l" | "list" => list(cmd_out),
 		"f" | "filter" => filter(cmd_out),
@@ -39,6 +42,12 @@ pub fn specific(command: &str, cmd_out: &mut String) -> Result<()> {
 		_ => return Err(NoHelpAvailable(command.to_owned())),
 	}
 	Ok(())
+}
+
+fn normal(cmd_out: &mut String) {
+	*cmd_out += "\
+TODO
+";
 }
 
 fn play(cmd_out: &mut String) {

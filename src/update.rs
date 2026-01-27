@@ -84,6 +84,7 @@ fn handle_message_normal_mode(
 		Message::DoUpdateAgain => (),
 		Message::GotoNormalMode => model.ctx.cmd_out = String::new(),
 		Message::GotoCommandMode => model.current_command = Some(String::new()),
+		Message::ToggleScreenRedraws => model.ctx.config.dont_redraw_screen ^= true,
 
 		Message::Quit { .. } => (), // this gets handled in the main loop
 		Message::RunCommand(cmd) => run_command(model, update_temp, cmd)?,
@@ -109,8 +110,9 @@ fn handle_message_command_mode(
 		Message::DoUpdateAgain => (),
 		Message::GotoNormalMode => model.current_command = None,
 		Message::GotoCommandMode => (),
-		Message::Quit { .. } => (), // this gets handled in the main loop
+		Message::ToggleScreenRedraws => model.ctx.config.dont_redraw_screen ^= true,
 
+		Message::Quit { .. } => (), // this gets handled in the main loop
 		Message::RunCommand(_) | Message::StartCommand(_) => {
 			panic!("the message {message:?} should not be sent during command mode")
 		}

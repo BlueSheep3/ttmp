@@ -14,6 +14,11 @@ pub fn handle_event(model: &Model, event: Event) -> Option<Message> {
 			{
 				return Some(Message::GotoNormalMode);
 			}
+			if key.modifiers.contains(KeyModifiers::CONTROL)
+				&& matches!(key.code, KeyCode::Char('r'))
+			{
+				return Some(Message::ToggleScreenRedraws);
+			}
 
 			if model.current_command.is_some() {
 				handle_key_command_mode(model, key)
@@ -30,6 +35,7 @@ fn handle_key_normal_mode(_model: &Model, key: KeyEvent) -> Option<Message> {
 		KeyCode::Char(':') => Some(Message::GotoCommandMode),
 		KeyCode::Char('q') => Some(Message::Quit { save: true }),
 		KeyCode::Char('?') => Some(Message::RunCommand("h")),
+		KeyCode::Char('S') => Some(Message::RunCommand("s")),
 
 		KeyCode::Char(' ') => Some(Message::RunCommand("p")),
 		KeyCode::Char('p') => Some(Message::RunCommand("p-")),
@@ -44,11 +50,11 @@ fn handle_key_normal_mode(_model: &Model, key: KeyEvent) -> Option<Message> {
 		KeyCode::Char('f') => Some(Message::StartCommand("fte ")),
 		KeyCode::Char('F') => Some(Message::StartCommand("fta ")),
 		KeyCode::Char('s') => Some(Message::StartCommand("fs ")),
-		KeyCode::Char('a') => Some(Message::StartCommand("tac ")),
-		KeyCode::Char('t') => Some(Message::RunCommand("tlc")),
+		KeyCode::Char('t') => Some(Message::StartCommand("tac ")),
+		KeyCode::Char('T') => Some(Message::StartCommand("trc ")),
 
-		KeyCode::Char('l') => Some(Message::RunCommand("lg")),
-		KeyCode::Char('L') => Some(Message::StartCommand("ls ")),
+		KeyCode::Char('l') => Some(Message::StartCommand("ls ")),
+		KeyCode::Char('L') => Some(Message::RunCommand("lg")),
 
 		KeyCode::Char('m') => Some(Message::RunCommand("ml")),
 		_ => None,
