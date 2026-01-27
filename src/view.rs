@@ -5,7 +5,7 @@ use crate::{
 use ratatui::{
 	Frame,
 	layout::{Constraint, Direction, Layout, Rect},
-	style::{Style, Stylize},
+	style::Style,
 	text::{Line, Span, Text},
 	widgets::{Block, Borders, Paragraph, Wrap},
 };
@@ -44,16 +44,18 @@ pub fn view(model: &Model, frame: &mut Frame) {
 }
 
 fn dont_draw_screen_replacement(frame: &mut Frame, area: Rect) {
-	// TODO center this block
+	let area = area.centered(Constraint::Max(54), Constraint::Max(7));
+
 	let center_block = Block::new().borders(Borders::ALL);
 	let center_area = center_block.inner(area);
 	frame.render_widget(center_block, area);
 
 	let para = Paragraph::new(vec![
-		Line::from("Rendering is currently disabled!"),
-		Line::from("Your inputs will still work though."),
-		Line::from("You can enable rendering by pressing <Ctrl + R>"),
+		Line::from("Rendering is currently disabled!").centered(),
+		Line::from("Your inputs will still work though.").centered(),
+		Line::from("You can enable rendering by pressing <Ctrl + R>.").centered(),
 	]);
+	let center_area = center_area.centered_vertically(Constraint::Max(3));
 	frame.render_widget(para, center_area);
 }
 
