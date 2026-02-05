@@ -53,6 +53,8 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["ps", speed] => play::set_speed(ctx, speed)?,
 		["pv", volume] => play::set_volume(ctx, volume)?,
 		["pv"] => play::set_volume(ctx, "100")?,
+		["pv+", add] => play::add_volume(ctx, add)?,
+		["pv-", sub] => play::sub_volume(ctx, sub)?,
 		["po"] => return Ok(play::sort(ctx)),
 		["pd", amount] => misc::repeat_song(&mut ctx.playlist, amount)?,
 		["lg"] => list::get_list_names(ctx)?,

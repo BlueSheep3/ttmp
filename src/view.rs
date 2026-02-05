@@ -1,5 +1,6 @@
 use crate::{
 	Model,
+	data::context::ProgramMode,
 	duration::{display_duration, display_duration_out_of},
 };
 use ratatui::{
@@ -65,11 +66,17 @@ fn playlist_window(model: &Model, frame: &mut Frame, area: Rect) {
 		.constraints(vec![Constraint::Max(2), Constraint::Fill(1)])
 		.split(area);
 
+	let temp_mode_marker = match model.ctx.program_mode {
+		ProgramMode::Main => "",
+		ProgramMode::Temp => "TEMPORARY MODE      ",
+	};
+
 	let top_block = Block::new().borders(Borders::BOTTOM);
 	let top_area = top_block.inner(layout[0]);
 	frame.render_widget(top_block, layout[0]);
 	let top_line = Line::from(format!(
-		" list: {}      remaining: {}",
+		" {}list: {}      remaining: {}",
+		temp_mode_marker,
 		model.ctx.config.current_playlist,
 		model.ctx.playlist.remaining.len()
 	));
@@ -116,7 +123,8 @@ fn command_window(model: &Model, frame: &mut Frame, area: Rect) {
 			layout[0],
 		);
 	}
-	frame.render_widget(Text::raw(&model.ctx.cmd_out), layout[2]);
+	let cmd_out = Paragraph::new(&*model.ctx.cmd_out).wrap(Wrap { trim: false });
+	frame.render_widget(cmd_out, layout[2]);
 }
 
 fn song_data(model: &Model, frame: &mut Frame, area: Rect) {
@@ -160,11 +168,16 @@ fn song_data(model: &Model, frame: &mut Frame, area: Rect) {
 			tags.join(", ")
 		});
 
+	let volume = (100. * model.ctx.config.volume).round();
+	let speed = (100. * model.ctx.config.speed).round() / 100.;
+
 	frame.render_widget(text, layout[0]);
 	frame.render_widget(
 		Paragraph::new(vec![
 			Line::raw(&model.current_song_name),
-			Line::raw(tags_str),
+			Line::raw(format!(
+				"volume: {volume}%   speed: x{speed}   tags: {tags_str}"
+			)),
 			Line::raw(progress_str),
 		]),
 		layout[2],

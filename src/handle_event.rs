@@ -31,8 +31,12 @@ pub fn handle_event(model: &Model, event: Event) -> Option<Message> {
 }
 
 fn handle_key_normal_mode(_model: &Model, key: KeyEvent) -> Option<Message> {
+	if key.modifiers.contains(KeyModifiers::CONTROL) {
+		return None;
+	}
+
 	match key.code {
-		KeyCode::Char(':') => Some(Message::GotoCommandMode),
+		KeyCode::Char(':' | ';' | 'c') => Some(Message::GotoCommandMode),
 		KeyCode::Char('q') => Some(Message::Quit { save: true }),
 		KeyCode::Char('?') => Some(Message::RunCommand("h")),
 		KeyCode::Char('S') => Some(Message::RunCommand("s")),
@@ -42,6 +46,8 @@ fn handle_key_normal_mode(_model: &Model, key: KeyEvent) -> Option<Message> {
 		KeyCode::Char('P') => Some(Message::RunCommand("p+")),
 		KeyCode::Right => Some(Message::RunCommand("gf 5s")),
 		KeyCode::Left => Some(Message::RunCommand("gb 5s")),
+		KeyCode::Up => Some(Message::RunCommand("pv+ 5")),
+		KeyCode::Down => Some(Message::RunCommand("pv- 5")),
 		KeyCode::Char('0') => Some(Message::RunCommand("g")),
 
 		KeyCode::Char('r') => Some(Message::RunCommand("r")),
@@ -57,11 +63,16 @@ fn handle_key_normal_mode(_model: &Model, key: KeyEvent) -> Option<Message> {
 		KeyCode::Char('L') => Some(Message::RunCommand("lg")),
 
 		KeyCode::Char('m') => Some(Message::RunCommand("ml")),
+		KeyCode::Char('M') => Some(Message::StartCommand("ma ")),
 		_ => None,
 	}
 }
 
 fn handle_key_command_mode(_model: &Model, key: KeyEvent) -> Option<Message> {
+	if key.modifiers.contains(KeyModifiers::CONTROL) {
+		return None;
+	}
+
 	match key.code {
 		KeyCode::Char(c) => Some(Message::TypedChar(c)),
 		KeyCode::Backspace => Some(Message::Backspace),

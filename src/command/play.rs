@@ -1,11 +1,12 @@
 //! commands that act on the playing songs
 
 use super::{
+	CommandReturn,
 	error::{
 		CommandError::{VolumeTooHigh, VolumeTooLow},
 		Result,
 	},
-	misc, CommandReturn,
+	misc,
 };
 use crate::data::{config::StartPlayState, context::Context, playlist::Playlist};
 use rand::seq::SliceRandom;
@@ -76,14 +77,28 @@ pub fn set_speed(ctx: &mut Context, speed: &str) -> Result<()> {
 }
 
 pub fn set_volume(ctx: &mut Context, volume: &str) -> Result<()> {
-	let v = volume.parse::<f32>()?;
-	if v < 0. {
-		return Err(VolumeTooLow(v));
+	let v = volume.parse::<f32>()? / 100.;
+	set_volume_pure(ctx, v)
+}
+
+pub fn add_volume(ctx: &mut Context, add: &str) -> Result<()> {
+	let a = add.parse::<f32>()? / 100.;
+	set_volume_pure(ctx, ctx.config.volume + a)
+}
+
+pub fn sub_volume(ctx: &mut Context, sub: &str) -> Result<()> {
+	let s = sub.parse::<f32>()? / 100.;
+	set_volume_pure(ctx, ctx.config.volume - s)
+}
+
+fn set_volume_pure(ctx: &mut Context, volume: f32) -> Result<()> {
+	if volume < 0. {
+		return Err(VolumeTooLow(volume));
 	}
-	if v > 300. {
-		return Err(VolumeTooHigh(v));
+	if volume > 3. {
+		return Err(VolumeTooHigh(volume));
 	}
-	ctx.config.volume = v / 100.;
+	ctx.config.volume = volume;
 	ctx.sink.set_volume(ctx.config.volume);
 	Ok(())
 }
