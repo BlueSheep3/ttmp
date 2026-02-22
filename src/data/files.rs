@@ -1,4 +1,4 @@
-use super::get_savedata_path;
+use super::{error::Result, get_savedata_path};
 use crate::serializer;
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,6 @@ use std::{
 	result,
 	time::Duration,
 };
-use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Files {
@@ -58,9 +57,7 @@ impl DerefMut for Files {
 
 impl Files {
 	pub fn load() -> Result<Self> {
-		let path = get_savedata_path()
-			.ok_or(FilesError::CantFindConfigPath)?
-			.join("files.ron");
+		let path = get_savedata_path()?.join("files.ron");
 		let files_string = fs::read_to_string(path)?;
 		let files = ron::from_str(&files_string).map_err(Box::new)?;
 		Ok(files)
@@ -72,9 +69,7 @@ impl Files {
 		pretty_config.new_line = Cow::Borrowed("\n");
 
 		let files_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
-		let path = get_savedata_path()
-			.ok_or(FilesError::CantFindConfigPath)?
-			.join("files.ron");
+		let path = get_savedata_path()?.join("files.ron");
 		fs::write(path, files_string)?;
 		Ok(())
 	}
@@ -127,14 +122,8 @@ fn get_all_files_in(path: &Path) -> result::Result<Vec<PathBuf>, io::Error> {
 	Ok(files)
 }
 
-fn get_temp_mp4_filepath() -> Result<PathBuf> {
-	Ok(get_savedata_path()
-		.ok_or(FilesError::CantFindConfigPath)?
-		.join("tempmp4.mp3"))
-}
-
 pub fn make_temp_mp4_copy(absolute_path: &Path) -> Result<PathBuf> {
-	let output_path: PathBuf = get_temp_mp4_filepath()?;
+	let output_path = get_savedata_path()?.join("tempmp4.mp3");
 	if output_path.exists() {
 		fs::remove_file(&output_path)?;
 	}
@@ -161,21 +150,4 @@ fn is_music_file(file_name: &str) -> bool {
 	[".mp3", ".wav", ".ogg", ".mp4"]
 		.into_iter()
 		.any(|end| file_name.ends_with(end))
-}
-
-type Result<T> = result::Result<T, FilesError>;
-
-#[derive(Error, Debug)]
-pub enum FilesError {
-	#[error("io error: {0}")]
-	Io(#[from] io::Error),
-
-	// these are wrapped in Box, because SpannedError is 88 bytes and Error is 72 bytes
-	#[error("ron spanned error: {0}")]
-	RonSpanned(#[from] Box<ron::error::SpannedError>),
-	#[error("ron error: {0}")]
-	Ron(#[from] Box<ron::Error>),
-
-	#[error("can't find path for Music Player config")]
-	CantFindConfigPath,
 }

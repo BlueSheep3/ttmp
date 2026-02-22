@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use std::{
 	io::{BufReader, Read},
 	path::PathBuf,
@@ -16,6 +17,7 @@ impl FileReader {
 		file_list.drain(..).collect()
 	}
 
+	#[allow(unused_variables)]
 	pub fn start_receiving(&self, pipe_name: &str) {
 		let pipe_name = pipe_name.to_owned();
 		let file_list = Arc::clone(&self.file_list);

@@ -16,7 +16,7 @@ mod shmem_writer;
 mod update;
 mod view;
 
-use self::data::context::{Context, ContextError};
+use self::data::{context::Context, error::DataError};
 use shmem_reader::FileReader;
 use std::{
 	env,
@@ -165,7 +165,7 @@ fn handle_shared_memory() -> Result<ControlFlow<(), Option<FileReader>>, Box<dyn
 	}
 }
 
-fn maybe_save(ctx: &Context) -> Result<(), ContextError> {
+fn maybe_save(ctx: &Context) -> Result<(), DataError> {
 	if ctx.program_mode.can_save() {
 		ctx.config.save()?;
 		ctx.files.save()?;

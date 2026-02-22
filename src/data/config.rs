@@ -1,9 +1,8 @@
-use super::get_savedata_path;
+use super::{error::Result, get_savedata_path};
 use crate::serializer;
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, collections::HashMap, fs, io, result};
-use thiserror::Error;
+use std::{borrow::Cow, collections::HashMap, fs};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
@@ -70,9 +69,7 @@ impl StartPlayState {
 
 impl Config {
 	pub fn load() -> Result<Self> {
-		let path = get_savedata_path()
-			.ok_or(ConfigError::CantFindConfigPath)?
-			.join("config.ron");
+		let path = get_savedata_path()?.join("config.ron");
 		let config_string = fs::read_to_string(path)?;
 		let config = ron::from_str(&config_string).map_err(Box::new)?;
 		Ok(config)
@@ -84,27 +81,8 @@ impl Config {
 		pretty_config.new_line = Cow::Borrowed("\n");
 
 		let config_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
-		let path = get_savedata_path()
-			.ok_or(ConfigError::CantFindConfigPath)?
-			.join("config.ron");
+		let path = get_savedata_path()?.join("config.ron");
 		fs::write(path, config_string)?;
 		Ok(())
 	}
-}
-
-type Result<T> = result::Result<T, ConfigError>;
-
-#[derive(Error, Debug)]
-pub enum ConfigError {
-	#[error("io error: {0}")]
-	Io(#[from] io::Error),
-
-	// these are wrapped in Box, because SpannedError is 88 bytes and Error is 72 bytes
-	#[error("ron spanned error: {0}")]
-	RonSpanned(#[from] Box<ron::error::SpannedError>),
-	#[error("ron error: {0}")]
-	Ron(#[from] Box<ron::Error>),
-
-	#[error("can't find path for Music Player config")]
-	CantFindConfigPath,
 }

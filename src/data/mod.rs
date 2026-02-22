@@ -3,11 +3,12 @@ pub mod context;
 pub mod files;
 pub mod playlist;
 
+use self::error::{DataError, Result};
 use crate::data::{config::Config, files::Files, playlist::Playlist};
-use std::{error::Error, fs, path::PathBuf};
+use std::{fs, path::PathBuf};
 
-pub fn create_default_savedata_if_not_present() -> Result<(), Box<dyn Error>> {
-	let path = get_savedata_path().ok_or("cant find savedata path")?;
+pub fn create_default_savedata_if_not_present() -> Result<()> {
+	let path = get_savedata_path()?;
 
 	if fs::exists(&path)? {
 		// already has the savedata, so we do nothing
@@ -59,8 +60,35 @@ fn readln() -> String {
 	input
 }
 
-fn get_savedata_path() -> Option<PathBuf> {
-	let config = dirs::config_dir()?;
+fn get_savedata_path() -> Result<PathBuf> {
+	let config = dirs::config_dir().ok_or(DataError::CantFindSavedataPath)?;
 	let path = config.join("musicplayer");
-	Some(path)
+	Ok(path)
+}
+
+pub mod error {
+	use rodio::StreamError;
+	use std::{io, result};
+	use thiserror::Error;
+
+	pub type Result<T> = result::Result<T, DataError>;
+
+	#[derive(Error, Debug)]
+	pub enum DataError {
+		#[error("io error: {0}")]
+		Io(#[from] io::Error),
+		#[error("{0}")]
+		Stream(#[from] StreamError),
+
+		// these are wrapped in Box, because SpannedError is 88 bytes and Error is 72 bytes
+		#[error("ron spanned error: {0}")]
+		RonSpanned(#[from] Box<ron::error::SpannedError>),
+		#[error("ron error: {0}")]
+		Ron(#[from] Box<ron::Error>),
+
+		#[error("the file name {0:?} is not valid utf8")]
+		FileNotUtf8Name(std::ffi::OsString),
+		#[error("can't find savedata path")]
+		CantFindSavedataPath,
+	}
 }

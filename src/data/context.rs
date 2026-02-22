@@ -1,11 +1,11 @@
 use super::{
-	config::{Config, ConfigError, StartPlayState},
-	files::{FileData, Files, FilesError},
-	playlist::{Playlist, PlaylistError},
+	config::{Config, StartPlayState},
+	error::Result,
+	files::{FileData, Files},
+	playlist::Playlist,
 };
-use rodio::{OutputStream, OutputStreamBuilder, PlayError, Sink, StreamError};
-use std::{env::ArgsOs, ffi::OsString, result, time::Duration};
-use thiserror::Error;
+use rodio::{OutputStream, OutputStreamBuilder, Sink};
+use std::{env::ArgsOs, ffi::OsString, time::Duration};
 
 pub struct Context {
 	pub program_mode: ProgramMode,
@@ -122,20 +122,4 @@ impl Context {
 		let song = self.files.get(first)?;
 		song.duration
 	}
-}
-
-type Result<T> = result::Result<T, ContextError>;
-
-#[derive(Error, Debug)]
-pub enum ContextError {
-	#[error("{0}")]
-	Config(#[from] ConfigError),
-	#[error("{0}")]
-	Files(#[from] FilesError),
-	#[error("{0}")]
-	Playlist(#[from] PlaylistError),
-	#[error("{0}")]
-	Stream(#[from] StreamError),
-	#[error("{0}")]
-	Play(#[from] PlayError),
 }
