@@ -61,7 +61,7 @@ fn readln() -> String {
 }
 
 fn get_savedata_path() -> Result<PathBuf> {
-	let config = dirs::config_dir().ok_or(DataError::CantFindSavedataPath)?;
+	let config = dirs::data_dir().ok_or(DataError::CantFindSavedataPath)?;
 	let path = config.join("musicplayer");
 	Ok(path)
 }
