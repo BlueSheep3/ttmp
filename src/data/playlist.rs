@@ -14,6 +14,9 @@ pub struct Playlist {
 	pub progress: Duration,
 	/// the remaining songs in order (current song included)
 	pub remaining: Vec<PathBuf>,
+	/// the songs you have already listened to in order
+	#[serde(default)]
+	pub previous: Vec<PathBuf>,
 }
 
 impl Playlist {
@@ -54,5 +57,15 @@ impl Playlist {
 			names.push(base.to_owned());
 		}
 		Ok(names)
+	}
+
+	pub fn next_song(&mut self) {
+		let removed = self.remaining.remove(0);
+		self.previous.push(removed);
+	}
+
+	pub fn previous_song(&mut self) {
+		let removed = self.previous.pop().unwrap();
+		self.remaining.insert(0, removed);
 	}
 }

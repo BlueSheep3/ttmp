@@ -45,7 +45,7 @@ pub fn pause_playing(ctx: &mut Context) {
 
 pub fn next_song(ctx: &mut Context) -> CommandReturn {
 	if !ctx.playlist.remaining.is_empty() {
-		ctx.playlist.remaining.remove(0);
+		ctx.playlist.next_song();
 		misc::load_in_first_song(ctx)
 	} else {
 		CommandReturn::Nothing
@@ -59,7 +59,34 @@ pub fn skip_songs(ctx: &mut Context, count: &str) -> Result<CommandReturn> {
 	if count == 0 {
 		return Ok(CommandReturn::Nothing);
 	}
-	ctx.playlist.remaining.drain(..count);
+	let removed = ctx.playlist.remaining.drain(..count);
+	ctx.playlist.previous.extend(removed);
+	Ok(misc::load_in_first_song(ctx))
+}
+
+pub fn previous_song(ctx: &mut Context) -> CommandReturn {
+	if !ctx.playlist.previous.is_empty() {
+		ctx.playlist.previous_song();
+		misc::load_in_first_song(ctx)
+	} else {
+		CommandReturn::Nothing
+	}
+}
+
+pub fn go_back_songs(ctx: &mut Context, count: &str) -> Result<CommandReturn> {
+	let count = count.parse::<usize>()?;
+	let len = ctx.playlist.previous.len();
+	let count = count.min(len);
+	if count == 0 {
+		return Ok(CommandReturn::Nothing);
+	}
+	let removed = ctx
+		.playlist
+		.previous
+		.drain((ctx.playlist.previous.len() - count)..);
+	let mut remaining = removed.collect::<Vec<_>>();
+	remaining.append(&mut ctx.playlist.remaining);
+	ctx.playlist.remaining = remaining;
 	Ok(misc::load_in_first_song(ctx))
 }
 

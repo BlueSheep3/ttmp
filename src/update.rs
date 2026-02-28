@@ -56,7 +56,6 @@ pub fn update(mut model: Model, message: Message) -> Result<(Model, Option<Messa
 	if !model.ctx.sink.is_paused() {
 		model.ctx.playlist.progress += model.last_update_time.elapsed();
 	}
-	maybe_goto_next_song(&mut model, &mut update_temp);
 	model.last_update_time = Instant::now();
 
 	let msg = match () {
@@ -72,6 +71,9 @@ pub fn update(mut model: Model, message: Message) -> Result<(Model, Option<Messa
 		}
 		() => None,
 	};
+
+	maybe_goto_next_song(&mut model, &mut update_temp);
+
 	Ok((model, msg))
 }
 
@@ -188,7 +190,7 @@ fn maybe_goto_next_song(model: &mut Model, update_temp: &mut UpdateTemp) {
 
 	let first = ctx.playlist.remaining[0].clone();
 	try_update_song_duration(ctx, &first);
-	ctx.playlist.remaining.remove(0);
+	ctx.playlist.next_song();
 	handle_command_return(
 		run_macro_or(ctx, "@song_end", &[], ""),
 		&mut ctx.cmd_out,
@@ -268,7 +270,7 @@ fn load_first_song(ctx: &mut Context) {
 				Ok(p) => path = p,
 				Err(_) => {
 					println!("Failed to convert song to mp3: {}", first.display());
-					ctx.playlist.remaining.remove(0);
+					ctx.playlist.next_song();
 					continue;
 				}
 			}
@@ -277,7 +279,7 @@ fn load_first_song(ctx: &mut Context) {
 			Ok(file) => break (file, first),
 			Err(_) => {
 				println!("Failed to load song: {}", first.display());
-				ctx.playlist.remaining.remove(0);
+				ctx.playlist.next_song();
 				continue;
 			}
 		};

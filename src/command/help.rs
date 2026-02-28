@@ -95,6 +95,7 @@ down         - decrease volume by 5%
 
 r            - Reset the Playlist (put all files in it)
 j            - go to the next song
+k            - go to the previous song
 
 f TAGS       - Keeps all Files that match any of TAGS
 F TAGS       - Keeps all Files that match all of TAGS
@@ -117,6 +118,7 @@ p+        - play
 p-        - pause
 pr        - randomize / shuffle playlist
 pn NUM    - skips NUM songs
+pp NUM    - goes back NUM songs
 pm NUM    - set the maximum number of files to be played
 ps SPEED  - set the playback speed to SPEED
 pv VOLUME - set the playback volume to VOLUME

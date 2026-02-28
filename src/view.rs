@@ -75,24 +75,28 @@ fn playlist_window(model: &Model, frame: &mut Frame, area: Rect) {
 	let top_area = top_block.inner(layout[0]);
 	frame.render_widget(top_block, layout[0]);
 	let top_line = Line::from(format!(
-		" {}list: {}      remaining: {}",
+		" {}list: {}      remaining: {}      previous: {}",
 		temp_mode_marker,
 		model.ctx.config.current_playlist,
-		model.ctx.playlist.remaining.len()
+		model.ctx.playlist.remaining.len(),
+		model.ctx.playlist.previous.len(),
 	));
 	frame.render_widget(top_line, top_area);
 
-	let lines = model
-		.ctx
-		.playlist
-		.remaining
+	let playlist = &model.ctx.playlist;
+	let prev_lines_count =
+		((layout[1].height / 4).min(9) as usize).min(playlist.previous.len()) as i32;
+	let rem_lines_count = layout[1].height as i32 - prev_lines_count;
+	let prev = playlist
+		.previous
 		.iter()
-		.take(layout[1].height as usize)
+		.skip(playlist.previous.len() - prev_lines_count as usize);
+	let rem = playlist.remaining.iter().take(rem_lines_count as usize);
+	let lines = prev
+		.chain(rem)
 		.enumerate()
 		.map(|(i, file)| {
-			if i == layout[1].height as usize - 1 {
-				return Line::from("   ...");
-			}
+			let i = i as i32 - prev_lines_count;
 			let song_name = file
 				.file_name()
 				.expect("Failed to get file name from the path.")

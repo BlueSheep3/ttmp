@@ -49,6 +49,8 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["pr"] => return Ok(play::randomize(ctx)),
 		["pn"] => return Ok(play::next_song(ctx)),
 		["pn", num] => return play::skip_songs(ctx, num),
+		["pp"] => return Ok(play::previous_song(ctx)),
+		["pp", num] => return play::go_back_songs(ctx, num),
 		["pm", max] => play::enforce_max(&mut ctx.playlist, max)?,
 		["ps", speed] => play::set_speed(ctx, speed)?,
 		["pv", volume] => play::set_volume(ctx, volume)?,

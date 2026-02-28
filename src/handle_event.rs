@@ -52,6 +52,7 @@ fn handle_key_normal_mode(_model: &Model, key: KeyEvent) -> Option<Message> {
 
 		KeyCode::Char('r') => Some(Message::RunCommand("r")),
 		KeyCode::Char('j') => Some(Message::RunCommand("pn")),
+		KeyCode::Char('k') => Some(Message::RunCommand("pp")),
 
 		KeyCode::Char('f') => Some(Message::StartCommand("fte ")),
 		KeyCode::Char('F') => Some(Message::StartCommand("fta ")),

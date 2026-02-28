@@ -10,6 +10,7 @@ use crate::data::{context::Context, playlist::Playlist};
 use std::time::Duration;
 
 pub fn reset_remaining(ctx: &mut Context) -> CommandReturn {
+	ctx.playlist.previous.clear();
 	ctx.playlist.remaining = ctx.files.keys().cloned().collect();
 	if ctx.config.start_play_state.should_play() {
 		play::start_playing(ctx)
