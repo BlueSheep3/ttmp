@@ -4,6 +4,7 @@
 #![warn(clippy::infinite_loop)]
 #![warn(clippy::use_self)]
 
+mod cli;
 mod command;
 mod data;
 mod duration;
@@ -35,14 +36,6 @@ fn main() -> ExitCode {
 		Ok(()) => ExitCode::SUCCESS,
 		Err(e) => {
 			eprintln!("{e}");
-
-			// if this is not a terminal, then this window will instantly close after
-			// the main function, so we wait for input to allow you to read the error.
-			// TODO figure out a way to not read_line when `is_terminal`
-			if let Err(e) = std::io::stdin().read_line(&mut String::new()) {
-				eprintln!("\nFailed to read line: {e}");
-			}
-
 			ExitCode::FAILURE
 		}
 	}
@@ -50,16 +43,27 @@ fn main() -> ExitCode {
 
 // will always restore the regular screen before returning.
 fn fallible_main() -> Result<(), Box<dyn Error>> {
-	data::create_default_savedata_if_not_present()?;
+	let cli_args = cli::parse_command_line_args()?;
 
-	let server = match handle_shared_memory()? {
-		ControlFlow::Continue(s) => s,
-		ControlFlow::Break(()) => return Ok(()),
+	data::create_default_savedata_if_not_present(&cli_args.savedata_path)?;
+
+	let server = if cli_args.disable_ipc {
+		None
+	} else {
+		match handle_shared_memory()? {
+			ControlFlow::Continue(s) => s,
+			ControlFlow::Break(()) => return Ok(()),
+		}
 	};
 
 	let (sender, receiver) = mpsc::channel();
 	let _pause_thread = thread::spawn(move || pause_thread::main(sender));
-	let ctx = Context::new_automatic(env::args_os())?;
+	let ctx = match cli_args.program_mode {
+		data::context::ProgramMode::Main => Context::new_main(&cli_args.savedata_path)?,
+		data::context::ProgramMode::Temp => {
+			Context::new_temp(&cli_args.files, &cli_args.savedata_path)?
+		}
+	};
 
 	let mut terminal = ratatui::try_init()?;
 	let mut model = Model::new(ctx, receiver, server);
@@ -167,9 +171,10 @@ fn handle_shared_memory() -> Result<ControlFlow<(), Option<FileReader>>, Box<dyn
 
 fn maybe_save(ctx: &Context) -> Result<(), DataError> {
 	if ctx.program_mode.can_save() {
-		ctx.config.save()?;
-		ctx.files.save()?;
-		ctx.playlist.save(&ctx.config.current_playlist)?;
+		ctx.config.save(&ctx.savedata_path)?;
+		ctx.files.save(&ctx.savedata_path)?;
+		ctx.playlist
+			.save(&ctx.config.current_playlist, &ctx.savedata_path)?;
 	}
 	Ok(())
 }

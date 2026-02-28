@@ -3,19 +3,21 @@ pub mod context;
 pub mod files;
 pub mod playlist;
 
-use self::error::{DataError, Result};
+use self::error::Result;
 use crate::data::{config::Config, files::Files, playlist::Playlist};
-use std::{fs, path::PathBuf};
+use std::{
+	fs,
+	path::{Path, PathBuf},
+};
 
-pub fn create_default_savedata_if_not_present() -> Result<()> {
-	let path = get_savedata_path()?;
-
-	if fs::exists(&path)? {
+pub fn create_default_savedata_if_not_present(savedata_path: &Path) -> Result<()> {
+	if fs::exists(savedata_path)? {
 		// already has the savedata, so we do nothing
 		return Ok(());
 	}
+	println!("No savedata found, creating new default savedata...");
 
-	fs::create_dir_all(path.join("list"))?;
+	fs::create_dir_all(savedata_path.join("list"))?;
 
 	let music = match dirs::audio_dir() {
 		Some(m) => m,
@@ -38,9 +40,9 @@ Give the path of the folder that contains all your Music.\
 		}
 	};
 
-	Config::default().save()?;
-	Files::empty_with_root(music).save()?;
-	Playlist::default().save("main")?;
+	Config::default().save(savedata_path)?;
+	Files::empty_with_root(music).save(savedata_path)?;
+	Playlist::default().save("main", savedata_path)?;
 	Ok(())
 }
 
@@ -60,12 +62,6 @@ fn readln() -> String {
 	input
 }
 
-fn get_savedata_path() -> Result<PathBuf> {
-	let config = dirs::data_dir().ok_or(DataError::CantFindSavedataPath)?;
-	let path = config.join("musicplayer");
-	Ok(path)
-}
-
 pub mod error {
 	use rodio::StreamError;
 	use std::{io, result};
@@ -77,7 +73,7 @@ pub mod error {
 	pub enum DataError {
 		#[error("io error: {0}")]
 		Io(#[from] io::Error),
-		#[error("{0}")]
+		#[error("stream error: {0}")]
 		Stream(#[from] StreamError),
 
 		// these are wrapped in Box, because SpannedError is 88 bytes and Error is 72 bytes
@@ -88,7 +84,5 @@ pub mod error {
 
 		#[error("the file name {0:?} is not valid utf8")]
 		FileNotUtf8Name(std::ffi::OsString),
-		#[error("can't find savedata path")]
-		CantFindSavedataPath,
 	}
 }

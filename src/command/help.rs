@@ -5,18 +5,20 @@ use super::error::{CommandError::NoHelpAvailable, Result};
 
 pub fn general(cmd_out: &mut String) {
 	*cmd_out += "\
-h <category>  - show help for a category of commands
+h CATEGORY - show help for a category of commands
 
 Misc Commands:
 help, h, ? - Show this help
-q          - Quit the Program
+q          - Save and Quit the Program
+q!         - Quit the Program without saving
 s          - Save the Config
 r          - Reset the Playlist (put all files in it)
 redraw     - Toggle whether screen redraws should happen
 echo TEXT  - print out TEXT
 
 Categories of Subcommands:
-n, normal  - commands you can run without pressing ':'
+first      - help for someone using this program for the first time
+n, normal  - all commands in normal mode
 p, play    - modify playing songs
 l, list    - modify differnt playlists
 f, filter  - filter the remaining songs
@@ -30,6 +32,7 @@ d, dir     - commands concerning the file system
 
 pub fn specific(command: &str, cmd_out: &mut String) -> Result<()> {
 	match command {
+		"first" => first(cmd_out),
 		"n" | "normal" => normal(cmd_out),
 		"p" | "play" => play(cmd_out),
 		"l" | "list" => list(cmd_out),
@@ -44,9 +47,66 @@ pub fn specific(command: &str, cmd_out: &mut String) -> Result<()> {
 	Ok(())
 }
 
+fn first(cmd_out: &mut String) {
+	*cmd_out += "\
+The standard mode of this program is NORMAL MODE.
+Here, pressing a key will instantly run that command.
+You can also press ':' or 'c' to enter COMMAND MODE.
+There, you can enter longer commands and then hit <enter> to execute that command.
+Try typing ':help<enter>' to get a more general help page.
+Some normal mode commands will also automatically enter command mode.
+
+You may be wondering why you are not seeing any songs in your playlist.
+This program does not automatically insert songs into its file list.
+You must type in ':dr<enter>' add all your songs to the file list
+(it also removes any songs that were in the list, but are no longer in your music folder).
+Then, press 'r' to add all songs in the file list to the current playlist.
+
+You can change the path to your music folder in the config, which is located at
+ Linux :  ~/.local/share/musicplayer/config.ron
+ MacOS :  /Users/USER/Library/Application Support/musicplayer/config.ron
+Windows:  C:\\Users\\USER\\AppData\\Roaming\\musicplayer\\config.ron
+
+The main way to organize songs here is to filter by tags.
+You can add a new tag to the current song by pressing 't'.
+You can then filter for all current songs with that tag by pressing 'f'.
+So if you want to have all songs with the tag TAG
+(including ones that are not in the current playlist),
+you first press 'r' to get all songs and then
+'f TAG<enter>' to filter out only the ones tagged TAG.
+";
+}
+
 fn normal(cmd_out: &mut String) {
 	*cmd_out += "\
-TODO
+:, ;, c      - enter command mode
+?            - open this help page
+q            - save and quit
+S            - save
+
+space        - pause/play
+p            - pause
+P            - play
+right        - go forward 5 seconds
+left         - go backwards 5 seconds
+up           - increase volume by 5%
+down         - decrease volume by 5%
+0            - go to the start of the current song
+
+r            - Reset the Playlist (put all files in it)
+j            - go to the next song
+
+f TAGS       - Keeps all Files that match any of TAGS
+F TAGS       - Keeps all Files that match all of TAGS
+s SEARCH     - Keeps all Files whose file name contains SEARCH
+t TAG        - add TAG to the current File
+T TAG        - remove TAG from the current File
+
+l NAME       - switch to the list NAME
+L            - get the names of all playlists
+
+m            - lists all Macros
+M NAME DEF   - add a Macro with NAME that runs DEF
 ";
 }
 

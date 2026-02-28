@@ -264,7 +264,7 @@ fn load_first_song(ctx: &mut Context) {
 			ctx.files.root.join(&first)
 		};
 		if is_mp4_file(&path.to_string_lossy()) {
-			match make_temp_mp4_copy(&path) {
+			match make_temp_mp4_copy(&path, &ctx.savedata_path) {
 				Ok(p) => path = p,
 				Err(_) => {
 					println!("Failed to convert song to mp3: {}", first.display());

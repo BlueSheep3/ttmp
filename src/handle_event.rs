@@ -37,8 +37,8 @@ fn handle_key_normal_mode(_model: &Model, key: KeyEvent) -> Option<Message> {
 
 	match key.code {
 		KeyCode::Char(':' | ';' | 'c') => Some(Message::GotoCommandMode),
+		KeyCode::Char('?') => Some(Message::RunCommand("help first")),
 		KeyCode::Char('q') => Some(Message::Quit { save: true }),
-		KeyCode::Char('?') => Some(Message::RunCommand("h")),
 		KeyCode::Char('S') => Some(Message::RunCommand("s")),
 
 		KeyCode::Char(' ') => Some(Message::RunCommand("p")),

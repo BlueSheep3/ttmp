@@ -1,4 +1,4 @@
-use super::{error::Result, get_savedata_path};
+use super::error::Result;
 use crate::serializer;
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
@@ -56,20 +56,20 @@ impl DerefMut for Files {
 }
 
 impl Files {
-	pub fn load() -> Result<Self> {
-		let path = get_savedata_path()?.join("files.ron");
+	pub fn load(savedata_path: &Path) -> Result<Self> {
+		let path = savedata_path.join("files.ron");
 		let files_string = fs::read_to_string(path)?;
 		let files = ron::from_str(&files_string).map_err(Box::new)?;
 		Ok(files)
 	}
 
-	pub fn save(&self) -> Result<()> {
+	pub fn save(&self, savedata_path: &Path) -> Result<()> {
 		let mut pretty_config = PrettyConfig::new();
 		pretty_config.indentor = Cow::Borrowed("\t");
 		pretty_config.new_line = Cow::Borrowed("\n");
 
 		let files_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
-		let path = get_savedata_path()?.join("files.ron");
+		let path = savedata_path.join("files.ron");
 		fs::write(path, files_string)?;
 		Ok(())
 	}
@@ -122,15 +122,15 @@ fn get_all_files_in(path: &Path) -> result::Result<Vec<PathBuf>, io::Error> {
 	Ok(files)
 }
 
-pub fn make_temp_mp4_copy(absolute_path: &Path) -> Result<PathBuf> {
-	let output_path = get_savedata_path()?.join("tempmp4.mp3");
+pub fn make_temp_mp4_copy(absolute_song_path: &Path, savedata_path: &Path) -> Result<PathBuf> {
+	let output_path = savedata_path.join("tempmp4.mp3");
 	if output_path.exists() {
 		fs::remove_file(&output_path)?;
 	}
 	Command::new("ffmpeg")
 		.args([
 			OsStr::new("-i"),
-			absolute_path.as_ref(),
+			absolute_song_path.as_ref(),
 			"-vn".as_ref(),
 			"-acodec".as_ref(),
 			"libmp3lame".as_ref(),

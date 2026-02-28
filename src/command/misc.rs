@@ -33,9 +33,10 @@ pub fn repeat_song(list: &mut Playlist, amount: &str) -> Result<()> {
 
 pub fn save(ctx: &mut Context) -> Result<()> {
 	if ctx.program_mode.can_save() {
-		ctx.config.save()?;
-		ctx.files.save()?;
-		ctx.playlist.save(&ctx.config.current_playlist)?;
+		ctx.config.save(&ctx.savedata_path)?;
+		ctx.files.save(&ctx.savedata_path)?;
+		ctx.playlist
+			.save(&ctx.config.current_playlist, &ctx.savedata_path)?;
 		Ok(())
 	} else {
 		Err(SaveInWrongMode)

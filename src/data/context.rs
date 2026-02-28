@@ -5,7 +5,10 @@ use super::{
 	playlist::Playlist,
 };
 use rodio::{OutputStream, OutputStreamBuilder, Sink};
-use std::{env::ArgsOs, ffi::OsString, time::Duration};
+use std::{
+	path::{Path, PathBuf},
+	time::Duration,
+};
 
 pub struct Context {
 	pub program_mode: ProgramMode,
@@ -14,6 +17,7 @@ pub struct Context {
 	pub files: Files,
 	pub playlist: Playlist,
 	pub sink: Sink,
+	pub savedata_path: PathBuf,
 
 	// these are just here, so the music doesnt stop, due to them being dropped
 	_stream_handle: OutputStream,
@@ -38,23 +42,11 @@ impl ProgramMode {
 }
 
 impl Context {
-	/// autoamitcally figures out which mode to initialize the context in
-	pub fn new_automatic(args: ArgsOs) -> Result<Self> {
-		let args = args.collect::<Vec<OsString>>();
-		if let [_, files @ ..] = args.as_slice()
-			&& !files.is_empty()
-		{
-			Self::new_temp(files)
-		} else {
-			Self::new_main()
-		}
-	}
-
-	pub fn new_main() -> Result<Self> {
+	pub fn new_main(savedata_path: &Path) -> Result<Self> {
 		let program_mode = ProgramMode::Main;
-		let config = Config::load()?;
-		let files = Files::load()?;
-		let playlist = Playlist::load(&config.current_playlist)?;
+		let config = Config::load(savedata_path)?;
+		let files = Files::load(savedata_path)?;
+		let playlist = Playlist::load(&config.current_playlist, savedata_path)?;
 		let mut stream_handle = OutputStreamBuilder::open_default_stream()?;
 		stream_handle.log_on_drop(false);
 		let sink = Sink::connect_new(stream_handle.mixer());
@@ -66,16 +58,17 @@ impl Context {
 			files,
 			playlist,
 			sink,
+			savedata_path: savedata_path.to_owned(),
 			_stream_handle: stream_handle,
 		};
 		ctx.init_sink();
 		Ok(ctx)
 	}
 
-	pub fn new_temp(file_paths: &[OsString]) -> Result<Self> {
+	pub fn new_temp(file_paths: &[PathBuf], savedata_path: &Path) -> Result<Self> {
 		let program_mode = ProgramMode::Temp;
-		let mut config = Config::load()?;
-		let mut files = Files::load()?;
+		let mut config = Config::load(savedata_path)?;
+		let mut files = Files::load(savedata_path)?;
 		let mut playlist = Playlist::default();
 		let mut stream_handle = OutputStreamBuilder::open_default_stream()?;
 		stream_handle.log_on_drop(false);
@@ -85,9 +78,9 @@ impl Context {
 		config.current_playlist = "temp".to_owned();
 		files.mappings = file_paths
 			.iter()
-			.map(|f| (f.into(), FileData::default()))
+			.map(|f| (f.clone(), FileData::default()))
 			.collect();
-		playlist.remaining = file_paths.iter().map(From::from).collect();
+		playlist.remaining = file_paths.to_vec();
 		playlist.progress = Duration::ZERO;
 
 		let ctx = Self {
@@ -97,6 +90,7 @@ impl Context {
 			files,
 			playlist,
 			sink,
+			savedata_path: savedata_path.to_owned(),
 			_stream_handle: stream_handle,
 		};
 		ctx.init_sink();

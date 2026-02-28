@@ -15,7 +15,7 @@ use crate::data::{context::Context, playlist::Playlist};
 
 pub fn get_list_names(ctx: &mut Context) -> Result<()> {
 	ctx.cmd_out += "All Playlist Names:\n";
-	for name in Playlist::get_all_names()? {
+	for name in Playlist::get_all_names(&ctx.savedata_path)? {
 		let first_char = if name == ctx.config.current_playlist {
 			'>'
 		} else {
@@ -48,7 +48,7 @@ pub fn new_empty(ctx: &Context, name: &str) -> Result<()> {
 		return Err(SaveOverCurrentPlaylist);
 	}
 	let list = Playlist::default();
-	list.save(&name)?;
+	list.save(&name, &ctx.savedata_path)?;
 	Ok(())
 }
 
@@ -57,7 +57,7 @@ pub fn duplicate_to(ctx: &Context, name: &str) -> Result<()> {
 	if name == ctx.config.current_playlist {
 		return Err(SaveOverCurrentPlaylist);
 	}
-	ctx.playlist.save(&name)?;
+	ctx.playlist.save(&name, &ctx.savedata_path)?;
 	Ok(())
 }
 
@@ -68,7 +68,7 @@ pub fn append_from(ctx: &mut Context, name: &str) -> Result<CommandReturn> {
 	let songs = if name == ctx.config.current_playlist {
 		ctx.playlist.remaining.clone()
 	} else {
-		Playlist::load(&name)?.remaining
+		Playlist::load(&name, &ctx.savedata_path)?.remaining
 	};
 	let was_empty = ctx.playlist.remaining.is_empty();
 	ctx.playlist.remaining.extend_from_slice(&songs);
@@ -87,7 +87,7 @@ pub fn copy_from(ctx: &mut Context, name: &str) -> Result<CommandReturn> {
 	if name == ctx.config.current_playlist {
 		return Ok(CommandReturn::Nothing);
 	}
-	ctx.playlist = Playlist::load(&name)?;
+	ctx.playlist = Playlist::load(&name, &ctx.savedata_path)?;
 	Ok(CommandReturn::ReloadFirstSong)
 }
 
@@ -96,16 +96,17 @@ pub fn remove(ctx: &Context, name: &str) -> Result<()> {
 	if name == ctx.config.current_playlist {
 		return Err(DeleteCurrentPlaylist);
 	}
-	Playlist::remove(&name)?;
+	Playlist::remove(&name, &ctx.savedata_path)?;
 	Ok(())
 }
 
 pub fn switch_to(ctx: &mut Context, name: &str) -> Result<CommandReturn> {
 	let name = force_str_format(name)?;
 	if ctx.program_mode.can_save() {
-		ctx.playlist.save(&ctx.config.current_playlist)?;
+		ctx.playlist
+			.save(&ctx.config.current_playlist, &ctx.savedata_path)?;
 	}
-	ctx.playlist = Playlist::load(&name)?;
+	ctx.playlist = Playlist::load(&name, &ctx.savedata_path)?;
 	ctx.config.current_playlist = name;
 	Ok(CommandReturn::ReloadFirstSong)
 }
