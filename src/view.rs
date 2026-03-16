@@ -161,16 +161,28 @@ fn song_data(model: &Model, frame: &mut Frame, area: Rect) {
 		display_duration(model.ctx.playlist.progress)
 	};
 
-	// FIXME displays the tags of the last song when there is no current song
-	let tags_str = model
-		.ctx
-		.files
-		.get(&model.current_song)
-		.map_or(String::new(), |f| {
-			let mut tags = f.tags.iter().cloned().collect::<Vec<_>>();
-			tags.sort();
-			tags.join(", ")
-		});
+	let song_name;
+	let tags_str;
+	if let Some(current_song) = model.ctx.playlist.remaining.front() {
+		song_name = current_song
+			.file_name()
+			.expect("Failed to get file name from the path.")
+			.to_string_lossy()
+			.to_string();
+
+		tags_str = model
+			.ctx
+			.files
+			.get(current_song)
+			.map_or(String::new(), |f| {
+				let mut tags = f.tags.iter().cloned().collect::<Vec<_>>();
+				tags.sort();
+				tags.join(", ")
+			});
+	} else {
+		song_name = "[No Songs Remaining]".to_owned();
+		tags_str = String::new();
+	}
 
 	let volume = (100. * model.ctx.config.volume).round();
 	let speed = (100. * model.ctx.config.speed).round() / 100.;
@@ -178,7 +190,7 @@ fn song_data(model: &Model, frame: &mut Frame, area: Rect) {
 	frame.render_widget(text, layout[0]);
 	frame.render_widget(
 		Paragraph::new(vec![
-			Line::raw(&model.current_song_name),
+			Line::raw(song_name),
 			Line::raw(format!(
 				"volume: {volume}%   speed: x{speed}   tags: {tags_str}"
 			)),

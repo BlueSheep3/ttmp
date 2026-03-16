@@ -11,7 +11,7 @@ use std::{
 	error::Error,
 	fs::File,
 	io::BufReader,
-	path::{Path, PathBuf},
+	path::Path,
 	time::{Duration, Instant},
 };
 
@@ -19,14 +19,10 @@ type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 pub fn init(model: &mut Model) {
 	if model.ctx.playlist.remaining.is_empty() {
-		remaining_songs_ended(&mut model.ctx, &mut model.current_song_name);
+		remaining_songs_ended(&mut model.ctx);
 	}
 	if !model.ctx.playlist.remaining.is_empty() {
-		load_first_song_and_set_name(
-			&mut model.ctx,
-			&mut model.current_song_name,
-			&mut model.current_song,
-		);
+		load_first_song(&mut model.ctx);
 	}
 }
 
@@ -62,11 +58,7 @@ pub fn update(mut model: Model, message: Message) -> Result<(Model, Option<Messa
 		() if update_temp.quit => Some(Message::Quit { save: true }),
 		() if update_temp.quit_no_save => Some(Message::Quit { save: false }),
 		() if update_temp.reload_first_song => {
-			load_first_song_and_set_name(
-				&mut model.ctx,
-				&mut model.current_song_name,
-				&mut model.current_song,
-			);
+			load_first_song(&mut model.ctx);
 			Some(Message::DoUpdateAgain)
 		}
 		() => None,
@@ -146,7 +138,7 @@ fn run_command(model: &mut Model, update_temp: &mut UpdateTemp, cmd: &str) -> Re
 	}
 
 	if was_not_empty && model.ctx.playlist.remaining.is_empty() {
-		remaining_songs_ended(&mut model.ctx, &mut model.current_song_name);
+		remaining_songs_ended(&mut model.ctx);
 		handle_command_return(
 			run_macro_or(&mut model.ctx, "@list_end", &[], ""),
 			&mut model.ctx.cmd_out,
@@ -174,11 +166,7 @@ fn receive_files_over_ipc(model: &mut Model) {
 		model.ctx.files.mappings.insert(path, FileData::default());
 	}
 	model.ctx.playlist.progress = Duration::ZERO;
-	load_first_song_and_set_name(
-		&mut model.ctx,
-		&mut model.current_song_name,
-		&mut model.current_song,
-	);
+	load_first_song(&mut model.ctx);
 	model.ctx.sink.play();
 }
 
@@ -199,7 +187,7 @@ fn maybe_goto_next_song(model: &mut Model, update_temp: &mut UpdateTemp) {
 
 	ctx.playlist.progress = Duration::ZERO;
 	if ctx.playlist.remaining.is_empty() {
-		remaining_songs_ended(ctx, &mut model.current_song_name);
+		remaining_songs_ended(ctx);
 		handle_command_return(
 			run_macro_or(ctx, "@list_end", &[], ""),
 			&mut ctx.cmd_out,
@@ -207,7 +195,7 @@ fn maybe_goto_next_song(model: &mut Model, update_temp: &mut UpdateTemp) {
 		);
 	}
 	if !ctx.playlist.remaining.is_empty() {
-		load_first_song_and_set_name(ctx, &mut model.current_song_name, &mut model.current_song);
+		load_first_song(ctx);
 		handle_command_return(
 			run_macro_or(ctx, "@song_start", &[], ""),
 			&mut ctx.cmd_out,
@@ -232,29 +220,13 @@ fn handle_command_return(
 
 // TODO handle errors of the following functions better
 
-fn load_first_song_and_set_name(ctx: &mut Context, song_name: &mut String, song: &mut PathBuf) {
-	load_first_song(ctx);
-
-	let Some(first) = ctx.playlist.remaining.front().cloned() else {
-		// cant call @list_end event here, since we are not in the main loop
-		remaining_songs_ended(ctx, song_name);
-		return;
-	};
-
-	*song = first.clone();
-
-	*song_name = first
-		.file_name()
-		.expect("Failed to get file name from the path.")
-		.to_string_lossy()
-		.to_string();
-}
-
 fn load_first_song(ctx: &mut Context) {
 	ctx.sink.stop();
 
 	let (file, first) = loop {
 		let Some(first) = ctx.playlist.remaining.front().cloned() else {
+			// cant call @list_end event here, since we are not in the main loop
+			remaining_songs_ended(ctx);
 			return;
 		};
 		// you may have relative paths in temp mode that are not relative to
@@ -307,9 +279,8 @@ fn load_first_song(ctx: &mut Context) {
 	}
 }
 
-fn remaining_songs_ended(ctx: &mut Context, song_name: &mut String) {
+fn remaining_songs_ended(ctx: &mut Context) {
 	ctx.sink.pause();
-	*song_name = "[No Songs Remaining]".to_owned();
 	ctx.playlist.progress = Duration::ZERO;
 }
 

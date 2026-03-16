@@ -100,8 +100,6 @@ struct Model {
 
 	ctx: Context,
 	last_update_time: Instant,
-	current_song_name: String,
-	current_song: PathBuf,
 
 	pause_receiver: Receiver<()>,
 	ipc_server: Option<FileReader>,
@@ -130,8 +128,6 @@ impl Model {
 
 			ctx,
 			last_update_time: Instant::now(),
-			current_song_name: String::new(),
-			current_song: PathBuf::new(),
 
 			pause_receiver,
 			ipc_server,
