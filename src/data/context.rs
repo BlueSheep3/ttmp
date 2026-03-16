@@ -80,7 +80,7 @@ impl Context {
 			.iter()
 			.map(|f| (f.clone(), FileData::default()))
 			.collect();
-		playlist.remaining = file_paths.to_vec();
+		playlist.remaining = file_paths.to_vec().into();
 		playlist.progress = Duration::ZERO;
 
 		let ctx = Self {
@@ -112,7 +112,7 @@ impl Context {
 	}
 
 	pub fn get_current_duration(&self) -> Option<Duration> {
-		let first = self.playlist.remaining.first()?;
+		let first = self.playlist.remaining.front()?;
 		let song = self.files.get(first)?;
 		song.duration
 	}

@@ -10,7 +10,7 @@ use crate::{
 use std::collections::HashSet;
 
 pub fn show_current_tags(ctx: &mut Context) -> Result<()> {
-	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
+	let current = ctx.playlist.remaining.front().ok_or(NoFilePlaying)?;
 	let tags = &ctx
 		.files
 		.get(current)
@@ -34,7 +34,7 @@ pub fn show_all_tags(ctx: &mut Context) {
 }
 
 pub fn add_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
-	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
+	let current = ctx.playlist.remaining.front().ok_or(NoFilePlaying)?;
 	let tags = &mut ctx
 		.files
 		.get_mut(current)
@@ -45,7 +45,7 @@ pub fn add_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
 }
 
 pub fn remove_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
-	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
+	let current = ctx.playlist.remaining.front().ok_or(NoFilePlaying)?;
 	let tags = &mut ctx
 		.files
 		.get_mut(current)

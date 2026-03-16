@@ -23,7 +23,7 @@ pub fn parse_command_line_args() -> Result<ParsedCommandLineArgs, CliError> {
 		let bytes = arg.as_encoded_bytes();
 		if bytes.starts_with(b"-") {
 			match bytes {
-				b"--help" | b"-h" => print_help_and_exit(),
+				b"--help" | b"-h" | b"?" => print_help_and_exit(),
 				b"--version" | b"-v" => print_version_and_exit(),
 				b"--no-ipc" => disable_ipc = true,
 				b"--mode" | b"-m" => {

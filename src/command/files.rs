@@ -15,7 +15,7 @@ pub fn reload_files(files: &mut Files) -> Result<()> {
 }
 
 pub fn show_full_path(ctx: &mut Context) -> Result<()> {
-	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
+	let current = ctx.playlist.remaining.front().ok_or(NoFilePlaying)?;
 	if current.is_absolute() {
 		ctx.cmd_out += &current.display().to_string();
 		ctx.cmd_out.push('\n');
@@ -27,7 +27,7 @@ pub fn show_full_path(ctx: &mut Context) -> Result<()> {
 }
 
 pub fn delete_current(ctx: &mut Context) -> Result<CommandReturn> {
-	let current = ctx.playlist.remaining.first().ok_or(NoFilePlaying)?;
+	let current = ctx.playlist.remaining.front().ok_or(NoFilePlaying)?;
 	ctx.files.remove(current);
 	fs::remove_file(ctx.files.root.join(current))?;
 	ctx.cmd_out += "File deleted successfully.\n";
@@ -37,7 +37,7 @@ pub fn delete_current(ctx: &mut Context) -> Result<CommandReturn> {
 pub fn move_file(ctx: &mut Context, destination_folder: &[&str]) -> Result<()> {
 	let input = destination_folder.join(" ");
 	let destination_folder = Path::new(&input);
-	let file_name = ctx.playlist.remaining.first_mut().ok_or(NoFilePlaying)?;
+	let file_name = ctx.playlist.remaining.front_mut().ok_or(NoFilePlaying)?;
 	let song_name = file_name
 		.file_name()
 		.ok_or(InvalidFileName(file_name.clone()))?

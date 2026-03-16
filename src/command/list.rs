@@ -71,7 +71,7 @@ pub fn append_from(ctx: &mut Context, name: &str) -> Result<CommandReturn> {
 		Playlist::load(&name, &ctx.savedata_path)?.remaining
 	};
 	let was_empty = ctx.playlist.remaining.is_empty();
-	ctx.playlist.remaining.extend_from_slice(&songs);
+	ctx.playlist.remaining.extend(songs);
 
 	Ok(if was_empty {
 		CommandReturn::ReloadFirstSong

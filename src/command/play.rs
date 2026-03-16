@@ -12,7 +12,10 @@ use crate::data::{config::StartPlayState, context::Context, playlist::Playlist};
 use rand::seq::SliceRandom;
 
 pub fn randomize(ctx: &mut Context) -> CommandReturn {
-	ctx.playlist.remaining.shuffle(&mut rand::rng());
+	ctx.playlist
+		.remaining
+		.make_contiguous()
+		.shuffle(&mut rand::rng());
 	misc::load_in_first_song(ctx)
 }
 
@@ -85,8 +88,8 @@ pub fn go_back_songs(ctx: &mut Context, count: &str) -> Result<CommandReturn> {
 		.previous
 		.drain((ctx.playlist.previous.len() - count)..);
 	let mut remaining = removed.collect::<Vec<_>>();
-	remaining.append(&mut ctx.playlist.remaining);
-	ctx.playlist.remaining = remaining;
+	remaining.extend(ctx.playlist.remaining.iter().cloned());
+	ctx.playlist.remaining = remaining.into();
 	Ok(misc::load_in_first_song(ctx))
 }
 
@@ -131,11 +134,11 @@ fn set_volume_pure(ctx: &mut Context, volume: f32) -> Result<()> {
 }
 
 pub fn sort(ctx: &mut Context) -> CommandReturn {
-	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
+	let Some(prev_current) = ctx.playlist.remaining.front().cloned() else {
 		return CommandReturn::Nothing;
 	};
 
-	ctx.playlist.remaining.sort();
+	ctx.playlist.remaining.make_contiguous().sort();
 
 	if ctx.playlist.remaining.is_empty() || prev_current != ctx.playlist.remaining[0] {
 		misc::load_in_first_song(ctx)

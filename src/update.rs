@@ -170,7 +170,7 @@ fn receive_files_over_ipc(model: &mut Model) {
 			"Added Song: {}",
 			path.file_name().unwrap().to_string_lossy()
 		));
-		model.ctx.playlist.remaining.insert(0, path.clone());
+		model.ctx.playlist.remaining.push_front(path.clone());
 		model.ctx.files.mappings.insert(path, FileData::default());
 	}
 	model.ctx.playlist.progress = Duration::ZERO;
@@ -235,7 +235,7 @@ fn handle_command_return(
 fn load_first_song_and_set_name(ctx: &mut Context, song_name: &mut String, song: &mut PathBuf) {
 	load_first_song(ctx);
 
-	let Some(first) = ctx.playlist.remaining.first().cloned() else {
+	let Some(first) = ctx.playlist.remaining.front().cloned() else {
 		// cant call @list_end event here, since we are not in the main loop
 		remaining_songs_ended(ctx, song_name);
 		return;
@@ -254,7 +254,7 @@ fn load_first_song(ctx: &mut Context) {
 	ctx.sink.stop();
 
 	let (file, first) = loop {
-		let Some(first) = ctx.playlist.remaining.first().cloned() else {
+		let Some(first) = ctx.playlist.remaining.front().cloned() else {
 			return;
 		};
 		// you may have relative paths in temp mode that are not relative to

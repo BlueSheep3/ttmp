@@ -1,6 +1,6 @@
 //! commands that filter the playlist based on some condition like tags or length
 
-use super::{misc, CommandReturn};
+use super::{CommandReturn, misc};
 use crate::data::context::Context;
 use std::collections::HashSet;
 
@@ -12,7 +12,7 @@ fn tag_matches(file_tags: &HashSet<String>, match_tag: &str) -> bool {
 }
 
 pub fn tag_exists(ctx: &mut Context, tags: &[&str]) -> CommandReturn {
-	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
+	let Some(prev_current) = ctx.playlist.remaining.front().cloned() else {
 		return CommandReturn::Nothing;
 	};
 
@@ -29,7 +29,7 @@ pub fn tag_exists(ctx: &mut Context, tags: &[&str]) -> CommandReturn {
 }
 
 pub fn tag_all(ctx: &mut Context, tags: &[&str]) -> CommandReturn {
-	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
+	let Some(prev_current) = ctx.playlist.remaining.front().cloned() else {
 		return CommandReturn::Nothing;
 	};
 
@@ -46,7 +46,7 @@ pub fn tag_all(ctx: &mut Context, tags: &[&str]) -> CommandReturn {
 }
 
 pub fn no_tags(ctx: &mut Context) -> CommandReturn {
-	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
+	let Some(prev_current) = ctx.playlist.remaining.front().cloned() else {
 		return CommandReturn::Nothing;
 	};
 
@@ -63,7 +63,7 @@ pub fn no_tags(ctx: &mut Context) -> CommandReturn {
 }
 
 pub fn search_full(ctx: &mut Context, search: &[&str]) -> CommandReturn {
-	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
+	let Some(prev_current) = ctx.playlist.remaining.front().cloned() else {
 		return CommandReturn::Nothing;
 	};
 	let search = search.join(" ").to_lowercase();
@@ -80,7 +80,7 @@ pub fn search_full(ctx: &mut Context, search: &[&str]) -> CommandReturn {
 }
 
 pub fn search_file_name(ctx: &mut Context, search: &[&str]) -> CommandReturn {
-	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
+	let Some(prev_current) = ctx.playlist.remaining.front().cloned() else {
 		return CommandReturn::Nothing;
 	};
 	let search = search.join(" ").to_lowercase();
@@ -101,7 +101,7 @@ pub fn search_file_name(ctx: &mut Context, search: &[&str]) -> CommandReturn {
 }
 
 pub fn filepath_starts_with(ctx: &mut Context, search: &[&str]) -> CommandReturn {
-	let Some(prev_current) = ctx.playlist.remaining.first().cloned() else {
+	let Some(prev_current) = ctx.playlist.remaining.front().cloned() else {
 		return CommandReturn::Nothing;
 	};
 	let search = search.join(" ").to_lowercase();

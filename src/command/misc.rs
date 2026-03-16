@@ -25,7 +25,7 @@ pub fn echo(text: &[&str], cmd_out: &mut String) {
 
 pub fn repeat_song(list: &mut Playlist, amount: &str) -> Result<()> {
 	let amount = amount.parse::<usize>()?;
-	let current_song = list.remaining.first().cloned().ok_or(NoFilePlaying)?;
+	let current_song = list.remaining.front().cloned().ok_or(NoFilePlaying)?;
 	list.remaining = std::iter::repeat_n(current_song, amount)
 		.chain(list.remaining.clone())
 		.collect();

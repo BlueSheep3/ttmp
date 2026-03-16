@@ -3,6 +3,7 @@ use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use std::{
 	borrow::Cow,
+	collections::VecDeque,
 	fs,
 	path::{Path, PathBuf},
 	time::Duration,
@@ -13,10 +14,10 @@ pub struct Playlist {
 	/// how far you are into the current song
 	pub progress: Duration,
 	/// the remaining songs in order (current song included)
-	pub remaining: Vec<PathBuf>,
+	pub remaining: VecDeque<PathBuf>,
 	/// the songs you have already listened to in order
 	#[serde(default)]
-	pub previous: Vec<PathBuf>,
+	pub previous: VecDeque<PathBuf>,
 }
 
 impl Playlist {
@@ -60,12 +61,14 @@ impl Playlist {
 	}
 
 	pub fn next_song(&mut self) {
-		let removed = self.remaining.remove(0);
-		self.previous.push(removed);
+		if let Some(removed) = self.remaining.pop_front() {
+			self.previous.push_back(removed);
+		}
 	}
 
 	pub fn previous_song(&mut self) {
-		let removed = self.previous.pop().unwrap();
-		self.remaining.insert(0, removed);
+		if let Some(removed) = self.previous.pop_back() {
+			self.remaining.push_front(removed);
+		}
 	}
 }
