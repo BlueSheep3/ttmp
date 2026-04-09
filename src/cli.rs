@@ -77,7 +77,7 @@ fn print_help_and_exit() -> ! {
 A minimal TUI based music player.
 
 All arguments that do not start with a '-' will be interpreted as file paths.
-If you specify at least 1 file, you will (unless specified otehrwise) start in 'temp' mode
+If you specify at least 1 file, you will (unless specified otherwise) start in 'temp' mode
 with all of those songs in the current playlist.
 Otherwise, you will start in 'main' mode, restoring your previous main mode playlist.
 

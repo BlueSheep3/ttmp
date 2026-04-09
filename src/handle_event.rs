@@ -63,8 +63,8 @@ fn handle_key_normal_mode(_model: &Model, key: KeyEvent) -> Option<Message> {
 		KeyCode::Char('l') => Some(Message::StartCommand("ls ")),
 		KeyCode::Char('L') => Some(Message::RunCommand("lg")),
 
-		KeyCode::Char('m') => Some(Message::RunCommand("ml")),
-		KeyCode::Char('M') => Some(Message::StartCommand("ma ")),
+		KeyCode::Char('m') => Some(Message::StartCommand("m")),
+		KeyCode::Char('M') => Some(Message::RunCommand("ml")),
 		_ => None,
 	}
 }

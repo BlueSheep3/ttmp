@@ -15,7 +15,9 @@ use crate::data::{context::Context, playlist::Playlist};
 
 pub fn get_list_names(ctx: &mut Context) -> Result<()> {
 	ctx.cmd_out += "All Playlist Names:\n";
-	for name in Playlist::get_all_names(&ctx.savedata_path)? {
+	let mut names = Playlist::get_all_names(&ctx.savedata_path)?;
+	names.sort();
+	for name in names {
 		let first_char = if name == ctx.config.current_playlist {
 			'>'
 		} else {

@@ -80,7 +80,7 @@ you first press 'r' to get all songs and then
 fn normal(cmd_out: &mut String) {
 	*cmd_out += "\
 :, ;, c      - enter command mode
-?            - open this help page
+?            - open a help page
 q            - save and quit
 S            - save
 
@@ -106,8 +106,8 @@ T TAG        - remove TAG from the current File
 l NAME       - switch to the list NAME
 L            - get the names of all playlists
 
-m            - lists all Macros
-M NAME DEF   - add a Macro with NAME that runs DEF
+m NAME ARGS  - run Macro with NAME and arguments ARGS
+M            - lists all Macros
 ";
 }
 
@@ -119,6 +119,7 @@ p-        - pause
 pr        - randomize / shuffle playlist
 pn NUM    - skips NUM songs
 pp NUM    - goes back NUM songs
+pcp       - clears all previous songs
 pm NUM    - set the maximum number of files to be played
 ps SPEED  - set the playback speed to SPEED
 pv VOLUME - set the playback volume to VOLUME

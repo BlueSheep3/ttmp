@@ -86,11 +86,17 @@ pub fn go_back_songs(ctx: &mut Context, count: &str) -> Result<CommandReturn> {
 	let removed = ctx
 		.playlist
 		.previous
-		.drain((ctx.playlist.previous.len() - count)..);
-	let mut remaining = removed.collect::<Vec<_>>();
-	remaining.extend(ctx.playlist.remaining.iter().cloned());
-	ctx.playlist.remaining = remaining.into();
+		.drain((ctx.playlist.previous.len() - count)..)
+		.rev();
+	ctx.playlist.remaining.reserve(removed.len());
+	for r in removed {
+		ctx.playlist.remaining.push_front(r);
+	}
 	Ok(misc::load_in_first_song(ctx))
+}
+
+pub fn clear_previous(ctx: &mut Context) {
+	ctx.playlist.previous.clear();
 }
 
 pub fn enforce_max(list: &mut Playlist, max: &str) -> Result<()> {
