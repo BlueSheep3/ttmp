@@ -152,7 +152,7 @@ fn song_data(model: &Model, frame: &mut Frame, area: Rect) {
 		Span::raw(" "),
 	]);
 	#[rustfmt::skip]
-	let pause_str = if model.ctx.sink.is_paused() { " || " } else { " >> " };
+	let pause_str = if model.ctx.player.is_paused() { " || " } else { " >> " };
 	let text = Text::from(vec![
 		top_bottom.clone(),
 		Line::styled(pause_str, style),

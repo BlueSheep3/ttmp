@@ -53,7 +53,7 @@ pub fn update(mut model: Model, message: Message) -> Result<(Model, Option<Messa
 		command::toggle_playing(&mut model.ctx);
 	}
 
-	if !model.ctx.sink.is_paused() {
+	if !model.ctx.player.is_paused() {
 		model.ctx.playlist.progress += model.last_update_time.elapsed();
 	}
 	model.last_update_time = Instant::now();
@@ -138,7 +138,7 @@ fn run_command(model: &mut Model, update_temp: &mut UpdateTemp, cmd: &str) -> Re
 	);
 
 	if model.ctx.playlist.remaining.is_empty() {
-		model.ctx.sink.pause();
+		model.ctx.player.pause();
 	}
 
 	if was_not_empty && model.ctx.playlist.remaining.is_empty() {
@@ -171,12 +171,12 @@ fn receive_files_over_ipc(model: &mut Model) {
 	}
 	model.ctx.playlist.progress = Duration::ZERO;
 	load_first_song(&mut model.ctx);
-	model.ctx.sink.play();
+	model.ctx.player.play();
 }
 
 fn maybe_goto_next_song(model: &mut Model, update_temp: &mut UpdateTemp) {
 	let ctx = &mut model.ctx;
-	if !ctx.sink.empty() || ctx.playlist.remaining.is_empty() {
+	if !ctx.player.empty() || ctx.playlist.remaining.is_empty() {
 		return;
 	}
 
@@ -225,7 +225,7 @@ fn handle_command_return(
 // TODO handle errors of the following functions better
 
 fn load_first_song(ctx: &mut Context) {
-	ctx.sink.stop();
+	ctx.player.stop();
 
 	let (file, first) = loop {
 		let Some(first) = ctx.playlist.remaining.front().cloned() else {
@@ -274,17 +274,17 @@ fn load_first_song(ctx: &mut Context) {
 	// `try_seek` is a faster alternative to `skip_duration`,
 	// but isn't supported for all file formats
 	if decoder.try_seek(ctx.playlist.progress).is_ok() {
-		ctx.sink.append(decoder);
+		ctx.player.append(decoder);
 	} else {
 		// logging the error value of `try_seek` would be nice here,
 		// but in many cases this would print text over other "ui" elements.
 		let source = decoder.skip_duration(ctx.playlist.progress);
-		ctx.sink.append(source);
+		ctx.player.append(source);
 	}
 }
 
 fn remaining_songs_ended(ctx: &mut Context) {
-	ctx.sink.pause();
+	ctx.player.pause();
 	ctx.playlist.progress = Duration::ZERO;
 }
 

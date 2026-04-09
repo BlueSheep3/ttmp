@@ -24,27 +24,27 @@ pub fn randomize(ctx: &mut Context) -> CommandReturn {
 }
 
 pub fn toggle_playing(ctx: &mut Context) {
-	if ctx.sink.is_paused() {
-		ctx.sink.play();
+	if ctx.player.is_paused() {
+		ctx.player.play();
 	} else {
-		ctx.sink.pause();
+		ctx.player.pause();
 	}
-	// swapping the remembered play/pause state independantly of the sink's
-	// play state, because the sink is always paused when no songs remain
+	// swapping the remembered play/pause state independantly of the player's
+	// play state, because the player is always paused when no songs remain
 	if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
 		*p ^= true;
 	}
 }
 
 pub fn start_playing(ctx: &mut Context) {
-	ctx.sink.play();
+	ctx.player.play();
 	if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
 		*p = true;
 	}
 }
 
 pub fn pause_playing(ctx: &mut Context) {
-	ctx.sink.pause();
+	ctx.player.pause();
 	if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
 		*p = false;
 	}
@@ -112,7 +112,7 @@ pub fn enforce_max(list: &mut Playlist, max: &str) -> Result<()> {
 pub fn set_speed(ctx: &mut Context, speed: &str) -> Result<()> {
 	let s = speed.parse::<f32>()?;
 	ctx.config.speed = s;
-	ctx.sink.set_speed(s);
+	ctx.player.set_speed(s);
 	Ok(())
 }
 
@@ -139,7 +139,7 @@ fn set_volume_pure(ctx: &mut Context, volume: f32) -> Result<()> {
 		return Err(VolumeTooHigh(volume));
 	}
 	ctx.config.volume = volume;
-	ctx.sink.set_volume(ctx.config.volume);
+	ctx.player.set_volume(ctx.config.volume);
 	Ok(())
 }
 

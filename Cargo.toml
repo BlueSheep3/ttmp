@@ -1,6 +1,6 @@
 [package]
 name = "ttmp"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 authors = ["BlueSheep3", "Per"]
 description = "Minimal TUI music player that organizes songs using tags"
@@ -8,10 +8,10 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/BlueSheep3/ttmp"
 
 [dependencies]
-interprocess = "2.2.3"
-rand = "0.9"
+interprocess = "2"
+rand = "0.10"
 ratatui = "0.30"
-rodio = "0.21"
+rodio = "0.22"
 ron = "0.12"
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"

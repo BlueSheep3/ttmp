@@ -67,7 +67,7 @@ fn readln() -> String {
 }
 
 pub mod error {
-	use rodio::StreamError;
+	use rodio::DeviceSinkError;
 	use std::{io, result};
 	use thiserror::Error;
 
@@ -77,8 +77,8 @@ pub mod error {
 	pub enum DataError {
 		#[error("io error: {0}")]
 		Io(#[from] io::Error),
-		#[error("stream error: {0}")]
-		Stream(#[from] StreamError),
+		#[error("device sink error: {0}")]
+		DeviceSink(#[from] DeviceSinkError),
 
 		// these are wrapped in Box, because SpannedError is 88 bytes and Error is 72 bytes
 		#[error("ron spanned error: {0}")]

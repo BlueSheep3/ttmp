@@ -8,7 +8,7 @@ use super::{
 	files::{FileData, Files},
 	playlist::Playlist,
 };
-use rodio::{OutputStream, OutputStreamBuilder, Sink};
+use rodio::{DeviceSinkBuilder, MixerDeviceSink, Player};
 use std::{
 	path::{Path, PathBuf},
 	time::Duration,
@@ -20,11 +20,11 @@ pub struct Context {
 	pub config: Config,
 	pub files: Files,
 	pub playlist: Playlist,
-	pub sink: Sink,
+	pub player: Player,
 	pub savedata_path: PathBuf,
 
-	// these are just here, so the music doesnt stop, due to them being dropped
-	_stream_handle: OutputStream,
+	// this are just here, so the music doesnt stop, due to it being dropped
+	_device_sink: MixerDeviceSink,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -51,9 +51,9 @@ impl Context {
 		let config = Config::load(savedata_path)?;
 		let files = Files::load(savedata_path)?;
 		let playlist = Playlist::load(&config.current_playlist, savedata_path)?;
-		let mut stream_handle = OutputStreamBuilder::open_default_stream()?;
-		stream_handle.log_on_drop(false);
-		let sink = Sink::connect_new(stream_handle.mixer());
+		let mut device_sink = DeviceSinkBuilder::open_default_sink()?;
+		device_sink.log_on_drop(false);
+		let player = Player::connect_new(device_sink.mixer());
 
 		let ctx = Self {
 			program_mode,
@@ -61,11 +61,11 @@ impl Context {
 			config,
 			files,
 			playlist,
-			sink,
+			player,
 			savedata_path: savedata_path.to_owned(),
-			_stream_handle: stream_handle,
+			_device_sink: device_sink,
 		};
-		ctx.init_sink();
+		ctx.init_player();
 		Ok(ctx)
 	}
 
@@ -74,9 +74,9 @@ impl Context {
 		let mut config = Config::load(savedata_path)?;
 		let mut files = Files::load(savedata_path)?;
 		let mut playlist = Playlist::default();
-		let mut stream_handle = OutputStreamBuilder::open_default_stream()?;
-		stream_handle.log_on_drop(false);
-		let sink = Sink::connect_new(stream_handle.mixer());
+		let mut device_sink = DeviceSinkBuilder::open_default_sink()?;
+		device_sink.log_on_drop(false);
+		let player = Player::connect_new(device_sink.mixer());
 
 		config.start_play_state = StartPlayState::Always;
 		config.current_playlist = "temp".to_owned();
@@ -93,26 +93,26 @@ impl Context {
 			config,
 			files,
 			playlist,
-			sink,
+			player,
 			savedata_path: savedata_path.to_owned(),
-			_stream_handle: stream_handle,
+			_device_sink: device_sink,
 		};
-		ctx.init_sink();
+		ctx.init_player();
 		Ok(ctx)
 	}
 
-	fn init_sink(&self) {
+	fn init_player(&self) {
 		let should_play = matches!(
 			self.config.start_play_state,
 			StartPlayState::Always | StartPlayState::Remember(true)
 		);
 		if should_play && !self.playlist.remaining.is_empty() {
-			self.sink.play();
+			self.player.play();
 		} else {
-			self.sink.pause();
+			self.player.pause();
 		}
-		self.sink.set_speed(self.config.speed);
-		self.sink.set_volume(self.config.volume);
+		self.player.set_speed(self.config.speed);
+		self.player.set_volume(self.config.volume);
 	}
 
 	pub fn get_current_duration(&self) -> Option<Duration> {
