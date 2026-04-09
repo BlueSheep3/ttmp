@@ -79,6 +79,8 @@ pub mod error {
 		Io(#[from] io::Error),
 		#[error("device sink error: {0}")]
 		DeviceSink(#[from] DeviceSinkError),
+		#[error("media controls error: {0}")]
+		Souvlaki(#[from] souvlaki::Error),
 
 		// these are wrapped in Box, because SpannedError is 88 bytes and Error is 72 bytes
 		#[error("ron spanned error: {0}")]

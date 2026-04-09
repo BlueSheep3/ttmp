@@ -23,7 +23,7 @@ pub fn randomize(ctx: &mut Context) -> CommandReturn {
 	misc::load_in_first_song(ctx)
 }
 
-pub fn toggle_playing(ctx: &mut Context) {
+pub fn toggle_playing(ctx: &mut Context) -> Result<()> {
 	if ctx.player.is_paused() {
 		ctx.player.play();
 	} else {
@@ -34,20 +34,26 @@ pub fn toggle_playing(ctx: &mut Context) {
 	if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
 		*p ^= true;
 	}
+	ctx.update_media_progress()?;
+	Ok(())
 }
 
-pub fn start_playing(ctx: &mut Context) {
+pub fn start_playing(ctx: &mut Context) -> Result<()> {
 	ctx.player.play();
 	if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
 		*p = true;
 	}
+	ctx.update_media_progress()?;
+	Ok(())
 }
 
-pub fn pause_playing(ctx: &mut Context) {
+pub fn pause_playing(ctx: &mut Context) -> Result<()> {
 	ctx.player.pause();
 	if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
 		*p = false;
 	}
+	ctx.update_media_progress()?;
+	Ok(())
 }
 
 pub fn next_song(ctx: &mut Context) -> CommandReturn {
@@ -118,20 +124,20 @@ pub fn set_speed(ctx: &mut Context, speed: &str) -> Result<()> {
 
 pub fn set_volume(ctx: &mut Context, volume: &str) -> Result<()> {
 	let v = volume.parse::<f32>()? / 100.;
-	set_volume_pure(ctx, v)
+	set_volume_float(ctx, v)
 }
 
 pub fn add_volume(ctx: &mut Context, add: &str) -> Result<()> {
 	let a = add.parse::<f32>()? / 100.;
-	set_volume_pure(ctx, ctx.config.volume + a)
+	set_volume_float(ctx, ctx.config.volume + a)
 }
 
 pub fn sub_volume(ctx: &mut Context, sub: &str) -> Result<()> {
 	let s = sub.parse::<f32>()? / 100.;
-	set_volume_pure(ctx, ctx.config.volume - s)
+	set_volume_float(ctx, ctx.config.volume - s)
 }
 
-fn set_volume_pure(ctx: &mut Context, volume: f32) -> Result<()> {
+fn set_volume_float(ctx: &mut Context, volume: f32) -> Result<()> {
 	if volume < 0. {
 		return Err(VolumeTooLow(volume));
 	}
@@ -140,6 +146,7 @@ fn set_volume_pure(ctx: &mut Context, volume: f32) -> Result<()> {
 	}
 	ctx.config.volume = volume;
 	ctx.player.set_volume(ctx.config.volume);
+	ctx.update_media_volume()?;
 	Ok(())
 }
 

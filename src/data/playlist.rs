@@ -76,3 +76,10 @@ impl Playlist {
 		}
 	}
 }
+
+pub fn get_song_name(file_name: &'_ Path) -> Cow<'_, str> {
+	file_name
+		.file_name()
+		.expect("Failed to get file name from the path.")
+		.to_string_lossy()
+}

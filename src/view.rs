@@ -4,7 +4,7 @@
 
 use crate::{
 	Model,
-	data::context::ProgramMode,
+	data::{context::ProgramMode, playlist},
 	duration::{display_duration, display_duration_out_of},
 };
 use ratatui::{
@@ -14,6 +14,7 @@ use ratatui::{
 	text::{Line, Span, Text},
 	widgets::{Block, Borders, Paragraph, Wrap},
 };
+use std::borrow::Cow::Borrowed;
 
 pub fn view(model: &Model, frame: &mut Frame) {
 	if model.ctx.config.dont_redraw_screen {
@@ -101,10 +102,8 @@ fn playlist_window(model: &Model, frame: &mut Frame, area: Rect) {
 		.enumerate()
 		.map(|(i, file)| {
 			let i = i as i32 - prev_lines_count;
-			let song_name = file
-				.file_name()
-				.expect("Failed to get file name from the path.")
-				.to_string_lossy();
+
+			let song_name = playlist::get_song_name(file);
 			let mut line = Line::from(format!("{i:2} {song_name}"));
 			if i == 0 {
 				line = line.style(Style::new().black().on_white());
@@ -168,12 +167,7 @@ fn song_data(model: &Model, frame: &mut Frame, area: Rect) {
 	let song_name;
 	let tags_str;
 	if let Some(current_song) = model.ctx.playlist.remaining.front() {
-		song_name = current_song
-			.file_name()
-			.expect("Failed to get file name from the path.")
-			.to_string_lossy()
-			.to_string();
-
+		song_name = playlist::get_song_name(current_song);
 		tags_str = model
 			.ctx
 			.files
@@ -184,7 +178,7 @@ fn song_data(model: &Model, frame: &mut Frame, area: Rect) {
 				tags.join(", ")
 			});
 	} else {
-		song_name = "[No Songs Remaining]".to_owned();
+		song_name = Borrowed("[No Songs Remaining]");
 		tags_str = String::new();
 	}
 

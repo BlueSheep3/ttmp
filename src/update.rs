@@ -4,7 +4,7 @@
 
 use crate::{
 	Message, Model,
-	command::{self, CommandReturn, match_input, run_macro_or},
+	command::{CommandReturn, match_input, run_macro_or},
 	data::{
 		context::{Context, ProgramMode},
 		files::{FileData, is_mp4_file, make_temp_mp4_copy},
@@ -49,8 +49,8 @@ pub fn update(mut model: Model, message: Message) -> Result<(Model, Option<Messa
 		handle_message_normal_mode(&mut model, message, &mut update_temp)?;
 	}
 
-	if let Ok(()) = model.pause_receiver.try_recv() {
-		command::toggle_playing(&mut model.ctx);
+	if let Ok(cmd) = model.cmd_receiver.try_recv() {
+		run_command(&mut model, &mut update_temp, &cmd)?;
 	}
 
 	if !model.ctx.player.is_paused() {
@@ -69,6 +69,11 @@ pub fn update(mut model: Model, message: Message) -> Result<(Model, Option<Messa
 	};
 
 	maybe_goto_next_song(&mut model, &mut update_temp);
+
+	if model.last_media_update.elapsed() > Duration::from_secs(5) {
+		model.ctx.update_media_progress()?;
+		model.last_media_update = Instant::now();
+	}
 
 	Ok((model, msg))
 }
@@ -245,7 +250,7 @@ fn load_first_song(ctx: &mut Context) {
 			match make_temp_mp4_copy(&path, &ctx.savedata_path) {
 				Ok(p) => path = p,
 				Err(_) => {
-					println!("Failed to convert song to mp3: {}", first.display());
+					eprintln!("Failed to convert song to mp3: {}", first.display());
 					ctx.playlist.next_song();
 					continue;
 				}
@@ -254,7 +259,7 @@ fn load_first_song(ctx: &mut Context) {
 		match File::open(path) {
 			Ok(file) => break (file, first),
 			Err(_) => {
-				println!("Failed to load song: {}", first.display());
+				eprintln!("Failed to load song: {}", first.display());
 				ctx.playlist.next_song();
 				continue;
 			}
@@ -280,6 +285,13 @@ fn load_first_song(ctx: &mut Context) {
 		// but in many cases this would print text over other "ui" elements.
 		let source = decoder.skip_duration(ctx.playlist.progress);
 		ctx.player.append(source);
+	}
+
+	if let Err(e) = ctx
+		.update_media_metadata()
+		.and_then(|_| ctx.update_media_progress())
+	{
+		eprintln!("failed to update media metadata: {e}");
 	}
 }
 

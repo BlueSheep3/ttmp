@@ -16,7 +16,7 @@ mod tag;
 use self::error::{CommandError::UknownOrInvalidCommand, Result};
 use crate::data::context::Context;
 
-pub use self::{macros::run_macro_or, play::toggle_playing};
+pub use self::macros::run_macro_or;
 
 /// information to give the update thread after doing a Command
 #[must_use]
@@ -42,14 +42,14 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["q"] => return Ok(CommandReturn::Quit),
 		["q!"] => return Ok(CommandReturn::QuitNoSave),
 		["s"] => misc::save(ctx)?,
-		["r"] => return Ok(misc::reset_remaining(ctx)),
+		["r"] => return misc::reset_remaining(ctx),
 		["redraw"] => ctx.config.dont_redraw_screen ^= true,
 		["redraw+"] => ctx.config.dont_redraw_screen = false,
 		["redraw-"] => ctx.config.dont_redraw_screen = true,
 		["echo", text @ ..] => misc::echo(text, &mut ctx.cmd_out),
-		["p"] => play::toggle_playing(ctx),
-		["p+"] => play::start_playing(ctx),
-		["p-"] => play::pause_playing(ctx),
+		["p"] => play::toggle_playing(ctx)?,
+		["p+"] => play::start_playing(ctx)?,
+		["p-"] => play::pause_playing(ctx)?,
 		["pr"] => return Ok(play::randomize(ctx)),
 		["pn"] => return Ok(play::next_song(ctx)),
 		["pn", num] => return play::skip_songs(ctx, num),

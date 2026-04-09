@@ -14,7 +14,6 @@ mod data;
 mod duration;
 mod handle_event;
 mod macros;
-mod pause_thread;
 mod serializer;
 mod shmem_reader;
 mod shmem_writer;
@@ -31,7 +30,6 @@ use std::{
 	path::PathBuf,
 	process::ExitCode,
 	sync::mpsc::{self, Receiver},
-	thread,
 	time::{Duration, Instant},
 };
 
@@ -60,17 +58,16 @@ fn fallible_main() -> Result<(), Box<dyn Error>> {
 		}
 	};
 
-	let (sender, receiver) = mpsc::channel();
-	let _pause_thread = thread::spawn(move || pause_thread::main(sender));
+	let (cmd_sender, cmd_receiver) = mpsc::channel();
 	let ctx = match cli_args.program_mode {
-		data::context::ProgramMode::Main => Context::new_main(&cli_args.savedata_path)?,
+		data::context::ProgramMode::Main => Context::new_main(&cli_args.savedata_path, cmd_sender)?,
 		data::context::ProgramMode::Temp => {
-			Context::new_temp(&cli_args.files, &cli_args.savedata_path)?
+			Context::new_temp(&cli_args.files, &cli_args.savedata_path, cmd_sender)?
 		}
 	};
 
 	let mut terminal = ratatui::try_init()?;
-	let mut model = Model::new(ctx, receiver, server);
+	let mut model = Model::new(ctx, cmd_receiver, server);
 	defer! { ratatui::restore(); }
 
 	update::init(&mut model);
@@ -88,15 +85,27 @@ fn fallible_main() -> Result<(), Box<dyn Error>> {
 
 		while let Some(m) = message {
 			if let Message::Quit { save } = m {
-				if save {
-					maybe_save(&model.ctx)?;
-				}
-				return Ok(());
+				return cleanup(model, save);
 			}
-
 			(model, message) = update::update(model, m)?;
 		}
 	}
+}
+
+fn cleanup(model: Model, save: bool) -> Result<(), Box<dyn Error>> {
+	if save {
+		maybe_save(&model.ctx)?;
+	}
+
+	// For some reason, detaching the media_controls can take a long time.
+	// This detach will automatically happen if media_controls gets dropped.
+	// To get around these we detach them on a different thread.
+	// This probably causes them to not properly get detached, because the program
+	// exits immediatly after this, but i haven't noticed any problems so far.
+	let mut media_controls = model.ctx.media_controls;
+	std::thread::spawn(move || media_controls.detach().ok()); // ignores errors
+
+	Ok(())
 }
 
 struct Model {
@@ -105,7 +114,8 @@ struct Model {
 	ctx: Context,
 	last_update_time: Instant,
 
-	pause_receiver: Receiver<()>,
+	cmd_receiver: Receiver<String>,
+	last_media_update: Instant,
 	ipc_server: Option<FileReader>,
 }
 
@@ -126,14 +136,15 @@ enum Message {
 }
 
 impl Model {
-	fn new(ctx: Context, pause_receiver: Receiver<()>, ipc_server: Option<FileReader>) -> Self {
+	fn new(ctx: Context, cmd_receiver: Receiver<String>, ipc_server: Option<FileReader>) -> Self {
 		Self {
 			current_command: None,
 
 			ctx,
 			last_update_time: Instant::now(),
 
-			pause_receiver,
+			cmd_receiver,
+			last_media_update: Instant::now(),
 			ipc_server,
 		}
 	}
