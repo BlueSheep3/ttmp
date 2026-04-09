@@ -10,6 +10,7 @@ pub struct ParsedCommandLineArgs {
 	pub program_mode: context::ProgramMode,
 	pub files: Vec<PathBuf>,
 	pub disable_ipc: bool,
+	pub disable_media: bool,
 	pub savedata_path: PathBuf,
 }
 
@@ -17,6 +18,7 @@ pub fn parse_command_line_args() -> Result<ParsedCommandLineArgs, CliError> {
 	let mut program_mode = None;
 	let mut files = Vec::new();
 	let mut disable_ipc = false;
+	let mut disable_media = false;
 	let mut savedata_path = None;
 
 	let mut args = env::args_os();
@@ -30,6 +32,7 @@ pub fn parse_command_line_args() -> Result<ParsedCommandLineArgs, CliError> {
 				b"--help" | b"-h" | b"?" => print_help_and_exit(),
 				b"--version" | b"-v" => print_version_and_exit(),
 				b"--no-ipc" => disable_ipc = true,
+				b"--no-media" => disable_media = true,
 				b"--mode" | b"-m" => {
 					let mode = args.next().ok_or(CliError::NoModeSpecifier)?;
 					match mode.as_encoded_bytes() {
@@ -70,6 +73,7 @@ pub fn parse_command_line_args() -> Result<ParsedCommandLineArgs, CliError> {
 		program_mode,
 		files,
 		disable_ipc,
+		disable_media,
 		savedata_path,
 	};
 	Ok(parsed_args)
@@ -89,6 +93,7 @@ Arguments:
 --help, -h         - print help and exit
 --version, -v      - print version info and exit
 --no-ipc           - disable all interprocess communication
+--no-media         - disable media controls and metadata
 --mode, -m  MODE   - specify what program mode to start in (either 'main' or 'temp')
 --path, -p  PATH   - specify the savedata path (this should be a directory)
                      note that default savedata will only be created if PATH doesn't exist

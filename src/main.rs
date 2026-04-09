@@ -60,10 +60,15 @@ fn fallible_main() -> Result<(), Box<dyn Error>> {
 
 	let (cmd_sender, cmd_receiver) = mpsc::channel();
 	let ctx = match cli_args.program_mode {
-		data::context::ProgramMode::Main => Context::new_main(&cli_args.savedata_path, cmd_sender)?,
-		data::context::ProgramMode::Temp => {
-			Context::new_temp(&cli_args.files, &cli_args.savedata_path, cmd_sender)?
+		data::context::ProgramMode::Main => {
+			Context::new_main(&cli_args.savedata_path, cli_args.disable_media, cmd_sender)?
 		}
+		data::context::ProgramMode::Temp => Context::new_temp(
+			&cli_args.files,
+			&cli_args.savedata_path,
+			cli_args.disable_media,
+			cmd_sender,
+		)?,
 	};
 
 	let mut terminal = ratatui::try_init()?;
@@ -102,8 +107,9 @@ fn cleanup(model: Model, save: bool) -> Result<(), Box<dyn Error>> {
 	// To get around these we detach them on a different thread.
 	// This probably causes them to not properly get detached, because the program
 	// exits immediatly after this, but i haven't noticed any problems so far.
-	let mut media_controls = model.ctx.media_controls;
-	std::thread::spawn(move || media_controls.detach().ok()); // ignores errors
+	if let Some(mut media_controls) = model.ctx.media_controls {
+		std::thread::spawn(move || media_controls.detach().ok()); // ignores errors
+	}
 
 	Ok(())
 }

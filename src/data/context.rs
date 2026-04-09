@@ -28,7 +28,7 @@ pub struct Context {
 	pub playlist: Playlist,
 	pub player: Player,
 	pub savedata_path: PathBuf,
-	pub media_controls: MediaControls,
+	pub media_controls: Option<MediaControls>,
 
 	// this are just here, so the music doesnt stop, due to it being dropped
 	_device_sink: MixerDeviceSink,
@@ -53,7 +53,11 @@ impl ProgramMode {
 }
 
 impl Context {
-	pub fn new_main(savedata_path: &Path, cmd_sender: Sender<String>) -> Result<Self> {
+	pub fn new_main(
+		savedata_path: &Path,
+		disable_media: bool,
+		cmd_sender: Sender<String>,
+	) -> Result<Self> {
 		let program_mode = ProgramMode::Main;
 		let config = Config::load(savedata_path)?;
 		let files = Files::load(savedata_path)?;
@@ -61,7 +65,10 @@ impl Context {
 		let mut device_sink = DeviceSinkBuilder::open_default_sink()?;
 		device_sink.log_on_drop(false);
 		let player = Player::connect_new(device_sink.mixer());
-		let media_controls = setup_media_controls(cmd_sender)?;
+		let media_controls = match disable_media {
+			true => None,
+			false => Some(setup_media_controls(cmd_sender)?),
+		};
 
 		let mut ctx = Self {
 			program_mode,
@@ -82,6 +89,7 @@ impl Context {
 	pub fn new_temp(
 		file_paths: &[PathBuf],
 		savedata_path: &Path,
+		disable_media: bool,
 		cmd_sender: Sender<String>,
 	) -> Result<Self> {
 		let program_mode = ProgramMode::Temp;
@@ -91,7 +99,10 @@ impl Context {
 		let mut device_sink = DeviceSinkBuilder::open_default_sink()?;
 		device_sink.log_on_drop(false);
 		let player = Player::connect_new(device_sink.mixer());
-		let media_controls = setup_media_controls(cmd_sender)?;
+		let media_controls = match disable_media {
+			true => None,
+			false => Some(setup_media_controls(cmd_sender)?),
+		};
 
 		config.start_play_state = StartPlayState::Always;
 		config.current_playlist = "temp".to_owned();
@@ -149,20 +160,27 @@ impl Context {
 			.map(|f| playlist::get_song_name(f));
 		let duration = self.get_current_duration();
 
-		self.media_controls.set_metadata(MediaMetadata {
-			title: song_name.as_deref(),
-			duration,
-			..Default::default()
-		})?;
+		if let Some(media_controls) = &mut self.media_controls {
+			media_controls.set_metadata(MediaMetadata {
+				title: song_name.as_deref(),
+				duration,
+				..Default::default()
+			})?;
+		}
 		Ok(())
 	}
 
 	pub fn update_media_volume(&mut self) -> Result<()> {
-		self.media_controls.set_volume(self.config.volume as f64)?;
+		if let Some(media_controls) = &mut self.media_controls {
+			media_controls.set_volume(self.config.volume as f64)?;
+		}
 		Ok(())
 	}
 
 	pub fn update_media_progress(&mut self) -> Result<()> {
+		let Some(media_controls) = &mut self.media_controls else {
+			return Ok(());
+		};
 		let progress = self.playlist.progress;
 		let playback = if self.playlist.remaining.is_empty() {
 			MediaPlayback::Stopped
@@ -175,7 +193,7 @@ impl Context {
 				progress: Some(MediaPosition(progress)),
 			}
 		};
-		self.media_controls.set_playback(playback)?;
+		media_controls.set_playback(playback)?;
 		Ok(())
 	}
 
