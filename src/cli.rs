@@ -1,3 +1,7 @@
+// Copyright (C) 2026, Arne Daude, Per Daude
+// SPDX-License-Identifier: GPL-3.0-or-later
+// This file is part of 'ttmp': https://github.com/BlueSheep3/ttmp
+
 use self::error::CliError;
 use crate::data::context;
 use std::{env, path::PathBuf, process};

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 authors = ["BlueSheep3", "Per"]
 description = "Minimal TUI music player that organizes songs using tags"
+license = "GPL-3.0-or-later"
 repository = "https://github.com/BlueSheep3/ttmp"
 
 [dependencies]

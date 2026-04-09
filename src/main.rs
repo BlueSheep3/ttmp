@@ -1,3 +1,7 @@
+// Copyright (C) 2026, Arne Daude, Per Daude
+// SPDX-License-Identifier: GPL-3.0-or-later
+// This file is part of 'ttmp': https://github.com/BlueSheep3/ttmp
+
 #![deny(unsafe_op_in_unsafe_fn)]
 #![deny(clippy::multiple_unsafe_ops_per_block)]
 #![warn(clippy::undocumented_unsafe_blocks)]

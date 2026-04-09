@@ -1,3 +1,7 @@
+// Copyright (C) 2026, Arne Daude, Per Daude
+// SPDX-License-Identifier: GPL-3.0-or-later
+// This file is part of 'ttmp': https://github.com/BlueSheep3/ttmp
+
 use super::error::{DataError, Result};
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};

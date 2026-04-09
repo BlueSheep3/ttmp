@@ -1,3 +1,7 @@
+// Copyright (C) 2026, Arne Daude, Per Daude
+// SPDX-License-Identifier: GPL-3.0-or-later
+// This file is part of 'ttmp': https://github.com/BlueSheep3/ttmp
+
 fn main() -> std::io::Result<()> {
 	if cfg!(target_os = "windows") {
 		winres::WindowsResource::new()
