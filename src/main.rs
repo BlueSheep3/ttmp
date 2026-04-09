@@ -139,7 +139,7 @@ impl Model {
 /// or starts listening to other processes sending over files.
 /// Returns `None` if this process should do no inter process communication.
 fn handle_shared_memory() -> Result<ControlFlow<(), Option<FileReader>>, Box<dyn Error>> {
-	const PIPE_NAME: &str = "//./pipe/ipc_music_player_xmyuiwqcoecmztrciqenasjkf";
+	const PIPE_NAME: &str = "//./pipe/ipc_ttmp_xmyuiwqcoecmztrciqenasjkf";
 
 	// if this is not started in the terminal, there will only ever be a single arg
 	let file = env::args_os().nth(1).map(PathBuf::from);

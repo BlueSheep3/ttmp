@@ -74,7 +74,7 @@ pub fn parse_command_line_args() -> Result<ParsedCommandLineArgs, CliError> {
 fn print_help_and_exit() -> ! {
 	println!(
 		"\
-A minimal TUI based music player.
+Minimal TUI music player that organizes songs using tags.
 
 All arguments that do not start with a '-' will be interpreted as file paths.
 If you specify at least 1 file, you will (unless specified otherwise) start in 'temp' mode
@@ -103,7 +103,7 @@ fn print_version_and_exit() -> ! {
 
 fn get_savedata_path() -> Result<PathBuf, CliError> {
 	let config = dirs::data_dir().ok_or(CliError::CantFindSavedataPath)?;
-	let path = config.join("musicplayer");
+	let path = config.join("ttmp");
 	Ok(path)
 }
 

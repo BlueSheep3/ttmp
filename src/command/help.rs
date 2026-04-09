@@ -63,9 +63,9 @@ You must type in ':dr<enter>' add all your songs to the file list
 Then, press 'r' to add all songs in the file list to the current playlist.
 
 You can change the path to your music folder in the config, which is located at
- Linux :  ~/.local/share/musicplayer/config.ron
- MacOS :  /Users/USER/Library/Application Support/musicplayer/config.ron
-Windows:  C:\\Users\\USER\\AppData\\Roaming\\musicplayer\\config.ron
+ Linux :  ~/.local/share/ttmp/config.ron
+ MacOS :  /Users/USER/Library/Application Support/ttmp/config.ron
+Windows:  C:\\Users\\USER\\AppData\\Roaming\\ttmp\\config.ron
 
 The main way to organize songs here is to filter by tags.
 You can add a new tag to the current song by pressing 't'.

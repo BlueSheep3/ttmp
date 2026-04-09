@@ -1,7 +1,10 @@
 [package]
-name = "music_player"
+name = "ttmp"
 version = "0.1.0"
 edition = "2024"
+authors = ["BlueSheep3", "Per"]
+description = "Minimal TUI music player that organizes songs using tags"
+repository = "https://github.com/BlueSheep3/ttmp"
 
 [dependencies]
 interprocess = "2.2.3"
@@ -16,6 +19,5 @@ dirs = "6"
 
 [build-dependencies]
 winres = "0.1"
-
 
 [features]
