@@ -107,8 +107,8 @@ fn cleanup(model: Model, save: bool) -> Result<(), Box<dyn Error>> {
 	// To get around these we detach them on a different thread.
 	// This probably causes them to not properly get detached, because the program
 	// exits immediatly after this, but i haven't noticed any problems so far.
-	if let Some(mut media_controls) = model.ctx.media_controls {
-		std::thread::spawn(move || media_controls.detach().ok()); // ignores errors
+	if let Some(mut media) = model.ctx.media {
+		std::thread::spawn(move || media.controls.detach().ok()); // ignores errors
 	}
 
 	Ok(())

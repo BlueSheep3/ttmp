@@ -5,6 +5,7 @@
 pub mod config;
 pub mod context;
 pub mod files;
+pub mod media;
 pub mod playlist;
 
 use self::error::Result;
