@@ -47,6 +47,11 @@ impl Context {
 	}
 
 	pub fn update_media_volume(&mut self) -> Result<()> {
+		// set_volume is onlz available on mpris
+		#[cfg(all(
+			unix,
+			not(any(target_os = "macos", target_os = "ios", target_os = "android"))
+		))]
 		if let Some(media) = &mut self.media {
 			media.controls.set_volume(self.config.volume as f64)?;
 		}
@@ -135,6 +140,10 @@ pub fn setup_media(cmd_sender: Sender<String>) -> Result<Media> {
 // https://github.com/Sinono3/souvlaki/blob/023e1a98f2b31704cfc48c160809ed3c5e139345/examples/print_events.rs
 
 #[cfg(target_os = "windows")]
+#[allow(
+	clippy::multiple_unsafe_ops_per_block,
+	clippy::undocumented_unsafe_blocks
+)]
 mod windows {
 	use std::{io::Error, mem};
 	use windows::{
