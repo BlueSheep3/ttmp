@@ -8,6 +8,7 @@ use crate::{
 	data::{
 		context::{Context, ProgramMode},
 		files::{FileData, is_mp4_file, make_temp_mp4_copy},
+		media,
 	},
 };
 use rodio::{Decoder, Source};
@@ -70,6 +71,7 @@ pub fn update(mut model: Model, message: Message) -> Result<(Model, Option<Messa
 
 	maybe_goto_next_song(&mut model, &mut update_temp);
 
+	media::common_update();
 	if model.last_media_update.elapsed() > Duration::from_secs(5) {
 		model.ctx.update_media_progress()?;
 		model.last_media_update = Instant::now();

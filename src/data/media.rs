@@ -1,3 +1,7 @@
+// Copyright (C) 2026, Arne Daude, Per Daude
+// SPDX-License-Identifier: GPL-3.0-or-later
+// This file is part of 'ttmp': https://github.com/BlueSheep3/ttmp
+
 use super::{context::Context, error::Result, playlist};
 use souvlaki::{
 	MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, MediaPosition, PlatformConfig,
@@ -11,16 +15,15 @@ use std::{
 pub struct Media {
 	pub controls: MediaControls,
 	#[cfg(target_os = "windows")]
-	pub dummy_window: self::windows::DummyWindow,
+	pub _dummy_window: self::windows::DummyWindow,
 }
 
+// You must call the specific media update functions whenever some
+// change to the corresponding data happens.
+// On windows, you must call `windows::pump_event_queue()` repeatedly. (call common_update)
 impl Context {
-	// You must call the specific media update functions whenever some
-	// change to the corresponding data happens.
-	// On windows, you must also call `windows::pump_event_queue()` repeatedly.
-
-	// this REALLY doesn't like it if you send too many metadata updates too quickly, so use
-	// the smaller functions when possible and space out any calls you need to do repeatedly.
+	/// this REALLY doesn't like it if you send too many metadata updates too quickly, so use
+	/// the smaller functions when possible and space out any calls you need to do repeatedly.
 	pub fn update_media_all(&mut self) -> Result<()> {
 		self.update_media_metadata()?;
 		self.update_media_volume()?;
@@ -47,7 +50,7 @@ impl Context {
 	}
 
 	pub fn update_media_volume(&mut self) -> Result<()> {
-		// set_volume is onlz available on mpris
+		// set_volume is only available on MPRIS
 		#[cfg(all(
 			unix,
 			not(any(target_os = "macos", target_os = "ios", target_os = "android"))
@@ -83,7 +86,7 @@ pub fn setup_media(cmd_sender: Sender<String>) -> Result<Media> {
 	#[cfg(not(target_os = "windows"))]
 	let hwnd = None;
 	#[cfg(target_os = "windows")]
-	let (hwnd, dummy_window) = {
+	let (hwnd, _dummy_window) = {
 		let dummy_window = windows::DummyWindow::new().unwrap();
 		let handle = Some(dummy_window.handle.0 as _);
 		(handle, dummy_window)
@@ -129,9 +132,17 @@ pub fn setup_media(cmd_sender: Sender<String>) -> Result<Media> {
 	let media = Media {
 		controls,
 		#[cfg(target_os = "windows")]
-		dummy_window,
+		_dummy_window,
 	};
 	Ok(media)
+}
+
+/// Media updating code that should be ran very often.
+/// This is different from the other media update functions,
+/// because those need to be called slowly.
+pub fn common_update() {
+	#[cfg(target_os = "windows")]
+	windows::pump_event_queue();
 }
 
 // ########################## windows specific boilerplate ###############################
@@ -156,7 +167,6 @@ mod windows {
 				TranslateMessage, WINDOW_EX_STYLE, WINDOW_STYLE, WM_QUIT, WNDCLASSEXW,
 			},
 		},
-		core::PCWSTR,
 		w,
 	};
 
@@ -165,7 +175,7 @@ mod windows {
 	}
 
 	impl DummyWindow {
-		pub fn new() -> Result<DummyWindow, String> {
+		pub fn new() -> Result<Self, String> {
 			let class_name = w!("SimpleTray");
 
 			let handle_result = unsafe {
@@ -175,7 +185,7 @@ mod windows {
 				let wnd_class = WNDCLASSEXW {
 					cbSize: mem::size_of::<WNDCLASSEXW>() as u32,
 					hInstance: instance,
-					lpszClassName: PCWSTR::from(class_name),
+					lpszClassName: class_name,
 					lpfnWndProc: Some(Self::wnd_proc),
 					..Default::default()
 				};
@@ -212,7 +222,7 @@ mod windows {
 				}
 			};
 
-			handle_result.map(|handle| DummyWindow { handle })
+			handle_result.map(|handle| Self { handle })
 		}
 		extern "system" fn wnd_proc(
 			hwnd: HWND,
