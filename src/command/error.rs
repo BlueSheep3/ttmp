@@ -14,6 +14,8 @@ pub enum CommandError {
 	Config(#[from] data::error::DataError),
 	#[error("io error: {0}")]
 	Io(#[from] io::Error),
+	#[error("trash error: {0}")]
+	Trash(#[from] trash::Error),
 	#[error("Failed while parsing Integer: {0}")]
 	ParseInt(#[from] std::num::ParseIntError),
 	#[error("Failed while parsing Float: {0}")]

@@ -8,7 +8,7 @@ use super::{
 		CommandError::{InvalidFileName, NoFilePlaying},
 		Result,
 	},
-	play::next_song,
+	misc,
 };
 use crate::data::{context::Context, files::Files};
 use std::{fs, path::Path};
@@ -33,9 +33,10 @@ pub fn show_full_path(ctx: &mut Context) -> Result<()> {
 pub fn delete_current(ctx: &mut Context) -> Result<CommandReturn> {
 	let current = ctx.playlist.remaining.front().ok_or(NoFilePlaying)?;
 	ctx.files.remove(current);
-	fs::remove_file(ctx.files.root.join(current))?;
+	trash::delete(ctx.files.root.join(current))?;
+	ctx.playlist.remaining.pop_front();
 	ctx.cmd_out += "File deleted successfully.\n";
-	Ok(next_song(ctx))
+	Ok(misc::load_in_first_song(ctx))
 }
 
 pub fn move_file(ctx: &mut Context, destination_folder: &[&str]) -> Result<()> {
