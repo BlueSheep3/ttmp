@@ -87,7 +87,8 @@ pub fn setup_media(cmd_sender: Sender<String>) -> Result<Media> {
 	let hwnd = None;
 	#[cfg(target_os = "windows")]
 	let (hwnd, _dummy_window) = {
-		let dummy_window = windows::DummyWindow::new().unwrap();
+		let dummy_window =
+			windows::DummyWindow::new().expect("creating a dummy window should awlays work");
 		let handle = Some(dummy_window.handle.0 as _);
 		(handle, dummy_window)
 	};

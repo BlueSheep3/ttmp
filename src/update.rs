@@ -171,7 +171,9 @@ fn receive_files_over_ipc(model: &mut Model) {
 	for path in paths.into_iter().filter(|p| p.is_file()) {
 		model.ctx.cmd_out.push_str(&format!(
 			"Added Song: {}",
-			path.file_name().unwrap().to_string_lossy()
+			path.file_name()
+				.expect("paths sent over ipc should be valid")
+				.to_string_lossy()
 		));
 		model.ctx.playlist.remaining.push_front(path.clone());
 		model.ctx.files.mappings.insert(path, FileData::default());

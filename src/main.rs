@@ -4,6 +4,7 @@
 
 #![deny(unsafe_op_in_unsafe_fn)]
 #![deny(clippy::multiple_unsafe_ops_per_block)]
+#![deny(clippy::unwrap_used)]
 #![warn(clippy::undocumented_unsafe_blocks)]
 #![warn(clippy::infinite_loop)]
 #![warn(clippy::use_self)]
