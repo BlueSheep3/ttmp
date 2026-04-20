@@ -231,8 +231,6 @@ fn handle_command_return(
 	}
 }
 
-// TODO handle errors of the following functions better
-
 fn load_first_song(ctx: &mut Context) {
 	ctx.player.stop();
 
@@ -254,7 +252,7 @@ fn load_first_song(ctx: &mut Context) {
 			match make_temp_mp4_copy(&path, &ctx.savedata_path) {
 				Ok(p) => path = p,
 				Err(_) => {
-					eprintln!("Failed to convert song to mp3: {}", first.display());
+					ctx.cmd_out += &format!("Failed to convert song to mp3: {}\n", first.display());
 					ctx.playlist.next_song();
 					continue;
 				}
@@ -263,7 +261,7 @@ fn load_first_song(ctx: &mut Context) {
 		match File::open(path) {
 			Ok(file) => break (file, first),
 			Err(_) => {
-				eprintln!("Failed to load song: {}", first.display());
+				ctx.cmd_out += &format!("Failed to load song: {}\n", first.display());
 				ctx.playlist.next_song();
 				continue;
 			}
@@ -295,7 +293,7 @@ fn load_first_song(ctx: &mut Context) {
 		.update_media_metadata()
 		.and_then(|_| ctx.update_media_progress())
 	{
-		eprintln!("failed to update media metadata: {e}");
+		ctx.cmd_out += &format!("failed to update media metadata: {e}\n");
 	}
 }
 

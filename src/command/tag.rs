@@ -6,7 +6,7 @@
 
 use crate::{
 	command::error::{
-		CommandError::{NoFilePlaying, NotInFiles},
+		CommandError::{DoesntHaveTag, NoFilePlaying, NotInFiles, TagStartsWithExclemationMark},
 		Result,
 	},
 	data::context::Context,
@@ -38,6 +38,9 @@ pub fn show_all_tags(ctx: &mut Context) {
 }
 
 pub fn add_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
+	if tag.starts_with('!') {
+		return Err(TagStartsWithExclemationMark(tag.to_owned()));
+	}
 	let current = ctx.playlist.remaining.front().ok_or(NoFilePlaying)?;
 	let tags = &mut ctx
 		.files
@@ -49,6 +52,9 @@ pub fn add_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
 }
 
 pub fn remove_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
+	if tag.starts_with('!') {
+		return Err(TagStartsWithExclemationMark(tag.to_owned()));
+	}
 	let current = ctx.playlist.remaining.front().ok_or(NoFilePlaying)?;
 	let tags = &mut ctx
 		.files
@@ -56,13 +62,15 @@ pub fn remove_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
 		.ok_or(NotInFiles(current.clone()))?
 		.tags;
 	if !tags.remove(tag) {
-		// TODO should this be an error?
-		ctx.cmd_out += "The current File does not have that tag\n";
+		return Err(DoesntHaveTag(tag.to_owned()));
 	}
 	Ok(())
 }
 
 pub fn add_tag_remaining(ctx: &mut Context, tag: &str) -> Result<()> {
+	if tag.starts_with('!') {
+		return Err(TagStartsWithExclemationMark(tag.to_owned()));
+	}
 	for file in &mut ctx.playlist.remaining {
 		let tags = &mut ctx
 			.files
@@ -75,6 +83,9 @@ pub fn add_tag_remaining(ctx: &mut Context, tag: &str) -> Result<()> {
 }
 
 pub fn remove_tag_remaining(ctx: &mut Context, tag: &str) -> Result<()> {
+	if tag.starts_with('!') {
+		return Err(TagStartsWithExclemationMark(tag.to_owned()));
+	}
 	for file in &mut ctx.playlist.remaining {
 		let tags = &mut ctx
 			.files

@@ -119,7 +119,13 @@ pub fn setup_media(cmd_sender: Sender<String>) -> Result<Media> {
 			MediaControlEvent::SetPosition(pos) => Owned(format!("g {}s", pos.0.as_secs_f32())),
 			MediaControlEvent::SetVolume(vol) => Owned(format!("pv {vol}")),
 			MediaControlEvent::OpenUri(_uri) => {
-				eprintln!("the OpenUri media control is currently not supported"); // TODO
+				// TODO
+				if cmd_sender
+					.send("echo The OpenUri media control is currently not supported".to_owned())
+					.is_err()
+				{
+					eprintln!("The OpenUri media control is currently not supported");
+				}
 				return;
 			}
 			MediaControlEvent::Raise => return, // ttmp doesn't control the terminal window

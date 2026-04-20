@@ -51,4 +51,8 @@ pub enum CommandError {
 	ListNameBadChar(char),
 	#[error("Invalid file name: {0}")]
 	InvalidFileName(PathBuf),
+	#[error("The current song doesn't have the tag: {0}")]
+	DoesntHaveTag(String),
+	#[error("Tags cannot start with '!', but got: {0}")]
+	TagStartsWithExclemationMark(String),
 }
