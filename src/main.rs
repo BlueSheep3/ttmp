@@ -120,6 +120,7 @@ struct Model {
 
 	ctx: Context,
 	last_update_time: Instant,
+	last_autosave_time: Instant,
 
 	cmd_receiver: Receiver<String>,
 	last_media_update: Instant,
@@ -149,6 +150,7 @@ impl Model {
 
 			ctx,
 			last_update_time: Instant::now(),
+			last_autosave_time: Instant::now(),
 
 			cmd_receiver,
 			last_media_update: Instant::now(),

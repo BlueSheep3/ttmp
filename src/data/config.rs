@@ -16,6 +16,8 @@ pub struct Config {
 	pub volume: f32,
 	/// what to do when songs are playable after not being playable
 	pub start_play_state: StartPlayState,
+	/// when to save automatically
+	pub autosave: AutosavePreference,
 	/// when this is true, the entire screen is replaced by a simple message,
 	/// which removes basically all the logic for redrawing the screen
 	pub dont_redraw_screen: bool,
@@ -32,6 +34,7 @@ impl Default for Config {
 			speed: 1.0,
 			volume: 1.0,
 			start_play_state: StartPlayState::Never,
+			autosave: AutosavePreference::AfterSeconds(3 * 60),
 			dont_redraw_screen: false,
 			current_playlist: "main".to_owned(),
 			macros: HashMap::from(
@@ -50,7 +53,7 @@ impl Default for Config {
 /// Represents what should happen when the program starts being able to play songs again.
 /// This can happen for example when the program is opened, or when the playlist
 /// is filled with songs after being empty.
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum StartPlayState {
 	/// always start playing when opening the program
 	Always,
@@ -62,13 +65,24 @@ pub enum StartPlayState {
 }
 
 impl StartPlayState {
-	pub fn should_play(self) -> bool {
+	pub fn should_play(&self) -> bool {
 		match self {
 			Self::Always => true,
 			Self::Never => false,
-			Self::Remember(play) => play,
+			Self::Remember(play) => *play,
 		}
 	}
+}
+
+/// Represents when you want to save automatically.
+#[derive(Serialize, Deserialize, Debug)]
+pub enum AutosavePreference {
+	/// never autosave
+	Never,
+	/// autosave every `N` seconds
+	AfterSeconds(u32),
+	/// autosave whenever you finish a song
+	AfterSongFinished,
 }
 
 impl Config {

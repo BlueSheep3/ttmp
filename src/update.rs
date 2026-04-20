@@ -6,6 +6,7 @@ use crate::{
 	Message, Model,
 	command::{CommandReturn, match_input, run_macro_or},
 	data::{
+		config::AutosavePreference,
 		context::{Context, ProgramMode},
 		files::{FileData, is_mp4_file, make_temp_mp4_copy},
 		media,
@@ -58,6 +59,15 @@ pub fn update(mut model: Model, message: Message) -> Result<(Model, Option<Messa
 		model.ctx.playlist.progress += model.last_update_time.elapsed();
 	}
 	model.last_update_time = Instant::now();
+
+	if let AutosavePreference::AfterSeconds(s) = model.ctx.config.autosave
+		&& model.last_autosave_time.elapsed().as_secs() > s as u64
+	{
+		if let Err(e) = super::maybe_save(&model.ctx) {
+			model.ctx.cmd_out += &format!("Failed to autosave: {e}");
+		}
+		model.last_autosave_time = Instant::now();
+	}
 
 	let msg = match () {
 		() if update_temp.quit => Some(Message::Quit { save: true }),
@@ -207,6 +217,13 @@ fn maybe_goto_next_song(model: &mut Model, update_temp: &mut UpdateTemp) {
 			update_temp,
 		);
 	}
+
+	if matches!(ctx.config.autosave, AutosavePreference::AfterSongFinished)
+		&& let Err(e) = super::maybe_save(ctx)
+	{
+		ctx.cmd_out += &format!("Failed to autosave: {e}");
+	}
+
 	if !ctx.playlist.remaining.is_empty() {
 		load_first_song(ctx);
 		handle_command_return(
