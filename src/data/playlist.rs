@@ -14,13 +14,13 @@ use std::{
 };
 
 #[derive(Serialize, Deserialize, Debug, Default)]
+#[serde(default)]
 pub struct Playlist {
 	/// how far you are into the current song
 	pub progress: Duration,
 	/// the remaining songs in order (current song included)
 	pub remaining: VecDeque<PathBuf>,
 	/// the songs you have already listened to in order
-	#[serde(default)]
 	pub previous: VecDeque<PathBuf>,
 }
 

@@ -34,43 +34,18 @@ pub fn handle_event(model: &Model, event: Event) -> Option<Message> {
 	}
 }
 
-fn handle_key_normal_mode(_model: &Model, key: KeyEvent) -> Option<Message> {
+fn handle_key_normal_mode(model: &Model, key: KeyEvent) -> Option<Message> {
 	if key.modifiers.contains(KeyModifiers::CONTROL) {
 		return None;
 	}
 
-	match key.code {
-		KeyCode::Char(':' | ';' | 'c') => Some(Message::GotoCommandMode),
-		KeyCode::Char('?') => Some(Message::RunCommand("help first")),
-		KeyCode::Char('q') => Some(Message::Quit { save: true }),
-		KeyCode::Char('S') => Some(Message::RunCommand("s")),
-
-		KeyCode::Char(' ') => Some(Message::RunCommand("p")),
-		KeyCode::Char('p') => Some(Message::RunCommand("p-")),
-		KeyCode::Char('P') => Some(Message::RunCommand("p+")),
-		KeyCode::Right => Some(Message::RunCommand("gf 5s")),
-		KeyCode::Left => Some(Message::RunCommand("gb 5s")),
-		KeyCode::Up => Some(Message::RunCommand("pv+ 5")),
-		KeyCode::Down => Some(Message::RunCommand("pv- 5")),
-		KeyCode::Char('0') => Some(Message::RunCommand("g")),
-
-		KeyCode::Char('r') => Some(Message::RunCommand("r")),
-		KeyCode::Char('j') => Some(Message::RunCommand("pn")),
-		KeyCode::Char('k') => Some(Message::RunCommand("pp")),
-
-		KeyCode::Char('f') => Some(Message::StartCommand("fte ")),
-		KeyCode::Char('F') => Some(Message::StartCommand("fta ")),
-		KeyCode::Char('s') => Some(Message::StartCommand("fs ")),
-		KeyCode::Char('t') => Some(Message::StartCommand("tac ")),
-		KeyCode::Char('T') => Some(Message::StartCommand("trc ")),
-
-		KeyCode::Char('l') => Some(Message::StartCommand("ls ")),
-		KeyCode::Char('L') => Some(Message::RunCommand("lg")),
-
-		KeyCode::Char('m') => Some(Message::StartCommand("m")),
-		KeyCode::Char('M') => Some(Message::RunCommand("ml")),
-		_ => None,
-	}
+	model
+		.ctx
+		.config
+		.keybinds
+		.iter()
+		.find(|(k, _)| *k == key.code)
+		.map(|(_, m)| m.clone())
 }
 
 fn handle_key_command_mode(_model: &Model, key: KeyEvent) -> Option<Message> {

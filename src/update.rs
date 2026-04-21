@@ -45,11 +45,7 @@ pub fn update(mut model: Model, message: Message) -> Result<(Model, Option<Messa
 
 	receive_files_over_ipc(&mut model);
 
-	if model.current_command.is_some() {
-		handle_message_command_mode(&mut model, message, &mut update_temp)?;
-	} else {
-		handle_message_normal_mode(&mut model, message, &mut update_temp)?;
-	}
+	handle_message(&mut model, message, &mut update_temp)?;
 
 	if let Ok(cmd) = model.cmd_receiver.try_recv() {
 		run_command(&mut model, &mut update_temp, &cmd)?;
@@ -90,54 +86,34 @@ pub fn update(mut model: Model, message: Message) -> Result<(Model, Option<Messa
 	Ok((model, msg))
 }
 
-fn handle_message_normal_mode(
-	model: &mut Model,
-	message: Message,
-	update_temp: &mut UpdateTemp,
-) -> Result<()> {
+fn handle_message(model: &mut Model, message: Message, update_temp: &mut UpdateTemp) -> Result<()> {
 	match message {
 		Message::DoUpdateAgain => (),
-		Message::GotoNormalMode => model.ctx.cmd_out = String::new(),
-		Message::GotoCommandMode => model.current_command = Some(String::new()),
-		Message::ToggleScreenRedraws => model.ctx.config.dont_redraw_screen ^= true,
-
-		Message::Quit { .. } => (), // this gets handled in the main loop
-		Message::RunCommand(cmd) => run_command(model, update_temp, cmd)?,
-		Message::StartCommand(cmd) => model.current_command = Some(cmd.to_owned()),
-
-		Message::TypedChar(_) | Message::Backspace | Message::Enter => {
-			panic!("the message {message:?} should not be sent during normal mode")
-		}
-	}
-	Ok(())
-}
-
-fn handle_message_command_mode(
-	model: &mut Model,
-	message: Message,
-	update_temp: &mut UpdateTemp,
-) -> Result<()> {
-	let Some(cmd) = &mut model.current_command else {
-		panic!("current_command was None, despite being in command mode");
-	};
-
-	match message {
-		Message::DoUpdateAgain => (),
-		Message::GotoNormalMode => model.current_command = None,
-		Message::GotoCommandMode => (),
-		Message::ToggleScreenRedraws => model.ctx.config.dont_redraw_screen ^= true,
-
-		Message::Quit { .. } => (), // this gets handled in the main loop
-		Message::RunCommand(_) | Message::StartCommand(_) => {
-			panic!("the message {message:?} should not be sent during command mode")
-		}
-
-		Message::TypedChar(c) => cmd.push(c),
-		Message::Backspace => drop(cmd.pop()),
-		Message::Enter => {
-			let cmd_clone = cmd.clone();
-			run_command(model, update_temp, &cmd_clone)?;
+		Message::GotoNormalMode => {
+			model.ctx.cmd_out = String::new();
 			model.current_command = None;
+		}
+		Message::GotoCommandMode => _ = model.current_command.get_or_insert(String::new()),
+		Message::ToggleScreenRedraws => model.ctx.config.dont_redraw_screen ^= true,
+
+		Message::Quit { .. } => (), // this gets handled in the main loop
+		Message::RunCommand(cmd) => run_command(model, update_temp, &cmd)?,
+		Message::StartCommand(cmd) => model.current_command = Some(cmd),
+
+		Message::TypedChar(c) => {
+			model.current_command.get_or_insert(String::new()).push(c);
+		}
+		Message::Backspace => {
+			if let Some(cmd) = &mut model.current_command {
+				cmd.pop();
+			}
+		}
+		Message::Enter => {
+			if let Some(cmd) = &mut model.current_command {
+				let cmd_clone = cmd.clone();
+				run_command(model, update_temp, &cmd_clone)?;
+				model.current_command = None;
+			}
 		}
 	}
 	Ok(())

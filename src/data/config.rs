@@ -3,12 +3,14 @@
 // This file is part of 'ttmp': https://github.com/BlueSheep3/ttmp
 
 use super::error::Result;
-use crate::serializer;
+use crate::{Message, serializer};
+use ratatui::crossterm::event::KeyCode;
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, collections::HashMap, fs, path::Path};
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(default)]
 pub struct Config {
 	/// the speed of the music
 	pub speed: f32,
@@ -23,6 +25,8 @@ pub struct Config {
 	pub dont_redraw_screen: bool,
 	/// the name of the current playlist
 	pub current_playlist: String,
+	/// the keys you can press in normal mode
+	pub keybinds: Vec<(KeyCode, Message)>,
 	/// type "m NAME" to run all commands listed under the macro
 	#[serde(serialize_with = "serializer::sorted_hashmap")]
 	pub macros: HashMap<String, String>,
@@ -46,6 +50,43 @@ impl Default for Config {
 				]
 				.map(|(l, r)| (l.to_owned(), r.to_owned())),
 			),
+			keybinds: vec![
+				// general
+				(KeyCode::Char(':'), Message::GotoCommandMode),
+				(KeyCode::Char(';'), Message::GotoCommandMode),
+				(KeyCode::Char('c'), Message::GotoCommandMode),
+				(
+					KeyCode::Char('?'),
+					Message::RunCommand("help first".to_owned()),
+				),
+				(KeyCode::Char('q'), Message::Quit { save: true }),
+				(KeyCode::Char('S'), Message::RunCommand("s".to_owned())),
+				// managing this song
+				(KeyCode::Char(' '), Message::RunCommand("p".to_owned())),
+				(KeyCode::Char('p'), Message::RunCommand("p-".to_owned())),
+				(KeyCode::Char('P'), Message::RunCommand("p+".to_owned())),
+				(KeyCode::Right, Message::RunCommand("gf 5s".to_owned())),
+				(KeyCode::Left, Message::RunCommand("gb 5s".to_owned())),
+				(KeyCode::Up, Message::RunCommand("pv+ 5".to_owned())),
+				(KeyCode::Down, Message::RunCommand("pv- 5".to_owned())),
+				(KeyCode::Char('0'), Message::RunCommand("g".to_owned())),
+				// managing this list
+				(KeyCode::Char('r'), Message::RunCommand("r".to_owned())),
+				(KeyCode::Char('j'), Message::RunCommand("pn".to_owned())),
+				(KeyCode::Char('k'), Message::RunCommand("pp".to_owned())),
+				// filters and tags
+				(KeyCode::Char('f'), Message::StartCommand("fte ".to_owned())),
+				(KeyCode::Char('F'), Message::StartCommand("fta ".to_owned())),
+				(KeyCode::Char('s'), Message::StartCommand("fs ".to_owned())),
+				(KeyCode::Char('t'), Message::StartCommand("tac ".to_owned())),
+				(KeyCode::Char('T'), Message::StartCommand("trc ".to_owned())),
+				// lists
+				(KeyCode::Char('l'), Message::StartCommand("ls ".to_owned())),
+				(KeyCode::Char('L'), Message::RunCommand("lg".to_owned())),
+				// macros
+				(KeyCode::Char('m'), Message::StartCommand("m".to_owned())),
+				(KeyCode::Char('M'), Message::RunCommand("ml".to_owned())),
+			],
 		}
 	}
 }

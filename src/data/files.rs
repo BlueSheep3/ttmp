@@ -24,6 +24,7 @@ pub struct Files {
 	pub root: PathBuf,
 	/// all music files, paths should be relative to `root`.
 	#[serde(serialize_with = "serializer::sorted_hashmap")]
+	#[serde(default)]
 	pub mappings: HashMap<PathBuf, FileData>,
 }
 
@@ -37,6 +38,7 @@ impl Files {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
+#[serde(default)]
 pub struct FileData {
 	#[serde(serialize_with = "serializer::sorted_hashset")]
 	pub tags: HashSet<String>,

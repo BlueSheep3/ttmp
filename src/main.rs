@@ -22,6 +22,7 @@ mod update;
 mod view;
 
 use self::data::{context::Context, error::DataError};
+use serde::{Deserialize, Serialize};
 use shmem_reader::FileReader;
 use std::{
 	env,
@@ -127,7 +128,7 @@ struct Model {
 	ipc_server: Option<FileReader>,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 enum Message {
 	DoUpdateAgain,
 	GotoNormalMode,
@@ -135,8 +136,8 @@ enum Message {
 	ToggleScreenRedraws,
 
 	Quit { save: bool },
-	RunCommand(&'static str),
-	StartCommand(&'static str),
+	RunCommand(String),
+	StartCommand(String),
 
 	TypedChar(char),
 	Backspace,
