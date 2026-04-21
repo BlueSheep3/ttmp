@@ -49,7 +49,7 @@ fn main() -> ExitCode {
 fn fallible_main() -> Result<(), Box<dyn Error>> {
 	let cli_args = cli::parse_command_line_args()?;
 
-	data::create_default_savedata_if_not_present(&cli_args.savedata_path)?;
+	data::create_default_savedata_if_not_present(&cli_args.paths)?;
 
 	let server = if cli_args.disable_ipc {
 		None
@@ -63,18 +63,18 @@ fn fallible_main() -> Result<(), Box<dyn Error>> {
 	let (cmd_sender, cmd_receiver) = mpsc::channel();
 	let ctx = match cli_args.program_mode {
 		data::context::ProgramMode::Main => {
-			Context::new_main(&cli_args.savedata_path, cli_args.disable_media, cmd_sender)?
+			Context::new_main(cli_args.paths, cli_args.disable_media, cmd_sender)?
 		}
 		data::context::ProgramMode::Temp => Context::new_temp(
 			&cli_args.files,
-			&cli_args.savedata_path,
+			cli_args.paths,
 			cli_args.disable_media,
 			cmd_sender,
 		)?,
 	};
 
 	let mut terminal = ratatui::try_init()?;
-	let mut model = Model::new(ctx, cmd_receiver, server);
+	let mut model = Box::new(Model::new(ctx, cmd_receiver, server));
 	defer! { ratatui::restore(); }
 
 	update::init(&mut model);
@@ -99,7 +99,7 @@ fn fallible_main() -> Result<(), Box<dyn Error>> {
 	}
 }
 
-fn cleanup(model: Model, save: bool) -> Result<(), Box<dyn Error>> {
+fn cleanup(model: Box<Model>, save: bool) -> Result<(), Box<dyn Error>> {
 	if save {
 		maybe_save(&model.ctx)?;
 	}
@@ -192,10 +192,11 @@ fn handle_shared_memory() -> Result<ControlFlow<(), Option<FileReader>>, Box<dyn
 
 fn maybe_save(ctx: &Context) -> Result<(), DataError> {
 	if ctx.program_mode.can_save() {
-		ctx.config.save(&ctx.savedata_path)?;
-		ctx.files.save(&ctx.savedata_path)?;
+		ctx.config.save(&ctx.savepaths.config)?;
+		ctx.state.save(&ctx.savepaths.data)?;
+		ctx.files.save(&ctx.savepaths.data)?;
 		ctx.playlist
-			.save(&ctx.config.current_playlist, &ctx.savedata_path)?;
+			.save(&ctx.state.current_playlist, &ctx.savepaths.data)?;
 	}
 	Ok(())
 }

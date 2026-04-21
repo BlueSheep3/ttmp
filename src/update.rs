@@ -40,7 +40,7 @@ struct UpdateTemp {
 	reload_first_song: bool,
 }
 
-pub fn update(mut model: Model, message: Message) -> Result<(Model, Option<Message>)> {
+pub fn update(mut model: Box<Model>, message: Message) -> Result<(Box<Model>, Option<Message>)> {
 	let mut update_temp = UpdateTemp::default();
 
 	receive_files_over_ipc(&mut model);
@@ -94,7 +94,7 @@ fn handle_message(model: &mut Model, message: Message, update_temp: &mut UpdateT
 			model.current_command = None;
 		}
 		Message::GotoCommandMode => _ = model.current_command.get_or_insert(String::new()),
-		Message::ToggleScreenRedraws => model.ctx.config.dont_redraw_screen ^= true,
+		Message::ToggleScreenRedraws => model.ctx.state.dont_redraw_screen ^= true,
 
 		Message::Quit { .. } => (), // this gets handled in the main loop
 		Message::RunCommand(cmd) => run_command(model, update_temp, &cmd)?,
@@ -242,7 +242,7 @@ fn load_first_song(ctx: &mut Context) {
 			ctx.files.root.join(&first)
 		};
 		if is_mp4_file(&path.to_string_lossy()) {
-			match make_temp_mp4_copy(&path, &ctx.savedata_path) {
+			match make_temp_mp4_copy(&path, &ctx.savepaths.data) {
 				Ok(p) => path = p,
 				Err(_) => {
 					ctx.cmd_out += &format!("Failed to convert song to mp3: {}\n", first.display());

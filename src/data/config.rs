@@ -7,24 +7,15 @@ use crate::{Message, serializer};
 use ratatui::crossterm::event::KeyCode;
 use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, collections::HashMap, fs, path::Path};
+use std::{borrow::Cow::Borrowed, collections::HashMap, fs, path::Path};
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(default)]
 pub struct Config {
-	/// the speed of the music
-	pub speed: f32,
-	/// the volume of the music
-	pub volume: f32,
 	/// what to do when songs are playable after not being playable
 	pub start_play_state: StartPlayState,
 	/// when to save automatically
 	pub autosave: AutosavePreference,
-	/// when this is true, the entire screen is replaced by a simple message,
-	/// which removes basically all the logic for redrawing the screen
-	pub dont_redraw_screen: bool,
-	/// the name of the current playlist
-	pub current_playlist: String,
 	/// the keys you can press in normal mode
 	pub keybinds: Vec<(KeyCode, Message)>,
 	/// type "m NAME" to run all commands listed under the macro
@@ -35,12 +26,8 @@ pub struct Config {
 impl Default for Config {
 	fn default() -> Self {
 		Self {
-			speed: 1.0,
-			volume: 1.0,
 			start_play_state: StartPlayState::Never,
 			autosave: AutosavePreference::AfterSeconds(3 * 60),
-			dont_redraw_screen: false,
-			current_playlist: "main".to_owned(),
 			macros: HashMap::from(
 				[
 					("@cmd_empty", ""),
@@ -102,17 +89,7 @@ pub enum StartPlayState {
 	/// meaning you have to start it manually
 	Never,
 	/// remember whether the song was playing when you closed the program
-	Remember(bool),
-}
-
-impl StartPlayState {
-	pub fn should_play(&self) -> bool {
-		match self {
-			Self::Always => true,
-			Self::Never => false,
-			Self::Remember(play) => *play,
-		}
-	}
+	Remember,
 }
 
 /// Represents when you want to save automatically.
@@ -136,8 +113,8 @@ impl Config {
 
 	pub fn save(&self, savedata_path: &Path) -> Result<()> {
 		let mut pretty_config = PrettyConfig::new();
-		pretty_config.indentor = Cow::Borrowed("\t");
-		pretty_config.new_line = Cow::Borrowed("\n");
+		pretty_config.indentor = Borrowed("\t");
+		pretty_config.new_line = Borrowed("\n");
 
 		let config_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
 		let path = savedata_path.join("config.ron");

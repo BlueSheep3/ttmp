@@ -19,10 +19,10 @@ use crate::data::{context::Context, playlist::Playlist};
 
 pub fn get_list_names(ctx: &mut Context) -> Result<()> {
 	ctx.cmd_out += "All Playlist Names:\n";
-	let mut names = Playlist::get_all_names(&ctx.savedata_path)?;
+	let mut names = Playlist::get_all_names(&ctx.savepaths.data)?;
 	names.sort();
 	for name in names {
-		let first_char = if name == ctx.config.current_playlist {
+		let first_char = if name == ctx.state.current_playlist {
 			'>'
 		} else {
 			'-'
@@ -50,20 +50,20 @@ fn force_str_format(name: &str) -> Result<String> {
 
 pub fn new_empty(ctx: &Context, name: &str) -> Result<()> {
 	let name = force_str_format(name)?;
-	if name == ctx.config.current_playlist {
+	if name == ctx.state.current_playlist {
 		return Err(SaveOverCurrentPlaylist);
 	}
 	let list = Playlist::default();
-	list.save(&name, &ctx.savedata_path)?;
+	list.save(&name, &ctx.savepaths.data)?;
 	Ok(())
 }
 
 pub fn duplicate_to(ctx: &Context, name: &str) -> Result<()> {
 	let name = force_str_format(name)?;
-	if name == ctx.config.current_playlist {
+	if name == ctx.state.current_playlist {
 		return Err(SaveOverCurrentPlaylist);
 	}
-	ctx.playlist.save(&name, &ctx.savedata_path)?;
+	ctx.playlist.save(&name, &ctx.savepaths.data)?;
 	Ok(())
 }
 
@@ -71,10 +71,10 @@ pub fn append_from(ctx: &mut Context, name: &str) -> Result<CommandReturn> {
 	let name = force_str_format(name)?;
 	// the current playlist is saved lazily, meaning Playlist::load(name)
 	// would get a previous version of ctx.playlist
-	let songs = if name == ctx.config.current_playlist {
+	let songs = if name == ctx.state.current_playlist {
 		ctx.playlist.remaining.clone()
 	} else {
-		Playlist::load(&name, &ctx.savedata_path)?.remaining
+		Playlist::load(&name, &ctx.savepaths.data)?.remaining
 	};
 	let was_empty = ctx.playlist.remaining.is_empty();
 	ctx.playlist.remaining.extend(songs);
@@ -90,19 +90,19 @@ pub fn copy_from(ctx: &mut Context, name: &str) -> Result<CommandReturn> {
 	let name = force_str_format(name)?;
 	// the current playlist is saved lazily, meaning Playlist::load(name)
 	// would get a previous version of ctx.playlist
-	if name == ctx.config.current_playlist {
+	if name == ctx.state.current_playlist {
 		return Ok(CommandReturn::Nothing);
 	}
-	ctx.playlist = Playlist::load(&name, &ctx.savedata_path)?;
+	ctx.playlist = Playlist::load(&name, &ctx.savepaths.data)?;
 	Ok(CommandReturn::ReloadFirstSong)
 }
 
 pub fn remove(ctx: &Context, name: &str) -> Result<()> {
 	let name = force_str_format(name)?;
-	if name == ctx.config.current_playlist {
+	if name == ctx.state.current_playlist {
 		return Err(DeleteCurrentPlaylist);
 	}
-	Playlist::remove(&name, &ctx.savedata_path)?;
+	Playlist::remove(&name, &ctx.savepaths.data)?;
 	Ok(())
 }
 
@@ -110,9 +110,9 @@ pub fn switch_to(ctx: &mut Context, name: &str) -> Result<CommandReturn> {
 	let name = force_str_format(name)?;
 	if ctx.program_mode.can_save() {
 		ctx.playlist
-			.save(&ctx.config.current_playlist, &ctx.savedata_path)?;
+			.save(&ctx.state.current_playlist, &ctx.savepaths.data)?;
 	}
-	ctx.playlist = Playlist::load(&name, &ctx.savedata_path)?;
-	ctx.config.current_playlist = name;
+	ctx.playlist = Playlist::load(&name, &ctx.savepaths.data)?;
+	ctx.state.current_playlist = name;
 	Ok(CommandReturn::ReloadFirstSong)
 }

@@ -17,7 +17,7 @@ use ratatui::{
 use std::borrow::Cow::Borrowed;
 
 pub fn view(model: &Model, frame: &mut Frame) {
-	if model.ctx.config.dont_redraw_screen {
+	if model.ctx.state.dont_redraw_screen {
 		dont_draw_screen_replacement(frame, frame.area());
 		return;
 	}
@@ -82,7 +82,7 @@ fn playlist_window(model: &Model, frame: &mut Frame, area: Rect) {
 	let top_line = Line::from(format!(
 		" {}list: {}      remaining: {}      previous: {}",
 		temp_mode_marker,
-		model.ctx.config.current_playlist,
+		model.ctx.state.current_playlist,
 		model.ctx.playlist.remaining.len(),
 		model.ctx.playlist.previous.len(),
 	));
@@ -182,8 +182,8 @@ fn song_data(model: &Model, frame: &mut Frame, area: Rect) {
 		tags_str = String::new();
 	}
 
-	let volume = (100. * model.ctx.config.volume).round();
-	let speed = (100. * model.ctx.config.speed).round() / 100.;
+	let volume = (100. * model.ctx.state.volume).round();
+	let speed = (100. * model.ctx.state.speed).round() / 100.;
 
 	frame.render_widget(text, layout[0]);
 	frame.render_widget(

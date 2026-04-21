@@ -56,7 +56,7 @@ impl Context {
 			not(any(target_os = "macos", target_os = "ios", target_os = "android"))
 		))]
 		if let Some(media) = &mut self.media {
-			media.controls.set_volume(self.config.volume as f64)?;
+			media.controls.set_volume(self.state.volume as f64)?;
 		}
 		Ok(())
 	}

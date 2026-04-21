@@ -7,47 +7,69 @@ pub mod context;
 pub mod files;
 pub mod media;
 pub mod playlist;
+pub mod state;
 
-use self::error::Result;
-use crate::data::{config::Config, files::Files, playlist::Playlist};
-use std::{
-	fs,
-	path::{Path, PathBuf},
+use self::{error::Result, state::State};
+use crate::{
+	cli::SavePaths,
+	data::{config::Config, files::Files, playlist::Playlist},
 };
+use std::{fs, path::PathBuf};
 
-pub fn create_default_savedata_if_not_present(savedata_path: &Path) -> Result<()> {
-	if fs::exists(savedata_path)? {
-		// already has the savedata, so we do nothing
-		return Ok(());
+pub fn create_default_savedata_if_not_present(paths: &SavePaths) -> Result<()> {
+	if !fs::exists(paths.config.join("config.ron"))? {
+		println!("No config found, creating new default config...");
+		fs::create_dir_all(&paths.config)?;
+		Config::default().save(&paths.config)?;
 	}
-	println!("No savedata found, creating new default savedata...");
 
-	fs::create_dir_all(savedata_path.join("list"))?;
+	// i need an instance of state, since the current playlist must exist
+	let state;
+	if !fs::exists(paths.data.join("state.ron"))? {
+		println!("No state found, creating new default state...");
+		fs::create_dir_all(&paths.data)?;
+		state = State::default();
+		state.save(&paths.data)?;
+	} else {
+		state = State::load(&paths.data)?;
+	}
 
-	let music = match dirs::audio_dir() {
-		Some(m) => m,
-		None => {
-			println!(
-				"\
-Cant find a default Music folder.
+	if !fs::exists(paths.data.join("files.ron"))? {
+		println!("No files found, creating new default files...");
+		fs::create_dir_all(&paths.data)?;
+		let music = match dirs::audio_dir() {
+			Some(m) => m,
+			None => {
+				println!(
+					"\
+Can't find a default Music folder.
 Give the path of the folder that contains all your Music.\
 "
-			);
-			loop {
-				print!("Music Path: ");
-				let music_path = readln();
-				let music_path = PathBuf::from(music_path);
-				if music_path.is_dir() {
-					break music_path;
+				);
+				loop {
+					print!("Music Path: ");
+					let music_path = readln();
+					let music_path = PathBuf::from(music_path);
+					if music_path.is_dir() {
+						break music_path;
+					}
+					println!("The path you provided is not a directory that exists.");
 				}
-				println!("The path you provided is not a directory that exists.");
 			}
-		}
-	};
+		};
+		Files::empty_with_root(music).save(&paths.data)?;
+	}
 
-	Config::default().save(savedata_path)?;
-	Files::empty_with_root(music).save(savedata_path)?;
-	Playlist::default().save("main", savedata_path)?;
+	let current_list_path = paths
+		.data
+		.join("list")
+		.join(format!("{}.ron", state.current_playlist));
+	if !fs::exists(current_list_path)? {
+		println!("No playlist found, creating new default playlist...");
+		fs::create_dir_all(paths.data.join("list"))?;
+		Playlist::default().save(&state.current_playlist, &paths.data)?;
+	}
+
 	Ok(())
 }
 

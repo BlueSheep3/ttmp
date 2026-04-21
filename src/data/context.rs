@@ -8,22 +8,21 @@ use super::{
 	files::{FileData, Files},
 	media::{Media, setup_media},
 	playlist::Playlist,
+	state::State,
 };
+use crate::cli::SavePaths;
 use rodio::{DeviceSinkBuilder, MixerDeviceSink, Player};
-use std::{
-	path::{Path, PathBuf},
-	sync::mpsc::Sender,
-	time::Duration,
-};
+use std::{path::PathBuf, sync::mpsc::Sender, time::Duration};
 
 pub struct Context {
 	pub program_mode: ProgramMode,
 	pub cmd_out: String,
 	pub config: Config,
+	pub state: State,
 	pub files: Files,
 	pub playlist: Playlist,
 	pub player: Player,
-	pub savedata_path: PathBuf,
+	pub savepaths: SavePaths,
 	pub media: Option<Media>,
 
 	// this are just here, so the music doesnt stop, due to it being dropped
@@ -50,14 +49,15 @@ impl ProgramMode {
 
 impl Context {
 	pub fn new_main(
-		savedata_path: &Path,
+		savepaths: SavePaths,
 		disable_media: bool,
 		cmd_sender: Sender<String>,
 	) -> Result<Self> {
 		let program_mode = ProgramMode::Main;
-		let config = Config::load(savedata_path)?;
-		let files = Files::load(savedata_path)?;
-		let playlist = Playlist::load(&config.current_playlist, savedata_path)?;
+		let config = Config::load(&savepaths.config)?;
+		let state = State::load(&savepaths.data)?;
+		let files = Files::load(&savepaths.data)?;
+		let playlist = Playlist::load(&state.current_playlist, &savepaths.data)?;
 		let mut device_sink = DeviceSinkBuilder::open_default_sink()?;
 		device_sink.log_on_drop(false);
 		let player = Player::connect_new(device_sink.mixer());
@@ -70,10 +70,11 @@ impl Context {
 			program_mode,
 			cmd_out: String::new(),
 			config,
+			state,
 			files,
 			playlist,
 			player,
-			savedata_path: savedata_path.to_owned(),
+			savepaths,
 			media,
 			_device_sink: device_sink,
 		};
@@ -84,13 +85,14 @@ impl Context {
 
 	pub fn new_temp(
 		file_paths: &[PathBuf],
-		savedata_path: &Path,
+		savepaths: SavePaths,
 		disable_media: bool,
 		cmd_sender: Sender<String>,
 	) -> Result<Self> {
 		let program_mode = ProgramMode::Temp;
-		let mut config = Config::load(savedata_path)?;
-		let mut files = Files::load(savedata_path)?;
+		let mut config = Config::load(&savepaths.config)?;
+		let mut state = State::load(&savepaths.data)?;
+		let mut files = Files::load(&savepaths.data)?;
 		let mut playlist = Playlist::default();
 		let mut device_sink = DeviceSinkBuilder::open_default_sink()?;
 		device_sink.log_on_drop(false);
@@ -101,7 +103,7 @@ impl Context {
 		};
 
 		config.start_play_state = StartPlayState::Always;
-		config.current_playlist = "temp".to_owned();
+		state.current_playlist = "temp".to_owned();
 		files.mappings = file_paths
 			.iter()
 			.map(|f| (f.clone(), FileData::default()))
@@ -113,10 +115,11 @@ impl Context {
 			program_mode,
 			cmd_out: String::new(),
 			config,
+			state,
 			files,
 			playlist,
 			player,
-			savedata_path: savedata_path.to_owned(),
+			savepaths,
 			media,
 			_device_sink: device_sink,
 		};
@@ -126,22 +129,26 @@ impl Context {
 	}
 
 	fn init_player(&self) {
-		let should_play = matches!(
-			self.config.start_play_state,
-			StartPlayState::Always | StartPlayState::Remember(true)
-		);
-		if should_play && !self.playlist.remaining.is_empty() {
+		if self.should_be_playing() && !self.playlist.remaining.is_empty() {
 			self.player.play();
 		} else {
 			self.player.pause();
 		}
-		self.player.set_speed(self.config.speed);
-		self.player.set_volume(self.config.volume);
+		self.player.set_speed(self.state.speed);
+		self.player.set_volume(self.state.volume);
 	}
 
 	pub fn get_current_duration(&self) -> Option<Duration> {
 		let first = self.playlist.remaining.front()?;
 		let song = self.files.get(first)?;
 		song.duration
+	}
+
+	pub fn should_be_playing(&self) -> bool {
+		match self.config.start_play_state {
+			StartPlayState::Always => true,
+			StartPlayState::Never => false,
+			StartPlayState::Remember => self.state.is_playing,
+		}
 	}
 }

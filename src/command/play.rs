@@ -12,7 +12,7 @@ use super::{
 	},
 	misc,
 };
-use crate::data::{config::StartPlayState, context::Context, playlist::Playlist};
+use crate::data::{context::Context, playlist::Playlist};
 use rand::seq::SliceRandom;
 
 pub fn randomize(ctx: &mut Context) -> CommandReturn {
@@ -31,27 +31,21 @@ pub fn toggle_playing(ctx: &mut Context) -> Result<()> {
 	}
 	// swapping the remembered play/pause state independantly of the player's
 	// play state, because the player is always paused when no songs remain
-	if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
-		*p ^= true;
-	}
+	ctx.state.is_playing ^= true;
 	ctx.update_media_progress()?;
 	Ok(())
 }
 
 pub fn start_playing(ctx: &mut Context) -> Result<()> {
 	ctx.player.play();
-	if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
-		*p = true;
-	}
+	ctx.state.is_playing = true;
 	ctx.update_media_progress()?;
 	Ok(())
 }
 
 pub fn pause_playing(ctx: &mut Context) -> Result<()> {
 	ctx.player.pause();
-	if let StartPlayState::Remember(p) = &mut ctx.config.start_play_state {
-		*p = false;
-	}
+	ctx.state.is_playing = false;
 	ctx.update_media_progress()?;
 	Ok(())
 }
@@ -117,7 +111,7 @@ pub fn enforce_max(list: &mut Playlist, max: &str) -> Result<()> {
 
 pub fn set_speed(ctx: &mut Context, speed: &str) -> Result<()> {
 	let s = speed.parse::<f32>()?;
-	ctx.config.speed = s;
+	ctx.state.speed = s;
 	ctx.player.set_speed(s);
 	Ok(())
 }
@@ -129,12 +123,12 @@ pub fn set_volume(ctx: &mut Context, volume: &str) -> Result<()> {
 
 pub fn add_volume(ctx: &mut Context, add: &str) -> Result<()> {
 	let a = add.parse::<f32>()? / 100.;
-	set_volume_float(ctx, ctx.config.volume + a)
+	set_volume_float(ctx, ctx.state.volume + a)
 }
 
 pub fn sub_volume(ctx: &mut Context, sub: &str) -> Result<()> {
 	let s = sub.parse::<f32>()? / 100.;
-	set_volume_float(ctx, ctx.config.volume - s)
+	set_volume_float(ctx, ctx.state.volume - s)
 }
 
 fn set_volume_float(ctx: &mut Context, volume: f32) -> Result<()> {
@@ -144,8 +138,8 @@ fn set_volume_float(ctx: &mut Context, volume: f32) -> Result<()> {
 	if volume > 3. {
 		return Err(VolumeTooHigh(volume));
 	}
-	ctx.config.volume = volume;
-	ctx.player.set_volume(ctx.config.volume);
+	ctx.state.volume = volume;
+	ctx.player.set_volume(ctx.state.volume);
 	ctx.update_media_volume()?;
 	Ok(())
 }

@@ -66,10 +66,18 @@ You must type in ':dr<enter>' add all your songs to the file list
 (it also removes any songs that were in the list, but are no longer in your music folder).
 Then, press 'r' to add all songs in the file list to the current playlist.
 
-You can change the path to your music folder in the config, which is located at
- Linux :  ~/.local/share/ttmp/config.ron
- MacOS :  /Users/USER/Library/Application Support/ttmp/config.ron
-Windows:  C:\\Users\\USER\\AppData\\Roaming\\ttmp\\config.ron
+The config directory is located at
+ Linux :  $XDG_CONFIG_HOME/ttmp  or  $HOME/.config/ttmp
+ MacOS :  /Users/USER/Library/Application Support/ttmp
+Windows:  C:\\Users\\USER\\AppData\\Roaming\\ttmp
+
+The data directory is located at
+ Linux :  $XDG_DATA_HOME/ttmp  or  $HOME/.local/share/ttmp
+ MacOS :  /Users/USER/Library/Application Support/ttmp
+Windows:  C:\\Users\\USER\\AppData\\Roaming\\ttmp
+
+You can select the directory that contains all your music
+in the 'files.ron' file in the data directory.
 
 The main way to organize songs here is to filter by tags.
 You can add a new tag to the current song by pressing 't'.

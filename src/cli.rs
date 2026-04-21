@@ -11,7 +11,12 @@ pub struct ParsedCommandLineArgs {
 	pub files: Vec<PathBuf>,
 	pub disable_ipc: bool,
 	pub disable_media: bool,
-	pub savedata_path: PathBuf,
+	pub paths: SavePaths,
+}
+
+pub struct SavePaths {
+	pub data: PathBuf,
+	pub config: PathBuf,
 }
 
 pub fn parse_command_line_args() -> Result<ParsedCommandLineArgs, CliError> {
@@ -19,7 +24,8 @@ pub fn parse_command_line_args() -> Result<ParsedCommandLineArgs, CliError> {
 	let mut files = Vec::new();
 	let mut disable_ipc = false;
 	let mut disable_media = false;
-	let mut savedata_path = None;
+	let mut data_path = None;
+	let mut config_path = None;
 
 	let mut args = env::args_os();
 	// the first argument is always the program itself
@@ -41,9 +47,13 @@ pub fn parse_command_line_args() -> Result<ParsedCommandLineArgs, CliError> {
 						_ => return Err(CliError::UnkownMode(mode)),
 					}
 				}
-				b"--path" | b"-p" => {
-					let path = args.next().ok_or(CliError::NoSavedataPathSpecifier)?;
-					savedata_path = Some(PathBuf::from(path));
+				b"--data" | b"-d" => {
+					let path = args.next().ok_or(CliError::NoDataPathSpecifier)?;
+					data_path = Some(PathBuf::from(path));
+				}
+				b"--config" | b"-c" => {
+					let path = args.next().ok_or(CliError::NoConfigPathSpecifier)?;
+					config_path = Some(PathBuf::from(path));
 				}
 				b"--" => {
 					files.extend(args.map(PathBuf::from));
@@ -63,18 +73,27 @@ pub fn parse_command_line_args() -> Result<ParsedCommandLineArgs, CliError> {
 			context::ProgramMode::Temp
 		}
 	});
-	let savedata_path = match savedata_path {
-		Some(p) => p,
+	let data_path = match data_path {
+		Some(d) => d,
 		// this function could produce an error, so only call it when
 		// the savedata path hasn't already been specified explicitly
-		None => get_savedata_path()?,
+		None => get_data_path()?,
+	};
+	let config_path = match config_path {
+		Some(c) => c,
+		// this function could produce an error, so only call it when
+		// the savedata path hasn't already been specified explicitly
+		None => get_config_path()?,
 	};
 	let parsed_args = ParsedCommandLineArgs {
 		program_mode,
 		files,
 		disable_ipc,
 		disable_media,
-		savedata_path,
+		paths: SavePaths {
+			data: data_path,
+			config: config_path,
+		},
 	};
 	Ok(parsed_args)
 }
@@ -95,8 +114,8 @@ Arguments:
 --no-ipc           - disable all interprocess communication
 --no-media         - disable media controls and metadata
 --mode, -m  MODE   - specify what program mode to start in (either 'main' or 'temp')
---path, -p  PATH   - specify the savedata path (this should be a directory)
-                     note that default savedata will only be created if PATH doesn't exist
+--data, -d  PATH   - specify the data path (this should be a directory)
+--config, -c PATH  - specify the config path (this should be a directory)
 --                 - force all arguments after this one to be interpreted as file paths
 "
 	);
@@ -110,8 +129,14 @@ fn print_version_and_exit() -> ! {
 	std::process::exit(0);
 }
 
-fn get_savedata_path() -> Result<PathBuf, CliError> {
+fn get_data_path() -> Result<PathBuf, CliError> {
 	let config = dirs::data_dir().ok_or(CliError::CantFindSavedataPath)?;
+	let path = config.join("ttmp");
+	Ok(path)
+}
+
+fn get_config_path() -> Result<PathBuf, CliError> {
+	let config = dirs::config_dir().ok_or(CliError::CantFindSavedataPath)?;
 	let path = config.join("ttmp");
 	Ok(path)
 }
@@ -128,9 +153,11 @@ pub mod error {
 		UnkownMode(OsString),
 		#[error("no mode was specified. --mode requires 1 argument")]
 		NoModeSpecifier,
-		#[error("no savedata path was specified. --path requires 1 argument")]
-		NoSavedataPathSpecifier,
-		#[error("can't find savedata path")]
+		#[error("no data path was specified. --data requires 1 argument")]
+		NoDataPathSpecifier,
+		#[error("no config path was specified. --config requires 1 argument")]
+		NoConfigPathSpecifier,
+		#[error("can't find savedata path\nyou can try specifying one with an argument")]
 		CantFindSavedataPath,
 	}
 }
