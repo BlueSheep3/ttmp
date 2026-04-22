@@ -46,7 +46,7 @@ impl Default for Config {
 					KeyCode::Char('?'),
 					Message::RunCommand("help first".to_owned()),
 				),
-				(KeyCode::Char('q'), Message::Quit { save: true }),
+				(KeyCode::Char('q'), Message::RunCommand("q".to_owned())),
 				(KeyCode::Char('S'), Message::RunCommand("s".to_owned())),
 				// managing this song
 				(KeyCode::Char(' '), Message::RunCommand("p".to_owned())),

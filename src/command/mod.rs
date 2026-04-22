@@ -55,6 +55,7 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["pn", num] => return play::skip_songs(ctx, num),
 		["pp"] => return Ok(play::previous_song(ctx)),
 		["pcp"] => play::clear_previous(ctx),
+		["px"] => play::remove_current(ctx),
 		["pp", num] => return play::go_back_songs(ctx, num),
 		["pm", max] => play::enforce_max(&mut ctx.playlist, max)?,
 		["ps", speed] => play::set_speed(ctx, speed)?,

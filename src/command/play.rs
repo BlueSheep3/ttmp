@@ -103,6 +103,10 @@ pub fn clear_previous(ctx: &mut Context) {
 	ctx.playlist.previous.clear();
 }
 
+pub fn remove_current(ctx: &mut Context) {
+	ctx.playlist.remaining.pop_front();
+}
+
 pub fn enforce_max(list: &mut Playlist, max: &str) -> Result<()> {
 	let max = max.parse::<usize>()?;
 	list.remaining.truncate(max);

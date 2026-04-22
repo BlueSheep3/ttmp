@@ -9,7 +9,7 @@ use super::error::{CommandError::NoHelpAvailable, Result};
 
 pub fn general(cmd_out: &mut String) {
 	*cmd_out += "\
-h CATEGORY - show help for a category of commands
+help CATEGORY  - show help for a category of commands
 
 Misc Commands:
 help, h, ? - Show this help
@@ -62,7 +62,7 @@ Some normal mode commands will also automatically enter command mode.
 
 You may be wondering why you are not seeing any songs in your playlist.
 This program does not automatically insert songs into its file list.
-You must type in ':dr<enter>' add all your songs to the file list
+You must type in ':dr<enter>' to add all your songs to the file list
 (it also removes any songs that were in the list, but are no longer in your music folder).
 Then, press 'r' to add all songs in the file list to the current playlist.
 
@@ -91,6 +91,9 @@ you first press 'r' to get all songs and then
 
 fn normal(cmd_out: &mut String) {
 	*cmd_out += "\
+This is the list of all the default keybinds in normal mode,
+however you can rebind them in the config file.
+
 :, ;, c      - enter command mode
 ?            - open a help page
 q            - save and quit
@@ -120,6 +123,10 @@ L            - get the names of all playlists
 
 m NAME ARGS  - run Macro with NAME and arguments ARGS
 M            - lists all Macros
+
+These keybinds cannot be rebound and can be used in any mode:
+ctrl c       - go into normal mode and clear command output
+ctrl r       - toggle whether screen redraws should happen
 ";
 }
 
@@ -132,6 +139,7 @@ pr        - randomize / shuffle playlist
 pn NUM    - skips NUM songs
 pp NUM    - goes back NUM songs
 pcp       - clears all previous songs
+px        - remove this song from the playlist
 pm NUM    - set the maximum number of files to be played
 ps SPEED  - set the playback speed to SPEED
 pv VOLUME - set the playback volume to VOLUME
