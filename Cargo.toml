@@ -1,6 +1,6 @@
 [package]
 name = "ttmp"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 authors = ["BlueSheep3", "Per"]
 description = "Minimal TUI music player that organizes songs using tags"
