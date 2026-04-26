@@ -52,7 +52,13 @@ pub fn update(mut model: Box<Model>, message: Message) -> Result<(Box<Model>, Op
 	}
 
 	if !model.ctx.player.is_paused() {
-		model.ctx.playlist.progress += model.last_update_time.elapsed();
+		let elapsed = model.last_update_time.elapsed();
+		// if more than 5 seconds passed since the last update,
+		// that probably means the computer was in sleep mode,
+		// meaning the song wasn't actually playing during that time.
+		if elapsed <= Duration::from_secs(5) {
+			model.ctx.playlist.progress += elapsed;
+		}
 	}
 	model.last_update_time = Instant::now();
 
