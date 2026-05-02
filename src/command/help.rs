@@ -15,6 +15,7 @@ Misc Commands:
 help, h, ? - Show this help
 q          - Save and Quit the Program
 q!         - Quit the Program without saving
+q?         - Save and Quit the Program even if errors occured
 s          - Save the Config
 r          - Reset the Playlist (put all files in it)
 redraw     - Toggle whether screen redraws should happen

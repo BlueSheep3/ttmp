@@ -91,19 +91,30 @@ fn fallible_main() -> Result<(), Box<dyn Error>> {
 		};
 
 		while let Some(m) = message {
-			if let Message::Quit { save } = m {
-				return cleanup(model, save);
+			if let Message::Quit {
+				save,
+				abort_on_error,
+			} = m
+			{
+				if save
+					&& model.ctx.program_mode.can_save()
+					&& let Err(e) = important_force_save(&model.ctx)
+					&& abort_on_error
+				{
+					model.ctx.cmd_out += &format!("error while saving on quit:\n{e}");
+					// saving failed while trying to quit, so abort the quit,
+					// giving you another chance at saving
+					break;
+				}
+				cleanup(model);
+				return Ok(());
 			}
 			(model, message) = update::update(model, m)?;
 		}
 	}
 }
 
-fn cleanup(model: Box<Model>, save: bool) -> Result<(), Box<dyn Error>> {
-	if save {
-		maybe_save(&model.ctx)?;
-	}
-
+fn cleanup(model: Box<Model>) {
 	// For some reason, detaching the media_controls can take a long time.
 	// This detach will automatically happen if media_controls gets dropped.
 	// To get around these we detach them on a different thread.
@@ -112,8 +123,6 @@ fn cleanup(model: Box<Model>, save: bool) -> Result<(), Box<dyn Error>> {
 	if let Some(mut media) = model.ctx.media {
 		std::thread::spawn(move || media.controls.detach().ok()); // ignores errors
 	}
-
-	Ok(())
 }
 
 struct Model {
@@ -135,7 +144,7 @@ enum Message {
 	GotoCommandMode,
 	ToggleScreenRedraws,
 
-	Quit { save: bool },
+	Quit { save: bool, abort_on_error: bool },
 	RunCommand(String),
 	StartCommand(String),
 
@@ -190,13 +199,37 @@ fn handle_shared_memory() -> Result<ControlFlow<(), Option<FileReader>>, Box<dyn
 	}
 }
 
-fn maybe_save(ctx: &Context) -> Result<(), DataError> {
+/// Will only save in a program mode that can save.
+/// If any file fails to be saved, the error is ignored and the other files are still attempted.
+fn unimportant_maybe_save(ctx: &Context) {
 	if ctx.program_mode.can_save() {
-		ctx.config.save(&ctx.savepaths.config)?;
-		ctx.state.save(&ctx.savepaths.data)?;
-		ctx.files.save(&ctx.savepaths.data)?;
-		ctx.playlist
-			.save(&ctx.state.current_playlist, &ctx.savepaths.data)?;
+		_ = ctx.config.save(&ctx.savepaths.config);
+		_ = ctx.state.save(&ctx.savepaths.data);
+		_ = ctx.files.save(&ctx.savepaths.data);
+		_ = ctx
+			.playlist
+			.save(&ctx.state.current_playlist, &ctx.savepaths.data);
 	}
-	Ok(())
+}
+
+/// Will always save, no matter what program mode you are in.
+/// If any file fails to be saved, the other files will still try to save,
+/// and then all errors are collected.
+fn important_force_save(ctx: &Context) -> Result<(), DataError> {
+	let results = [
+		ctx.config.save(&ctx.savepaths.config),
+		ctx.state.save(&ctx.savepaths.data),
+		ctx.files.save(&ctx.savepaths.data),
+		ctx.playlist
+			.save(&ctx.state.current_playlist, &ctx.savepaths.data),
+	];
+	let errors = results
+		.into_iter()
+		.filter_map(|r| r.err())
+		.collect::<Vec<_>>();
+	if errors.is_empty() {
+		Ok(())
+	} else {
+		Err(DataError::MultiError(errors))
+	}
 }

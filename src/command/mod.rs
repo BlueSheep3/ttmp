@@ -26,6 +26,7 @@ pub enum CommandReturn {
 	Nothing,
 	Quit,
 	QuitNoSave,
+	QuitNoAbort,
 	/// Reloads all data about the song at index 0 in the remaining song list.
 	/// Note that this will also respect things like the current progress,
 	/// so e.g. to skip a song you first need to set progress to 0 and then return this.
@@ -41,6 +42,7 @@ pub fn match_input(input: &str, ctx: &mut Context) -> Result<CommandReturn> {
 		["h" | "?" | "help", command] => help::specific(command, &mut ctx.cmd_out)?,
 		["q"] => return Ok(CommandReturn::Quit),
 		["q!"] => return Ok(CommandReturn::QuitNoSave),
+		["q?"] => return Ok(CommandReturn::QuitNoAbort),
 		["s"] => misc::save(ctx)?,
 		["r"] => return misc::reset_remaining(ctx),
 		["redraw"] => ctx.state.dont_redraw_screen ^= true,

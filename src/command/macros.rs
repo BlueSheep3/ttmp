@@ -55,8 +55,9 @@ pub fn run_commands(
 		let state = super::match_input(&cmd, ctx)?;
 		match state {
 			CommandReturn::Nothing => (),
-			CommandReturn::Quit => return Ok(state),
-			CommandReturn::QuitNoSave => return Ok(state),
+			CommandReturn::Quit | CommandReturn::QuitNoSave | CommandReturn::QuitNoAbort => {
+				return Ok(state);
+			}
 			CommandReturn::ReloadFirstSong => should_reload = true,
 		}
 	}

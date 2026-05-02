@@ -113,5 +113,8 @@ pub mod error {
 
 		#[error("the file name {0:?} is not valid utf8")]
 		FileNotUtf8Name(std::ffi::OsString),
+
+		#[error("{}", .0.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n"))]
+		MultiError(Vec<Self>),
 	}
 }

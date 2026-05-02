@@ -37,6 +37,7 @@ pub fn init(model: &mut Model) {
 struct UpdateTemp {
 	quit: bool,
 	quit_no_save: bool,
+	quit_no_abort: bool,
 	reload_first_song: bool,
 }
 
@@ -65,21 +66,11 @@ pub fn update(mut model: Box<Model>, message: Message) -> Result<(Box<Model>, Op
 	if let AutosavePreference::AfterSeconds(s) = model.ctx.config.autosave
 		&& model.last_autosave_time.elapsed().as_secs() > s as u64
 	{
-		if let Err(e) = super::maybe_save(&model.ctx) {
-			model.ctx.cmd_out += &format!("Failed to autosave: {e}");
-		}
+		super::unimportant_maybe_save(&model.ctx);
 		model.last_autosave_time = Instant::now();
 	}
 
-	let msg = match () {
-		() if update_temp.quit => Some(Message::Quit { save: true }),
-		() if update_temp.quit_no_save => Some(Message::Quit { save: false }),
-		() if update_temp.reload_first_song => {
-			load_first_song(&mut model.ctx);
-			Some(Message::DoUpdateAgain)
-		}
-		() => None,
-	};
+	let msg = handle_update_temp(&update_temp, &mut model.ctx);
 
 	maybe_goto_next_song(&mut model, &mut update_temp);
 
@@ -90,6 +81,28 @@ pub fn update(mut model: Box<Model>, message: Message) -> Result<(Box<Model>, Op
 	}
 
 	Ok((model, msg))
+}
+
+fn handle_update_temp(update_temp: &UpdateTemp, ctx: &mut Context) -> Option<Message> {
+	match () {
+		() if update_temp.quit => Some(Message::Quit {
+			save: true,
+			abort_on_error: true,
+		}),
+		() if update_temp.quit_no_save => Some(Message::Quit {
+			save: false,
+			abort_on_error: false,
+		}),
+		() if update_temp.quit_no_abort => Some(Message::Quit {
+			save: true,
+			abort_on_error: false,
+		}),
+		() if update_temp.reload_first_song => {
+			load_first_song(ctx);
+			Some(Message::DoUpdateAgain)
+		}
+		() => None,
+	}
 }
 
 fn handle_message(model: &mut Model, message: Message, update_temp: &mut UpdateTemp) -> Result<()> {
@@ -200,10 +213,8 @@ fn maybe_goto_next_song(model: &mut Model, update_temp: &mut UpdateTemp) {
 		);
 	}
 
-	if matches!(ctx.config.autosave, AutosavePreference::AfterSongFinished)
-		&& let Err(e) = super::maybe_save(ctx)
-	{
-		ctx.cmd_out += &format!("Failed to autosave: {e}");
+	if matches!(ctx.config.autosave, AutosavePreference::AfterSongFinished) {
+		super::unimportant_maybe_save(ctx);
 	}
 
 	if !ctx.playlist.remaining.is_empty() {
@@ -225,6 +236,7 @@ fn handle_command_return(
 		Ok(CommandReturn::Nothing) => (),
 		Ok(CommandReturn::Quit) => update_temp.quit = true,
 		Ok(CommandReturn::QuitNoSave) => update_temp.quit_no_save = true,
+		Ok(CommandReturn::QuitNoAbort) => update_temp.quit_no_abort = true,
 		Ok(CommandReturn::ReloadFirstSong) => update_temp.reload_first_song = true,
 		Err(e) => command_output.push_str(&e.to_string()),
 	}
