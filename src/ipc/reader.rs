@@ -21,7 +21,6 @@ impl FileReader {
 		file_list.drain(..).collect()
 	}
 
-	#[allow(unused_variables)]
 	pub fn start_receiving(&self, pipe_name: &str) {
 		let pipe_name = pipe_name.to_owned();
 		let file_list = Arc::clone(&self.file_list);
@@ -45,10 +44,10 @@ impl FileReader {
 				.expect("Failed to create named pipe");
 
 			loop {
+				let mut buffer = String::new();
 				match listener.accept() {
 					Ok(connection) => {
 						let mut reader = BufReader::new(connection);
-						let mut buffer = String::new();
 
 						reader
 							.read_to_string(&mut buffer)
@@ -57,6 +56,36 @@ impl FileReader {
 						let path = PathBuf::from(buffer.trim());
 						let mut file_list = file_list.lock().expect("Failed to lock file list");
 						file_list.push(path);
+						buffer.clear();
+					}
+					Err(e) => {
+						eprintln!("Failed to accept client connection: {e}");
+						break;
+					}
+				}
+			}
+		});
+
+		#[cfg(unix)]
+		thread::spawn(move || {
+			use std::{
+				ffi::OsStr,
+				os::unix::{ffi::OsStrExt, net::UnixListener},
+			};
+
+			_ = std::fs::remove_file(&pipe_name); // ignore error if file doesnt exist
+			let listener = UnixListener::bind(&pipe_name).expect("failed to create unix socket");
+			let mut buffer = Vec::new();
+
+			loop {
+				match listener.accept() {
+					Ok((mut socket, _)) => {
+						socket
+							.read_to_end(&mut buffer)
+							.expect("failed to read message");
+						let mut file_list = file_list.lock().expect("failed to lock file list");
+						file_list.push(OsStr::from_bytes(&buffer).into());
+						buffer.clear();
 					}
 					Err(e) => {
 						eprintln!("Failed to accept client connection: {e}");

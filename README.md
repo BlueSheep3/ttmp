@@ -18,9 +18,6 @@ tagged `a` or `b`, but not `c`.
 ttmp has been tested on Windows and Linux.
 While it has not been tested on MacOS, it should also work.
 
-The non-Windows versions are currently missing the IPC features,
-but this should be fixed soon.
-
 
 
 # Compiling from source
