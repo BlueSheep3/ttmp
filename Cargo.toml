@@ -29,7 +29,7 @@ features = [
 	"Win32_Graphics_Gdi",
 ]
 
-[target.'cfg(target_os = "windows")'.build-dependencies]
-winres = "0.1"
+[build-dependencies]
+winresource = "0.1"
 
 [features]

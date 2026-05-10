@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of 'ttmp': https://github.com/BlueSheep3/ttmp
 
-fn main() -> std::io::Result<()> {
-	#[cfg(target_os = "windows")]
-	{
-		winres::WindowsResource::new()
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+	if std::env::var("CARGO_CFG_TARGET_OS")? == "windows" {
+		winresource::WindowsResource::new()
 			.set_icon("assets/icon.ico")
 			.compile()?;
 	}

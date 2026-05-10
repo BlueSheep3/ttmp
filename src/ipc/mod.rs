@@ -69,5 +69,5 @@ fn is_only_instance() -> Result<bool, io::Error> {
 	// so just checking whether the file exists is enough.
 	// we don't need to aquire any lock here.
 	#[cfg(target_os = "windows")]
-	fs::exists(PIPE_NAME)
+	std::fs::exists(PIPE_NAME)
 }
