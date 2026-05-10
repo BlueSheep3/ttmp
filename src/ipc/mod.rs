@@ -31,15 +31,11 @@ pub fn send_or_start_listening(
 		&& file.is_absolute()
 	{
 		// if another instance is running, send the file and exit
-		eprintln!("before is_only_instance");
 		if !is_only_instance()? {
-			eprintln!("about to send to pipe");
 			writer::try_send_to_pipe(PIPE_NAME, file)?;
-			eprintln!("finished sending to pipe");
 			return Ok(ControlFlow::Break(()));
 		}
 
-		eprintln!("about to start_receiving");
 		let reader = FileReader::default();
 		reader.start_receiving(PIPE_NAME);
 		Ok(ControlFlow::Continue(Some(reader)))

@@ -77,8 +77,7 @@ impl Playlist {
 	}
 }
 
-pub fn get_song_name(file_name: &'_ Path) -> Cow<'_, str> {
-	file_name
-		.file_name()
-		.map_or_else(|| file_name.to_string_lossy(), |n| n.to_string_lossy())
+pub fn get_song_name(path: &'_ Path) -> Cow<'_, str> {
+	path.file_name()
+		.map_or_else(|| path.to_string_lossy(), |n| n.to_string_lossy())
 }

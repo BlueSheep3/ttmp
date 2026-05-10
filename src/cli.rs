@@ -32,7 +32,6 @@ pub fn parse_command_line_args() -> Result<ParsedCommandLineArgs, CliError> {
 	args.next();
 
 	while let Some(arg) = args.next() {
-		eprintln!("parsing arg: {}", arg.display());
 		let bytes = arg.as_encoded_bytes();
 		if bytes.starts_with(b"-") {
 			match bytes {
