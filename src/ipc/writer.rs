@@ -12,12 +12,10 @@ pub fn try_send_to_pipe(pipe_name: &str, file_path: &Path) -> Result<(), Box<dyn
 			io::{BufWriter, Write as _},
 		};
 
-		let file_path = file_path.as_os_str().as_encoded_bytes();
-		let file = OpenOptions::new().write(true).open(pipe_name)?;
-
-		let mut writer = BufWriter::new(file);
-		writer.write_all(file_path)?;
-		writer.flush()?;
+		// yes, the intermediate step of opening the file with specific
+		// options is necesseray, otherwise an empty string will be sent
+		let mut file = OpenOptions::new().write(true).open(pipe_name)?;
+		file.write_all(file_path.as_os_str().as_encoded_bytes())?;
 	}
 
 	#[cfg(unix)]
