@@ -13,13 +13,9 @@ pub fn try_send_to_pipe(pipe_name: &str, file_path: &Path) -> Result<(), Box<dyn
 		};
 
 		let file_path = file_path.as_os_str().as_encoded_bytes();
-		let file = OpenOptions::new().write(true).open(pipe_name)?;
+		let mut file = OpenOptions::new().write(true).open(pipe_name)?;
 
-		eprintln!("sending over: {:?}", String::from_utf8_lossy(file_path));
-
-		let mut writer = BufWriter::new(file);
-		writer.write_all(file_path)?;
-		writer.flush()?;
+		file.write_all(file_path)?;
 	}
 
 	#[cfg(unix)]
