@@ -13,7 +13,8 @@ pub fn try_send_to_pipe(pipe_name: &str, file_path: &Path) -> Result<(), Box<dyn
 		};
 
 		// yes, the intermediate step of opening the file with specific
-		// options is necesseray, otherwise an empty string will be sent
+		// options is necessary, otherwise an empty string will be sent,
+		// and you get the weird error "The parameter is incorrect. (os error 87)"
 		let mut file = OpenOptions::new().write(true).open(pipe_name)?;
 		file.write_all(file_path.as_os_str().as_encoded_bytes())?;
 	}

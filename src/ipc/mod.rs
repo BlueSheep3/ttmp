@@ -7,7 +7,13 @@ mod writer;
 
 pub use reader::FileReader;
 
-use std::{error::Error, io, ops::ControlFlow, path::PathBuf};
+use std::{
+	error::Error,
+	fs::{File, TryLockError},
+	io,
+	ops::ControlFlow,
+	path::PathBuf,
+};
 
 #[cfg(target_os = "windows")]
 const PIPE_NAME: &str = "//./pipe/ipc_ttmp_xmyuiwqcoecmztrciqenasjkf";
@@ -44,11 +50,10 @@ fn is_only_instance_and_lock() -> Result<bool, io::Error> {
 	#[cfg(target_os = "windows")]
 	let lock_name = dirs::home_dir()
 		.expect("Home Directory not found")
-		.join("AppData/Local/Temp");
+		.join("AppData/Local/Temp/ipc_ttmp_lock_dj72nAk2Xl9cHS11hAXo9Cj455g");
 	#[cfg(unix)]
 	let lock_name = PathBuf::from("/tmp/ipc_ttmp_lock_dj72nAk2Xl9cHS11hAXo9Cj455g");
 
-	use std::fs::{File, TryLockError};
 	let file = File::create(lock_name)?;
 
 	// if this is not the only instance, another instance will
