@@ -7,7 +7,7 @@ mod writer;
 
 pub use reader::FileReader;
 
-use std::{env, error::Error, io, ops::ControlFlow, path::PathBuf};
+use std::{error::Error, io, ops::ControlFlow, path::PathBuf};
 
 #[cfg(target_os = "windows")]
 const PIPE_NAME: &str = "//./pipe/ipc_ttmp_xmyuiwqcoecmztrciqenasjkf";
@@ -21,21 +21,25 @@ const LOCK_NAME: &str = "/tmp/ipc_ttmp_lock_dj72nAk2Xl9cHS11hAXo9Cj455g";
 /// Either sends over the file that you just opened (if you opened any),
 /// or starts listening to other processes sending over files.
 /// Returns `None` if this process should do no inter process communication.
-pub fn send_or_start_listening() -> Result<ControlFlow<(), Option<FileReader>>, Box<dyn Error>> {
-	// if this is not started in the terminal, there will only ever be a single arg
-	let file = env::args_os().nth(1).map(PathBuf::from);
-
+pub fn send_or_start_listening(
+	args_files: &[PathBuf],
+) -> Result<ControlFlow<(), Option<FileReader>>, Box<dyn Error>> {
+	// if this is not started in the terminal, there will only ever be a single arg.
 	// if the file path is relative, this process was most likely
 	// manually started in a terminal, in which case we want this to be isolated.
-	if let Some(file) = file
+	if let Some(file) = args_files.first()
 		&& file.is_absolute()
 	{
 		// if another instance is running, send the file and exit
+		eprintln!("before is_only_instance");
 		if !is_only_instance()? {
+			eprintln!("about to send to pipe");
 			writer::try_send_to_pipe(PIPE_NAME, file)?;
+			eprintln!("finished sending to pipe");
 			return Ok(ControlFlow::Break(()));
 		}
 
+		eprintln!("about to start_receiving");
 		let reader = FileReader::default();
 		reader.start_receiving(PIPE_NAME);
 		Ok(ControlFlow::Continue(Some(reader)))
@@ -69,5 +73,5 @@ fn is_only_instance() -> Result<bool, io::Error> {
 	// so just checking whether the file exists is enough.
 	// we don't need to aquire any lock here.
 	#[cfg(target_os = "windows")]
-	std::fs::exists(PIPE_NAME)
+	Ok(!std::fs::exists(PIPE_NAME)?)
 }

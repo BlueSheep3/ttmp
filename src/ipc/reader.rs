@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of 'ttmp': https://github.com/BlueSheep3/ttmp
 
-#[allow(unused_imports)]
 use std::{
-	io::{BufReader, Read},
+	io::Read,
 	path::PathBuf,
 	sync::{Arc, Mutex},
 	thread,
@@ -25,26 +24,22 @@ impl FileReader {
 		let pipe_name = pipe_name.to_owned();
 		let file_list = Arc::clone(&self.file_list);
 
-		// this uses a windows specific implementation of named pipes,
-		// and im currently too lazy to find a proper replacement for linux,
-		// so we just dont receive anything from the files list,
-		// which just means that starting a new temp instance of this
-		// will not send over its file to a single temp instance.
 		#[cfg(target_os = "windows")]
 		thread::spawn(move || {
 			use interprocess::os::windows::named_pipe::{
 				PipeListener, PipeListenerOptions, PipeMode,
 				pipe_mode::{Bytes, Messages},
 			};
+			use std::io::BufReader;
 
 			let listener: PipeListener<Bytes, Messages> = PipeListenerOptions::new()
 				.path(&*pipe_name)
 				.mode(PipeMode::Messages)
 				.create()
 				.expect("Failed to create named pipe");
+			let mut buffer = String::new();
 
 			loop {
-				let mut buffer = String::new();
 				match listener.accept() {
 					Ok(connection) => {
 						let mut reader = BufReader::new(connection);

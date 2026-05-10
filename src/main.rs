@@ -49,7 +49,7 @@ fn fallible_main() -> Result<(), Box<dyn Error>> {
 	let server = if cli_args.disable_ipc {
 		None
 	} else {
-		match ipc::send_or_start_listening()? {
+		match ipc::send_or_start_listening(&cli_args.files)? {
 			ControlFlow::Continue(s) => s,
 			ControlFlow::Break(()) => return Ok(()),
 		}

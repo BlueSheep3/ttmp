@@ -1,4 +1,4 @@
-# Unlike the rest of ttmp, this flake is not licensed under GPLv3.0-or-later.
+# Unlike the rest of ttmp, this flake is not licensed under GPL-3.0-or-later.
 # This flake is unlicensed, you can do whatever you want with it.
 #
 # This flake is heavily based on:

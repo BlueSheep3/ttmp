@@ -173,13 +173,11 @@ fn receive_files_over_ipc(model: &mut Model) {
 		return;
 	}
 	model.ctx.cmd_out.push('\n');
-	for path in paths.into_iter().filter(|p| p.is_file()) {
-		model.ctx.cmd_out.push_str(&format!(
-			"Added Song: {}",
-			path.file_name()
-				.expect("paths sent over ipc should be valid")
-				.to_string_lossy()
-		));
+	for path in paths {
+		let name = path
+			.file_name()
+			.map_or_else(|| path.to_string_lossy(), |p| p.to_string_lossy());
+		model.ctx.cmd_out.push_str(&format!("Added Song: {name}\n"));
 		model.ctx.playlist.remaining.push_front(path.clone());
 		model.ctx.files.mappings.insert(path, FileData::default());
 	}
