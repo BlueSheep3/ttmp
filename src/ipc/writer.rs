@@ -2,11 +2,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This file is part of 'ttmp': https://github.com/BlueSheep3/ttmp
 
-use std::{error::Error, path::PathBuf};
+use std::{error::Error, path::Path};
 
-pub fn try_send_to_pipe(pipe_name: &str, file_path: PathBuf) -> Result<(), Box<dyn Error>> {
+pub fn try_send_to_pipe(pipe_name: &str, file_path: &Path) -> Result<(), Box<dyn Error>> {
 	#[cfg(target_os = "windows")]
-	std::fs::write(pipe_name, file_path.as_os_str().as_encoded_bytes())?;
+	{
+		use std::{
+			fs::OpenOptions,
+			io::{BufWriter, Write as _},
+		};
+
+		// yes, the intermediate step of opening the file with specific
+		// options is necessary, otherwise an empty string will be sent,
+		// and you get the weird error "The parameter is incorrect. (os error 87)"
+		let mut file = OpenOptions::new().write(true).open(pipe_name)?;
+		file.write_all(file_path.as_os_str().as_encoded_bytes())?;
+	}
 
 	#[cfg(unix)]
 	{

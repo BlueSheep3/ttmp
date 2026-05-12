@@ -5,7 +5,7 @@
 //! commands that filter the playlist based on some condition like tags or length
 
 use super::{CommandReturn, misc};
-use crate::data::context::Context;
+use crate::data::{context::Context, playlist};
 use std::collections::HashSet;
 
 fn tag_matches(file_tags: &HashSet<String>, match_tag: &str) -> bool {
@@ -90,9 +90,7 @@ pub fn search_file_name(ctx: &mut Context, search: &[&str]) -> CommandReturn {
 	let search = search.join(" ").to_lowercase();
 
 	ctx.playlist.remaining.retain(|file| {
-		file.file_name()
-			.expect("couldn't get the filename")
-			.to_string_lossy()
+		playlist::get_song_name(file)
 			.to_lowercase()
 			.contains(&search)
 	});
