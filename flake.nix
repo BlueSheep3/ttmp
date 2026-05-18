@@ -11,7 +11,7 @@
   outputs = {nixpkgs, ...}: let
     system = "x86_64-linux";
     name = "ttmp";
-    version = "0.3.1";
+    version = "0.3.2";
     pkgs = import nixpkgs {inherit system;};
 
     rpathLibs = with pkgs; [
