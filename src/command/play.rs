@@ -7,7 +7,7 @@
 use super::{
 	CommandReturn,
 	error::{
-		CommandError::{VolumeTooHigh, VolumeTooLow},
+		CommandError::{SpeedNonPositive, VolumeTooHigh, VolumeTooLow},
 		Result,
 	},
 	misc,
@@ -115,6 +115,11 @@ pub fn enforce_max(list: &mut Playlist, max: &str) -> Result<()> {
 
 pub fn set_speed(ctx: &mut Context, speed: &str) -> Result<()> {
 	let s = speed.parse::<f32>()?;
+	// the player stops working when you set the speed
+	// to a negative or something close to zero
+	if s < 0.01 {
+		return Err(SpeedNonPositive(s));
+	}
 	ctx.state.speed = s;
 	ctx.player.set_speed(s);
 	Ok(())

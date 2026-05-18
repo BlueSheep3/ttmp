@@ -58,7 +58,7 @@ pub fn update(mut model: Box<Model>, message: Message) -> Result<(Box<Model>, Op
 		// that probably means the computer was in sleep mode,
 		// meaning the song wasn't actually playing during that time.
 		if elapsed <= Duration::from_secs(5) {
-			model.ctx.playlist.progress += elapsed;
+			model.ctx.playlist.progress += elapsed.mul_f32(model.ctx.state.speed);
 		}
 	}
 	model.last_update_time = Instant::now();
