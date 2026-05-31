@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=ttmp
+Comment=Minimal TUI music player that organizes songs using tags.
+Exec=ttmp %F
+Terminal=true
+Type=Application
+Icon=ttmp
+Categories=Audio;
+MimeType=audio/mpeg;audio/ogg;audio/vnd.wav;audio/mp4;

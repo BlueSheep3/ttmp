@@ -29,21 +29,10 @@
 
       postInstall = ''
         mkdir -p "$out/share/icons/hicolor/512x512/apps"
-        ln -s "${./assets/icon.png}" "$out/share/icons/hicolor/512x512/apps/${name}.png"
+        cp 'assets/icon.png' "$out/share/icons/hicolor/512x512/apps/${name}.png"
 
         mkdir -p "$out/share/applications"
-        cat >"$out/share/applications/${name}.desktop" <<-EOF
-        [Desktop Entry]
-        Name=${name}
-        GenericName=Music Player
-        Comment=Minimal TUI music player that organizes songs using tags.
-        Exec=${name} %F
-        Terminal=true
-        Type=Application
-        Icon=${name}
-        Categories=Audio;
-        MimeType=audio/mpeg;audio/ogg;audio/vnd.wav;audio/mp4;
-        EOF
+        cp 'assets/desktopfile.desktop' "$out/share/applications/${name}.desktop"
       '';
     };
 
