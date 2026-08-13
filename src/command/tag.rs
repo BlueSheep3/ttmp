@@ -28,8 +28,8 @@ pub fn show_current_tags(ctx: &mut Context) -> Result<()> {
 pub fn show_all_tags(ctx: &mut Context) {
 	let tags = ctx
 		.files
-		.iter()
-		.flat_map(|(_, data)| data.tags.iter())
+		.values()
+		.flat_map(|data| data.tags.iter())
 		.cloned()
 		.collect::<HashSet<_>>();
 	let mut tags = tags.into_iter().collect::<Vec<_>>();

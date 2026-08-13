@@ -9,7 +9,9 @@ use std::{env, path::PathBuf, process};
 pub struct ParsedCommandLineArgs {
 	pub program_mode: context::ProgramMode,
 	pub files: Vec<PathBuf>,
-	pub disable_ipc: bool,
+	/// When `None`, infer whether IPC should be enabled.
+	/// When `Some(x)`, force IPC to be enabled iff `x`.
+	pub force_ipc: Option<bool>,
 	pub disable_media: bool,
 	pub paths: SavePaths,
 }
@@ -22,7 +24,7 @@ pub struct SavePaths {
 pub fn parse_command_line_args() -> Result<ParsedCommandLineArgs, CliError> {
 	let mut program_mode = None;
 	let mut files = Vec::new();
-	let mut disable_ipc = false;
+	let mut force_ipc = None;
 	let mut disable_media = false;
 	let mut data_path = None;
 	let mut config_path = None;
@@ -35,9 +37,10 @@ pub fn parse_command_line_args() -> Result<ParsedCommandLineArgs, CliError> {
 		let bytes = arg.as_encoded_bytes();
 		if bytes.starts_with(b"-") {
 			match bytes {
-				b"--help" | b"-h" | b"?" => print_help_and_exit(),
+				b"--help" | b"-h" => print_help_and_exit(),
 				b"--version" | b"-v" => print_version_and_exit(),
-				b"--no-ipc" => disable_ipc = true,
+				b"--force-ipc" => force_ipc = Some(true),
+				b"--no-ipc" => force_ipc = Some(false),
 				b"--no-media" => disable_media = true,
 				b"--mode" | b"-m" => {
 					let mode = args.next().ok_or(CliError::NoModeSpecifier)?;
@@ -88,7 +91,7 @@ pub fn parse_command_line_args() -> Result<ParsedCommandLineArgs, CliError> {
 	let parsed_args = ParsedCommandLineArgs {
 		program_mode,
 		files,
-		disable_ipc,
+		force_ipc,
 		disable_media,
 		paths: SavePaths {
 			data: data_path,
@@ -108,15 +111,19 @@ If you specify at least 1 file, you will (unless specified otherwise) start in '
 with all of those songs in the current playlist.
 Otherwise, you will start in 'main' mode, restoring your previous main mode playlist.
 
+If the first file argument is an absolute path, IPC will be enabled,
+which will send any songs to an already open ttmp process (if one exists).
+
 Arguments:
---help, -h         - print help and exit
---version, -v      - print version info and exit
---no-ipc           - disable all interprocess communication
---no-media         - disable media controls and metadata
---mode, -m  MODE   - specify what program mode to start in (either 'main' or 'temp')
---data, -d  PATH   - specify the data path (this should be a directory)
---config, -c PATH  - specify the config path (this should be a directory)
---                 - force all arguments after this one to be interpreted as file paths
+  --help, -h         - print help and exit
+  --version, -v      - print version info and exit
+  --force-ipc        - force interprocess communication to be enabled
+  --no-ipc           - disable all interprocess communication
+  --no-media         - disable media controls and metadata
+  --mode, -m   MODE  - specify what program mode to start in (either 'main' or 'temp')
+  --data, -d   PATH  - specify the data path (this should be a directory)
+  --config, -c PATH  - specify the config path (this should be a directory)
+  --                 - force all arguments after this one to be interpreted as file paths
 "
 	);
 	process::exit(0);

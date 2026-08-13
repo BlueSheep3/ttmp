@@ -25,25 +25,30 @@ const PIPE_NAME: &str = "/tmp/ipc_ttmp_xmyuiwqcoecmztrciqenasjkf";
 /// Returns `None` if this process should do no inter process communication.
 pub fn send_or_start_listening(
 	args_files: &[PathBuf],
+	force_ipc: Option<bool>,
 ) -> Result<ControlFlow<(), Option<FileReader>>, Box<dyn Error>> {
-	// if this is not started in the terminal, there will only ever be a single arg.
-	// if the file path is relative, this process was most likely
-	// manually started in a terminal, in which case we want this to be isolated.
-	if let Some(file) = args_files.first()
-		&& file.is_absolute()
-	{
-		// if another instance is running, send the file and exit
-		if !is_only_instance_and_lock()? {
-			writer::try_send_to_pipe(PIPE_NAME, file)?;
-			return Ok(ControlFlow::Break(()));
-		}
-
-		let reader = FileReader::default();
-		reader.start_receiving(PIPE_NAME);
-		Ok(ControlFlow::Continue(Some(reader)))
-	} else {
-		Ok(ControlFlow::Continue(None))
+	let enabled = match force_ipc {
+		Some(force) => force,
+		// if this is not started in the terminal, there will only ever be a single arg.
+		// if the file path is relative, this process was most likely
+		// manually started in a terminal, in which case we want this to be isolated.
+		None => args_files.first().is_some_and(|f| f.is_absolute()),
+	};
+	if !enabled {
+		return Ok(ControlFlow::Continue(None));
 	}
+
+	// if another instance is running, send the file and exit
+	if !is_only_instance_and_lock()? {
+		for file in args_files {
+			writer::try_send_to_pipe(PIPE_NAME, file)?;
+		}
+		return Ok(ControlFlow::Break(()));
+	}
+
+	let reader = FileReader::default();
+	reader.start_receiving(PIPE_NAME);
+	Ok(ControlFlow::Continue(Some(reader)))
 }
 
 fn is_only_instance_and_lock() -> Result<bool, io::Error> {

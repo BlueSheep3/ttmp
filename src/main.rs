@@ -46,13 +46,9 @@ fn fallible_main() -> Result<(), Box<dyn Error>> {
 
 	data::create_default_savedata_if_not_present(&cli_args.paths)?;
 
-	let server = if cli_args.disable_ipc {
-		None
-	} else {
-		match ipc::send_or_start_listening(&cli_args.files)? {
-			ControlFlow::Continue(s) => s,
-			ControlFlow::Break(()) => return Ok(()),
-		}
+	let server = match ipc::send_or_start_listening(&cli_args.files, cli_args.force_ipc)? {
+		ControlFlow::Continue(s) => s,
+		ControlFlow::Break(()) => return Ok(()),
 	};
 
 	let (cmd_sender, cmd_receiver) = mpsc::channel();
