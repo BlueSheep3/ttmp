@@ -103,8 +103,9 @@ pub fn clear_previous(ctx: &mut Context) {
 	ctx.playlist.previous.clear();
 }
 
-pub fn remove_current(ctx: &mut Context) {
+pub fn remove_current(ctx: &mut Context) -> CommandReturn {
 	ctx.playlist.remaining.pop_front();
+	CommandReturn::ReloadFirstSong
 }
 
 pub fn enforce_max(list: &mut Playlist, max: &str) -> Result<()> {
