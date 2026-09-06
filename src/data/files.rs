@@ -11,7 +11,6 @@ use std::{
 	collections::{HashMap, HashSet},
 	ffi::OsStr,
 	fs, io,
-	ops::{Deref, DerefMut},
 	path::{Path, PathBuf},
 	process::{Command, Stdio},
 	result,
@@ -20,20 +19,62 @@ use std::{
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Files {
-	/// the folder that all the files are in.
-	pub root: PathBuf,
-	/// all music files, paths should be relative to `root`.
+	/// The folder that all the files are in.
+	root: PathBuf,
+
+	/// All music files. Paths are generally expected to be
+	/// relative to `root`, but they can also be absolute.
 	#[serde(serialize_with = "serializer::sorted_hashmap")]
 	#[serde(default)]
-	pub mappings: HashMap<PathBuf, FileData>,
+	mappings: HashMap<PathBuf, FileData>,
+
+	/// Whether this struct was changed since the last time you saved.
+	/// When loading an existing `files.ron` file, it will be set to false,
+	/// since the struct data is identical to the existing `files.ron` file.
+	/// When creating a new instance of this struct, it will be set to true,
+	/// since it still hasn't been saved.
+	///
+	/// It is very important that this gets set to `true` whenever
+	/// `root` or `mappings` get mutated.
+	///
+	/// Do note that this field does cause some unexpected behaviour:
+	/// The `mappings_mut()` function will set this field to `true`, despite the
+	/// typical assumptions that functions like these do not mutate anything else.
+	/// However, this should never be a problem, because any "problems" that
+	/// this may cause would just cause `files.ron` to be saved more often
+	/// than it really needs to be.
+	#[serde(skip)]
+	changed_since_last_save: bool,
 }
 
 impl Files {
+	/// Creates an instance of `Files` with the given `root` directory and no `mappings`.
+	/// This instance will be marked as having been changed since the last save.
 	pub fn empty_with_root(root: PathBuf) -> Self {
 		Self {
 			root,
 			mappings: HashMap::new(),
+			changed_since_last_save: true,
 		}
+	}
+
+	pub fn root(&self) -> &PathBuf {
+		&self.root
+	}
+
+	pub fn mappings(&self) -> &HashMap<PathBuf, FileData> {
+		&self.mappings
+	}
+
+	/// marks `self` as changed
+	pub fn mappings_mut(&mut self) -> &mut HashMap<PathBuf, FileData> {
+		self.changed_since_last_save = true;
+		&mut self.mappings
+	}
+
+	/// only use this function if it's fine to lose the mutations that you make here.
+	pub fn mappings_mut_without_marking_as_changed(&mut self) -> &mut HashMap<PathBuf, FileData> {
+		&mut self.mappings
 	}
 }
 
@@ -47,29 +88,17 @@ pub struct FileData {
 	pub duration: Option<Duration>,
 }
 
-impl Deref for Files {
-	type Target = HashMap<PathBuf, FileData>;
-
-	fn deref(&self) -> &Self::Target {
-		&self.mappings
-	}
-}
-
-impl DerefMut for Files {
-	fn deref_mut(&mut self) -> &mut Self::Target {
-		&mut self.mappings
-	}
-}
-
 impl Files {
 	pub fn load(savedata_path: &Path) -> Result<Self> {
 		let path = savedata_path.join("files.ron");
 		let files_string = fs::read_to_string(path)?;
-		let files = ron::from_str(&files_string).map_err(Box::new)?;
+		let files: Self = ron::from_str(&files_string).map_err(Box::new)?;
 		Ok(files)
 	}
 
-	pub fn save(&self, savedata_path: &Path) -> Result<()> {
+	/// Will save `self` and mark it as unchanged.
+	/// This happens even if `self` has not changed since the last save.
+	pub fn force_save(&mut self, savedata_path: &Path) -> Result<()> {
 		let mut pretty_config = PrettyConfig::new();
 		pretty_config.indentor = Cow::Borrowed("\t");
 		pretty_config.new_line = Cow::Borrowed("\n");
@@ -77,7 +106,17 @@ impl Files {
 		let files_string = ron::ser::to_string_pretty(self, pretty_config).map_err(Box::new)?;
 		let path = savedata_path.join("files.ron");
 		fs::write(path, files_string)?;
+		self.changed_since_last_save = false;
 		Ok(())
+	}
+
+	/// If `self` has changed since the last save,
+	/// this will save `self` and mark it as unchanged.
+	pub fn save_if_changed(&mut self, savedata_path: &Path) -> Result<()> {
+		if !self.changed_since_last_save {
+			return Ok(());
+		}
+		self.force_save(savedata_path)
 	}
 
 	/// add all files that are in the system, but not in the config,
@@ -85,24 +124,27 @@ impl Files {
 	pub fn reload_files(&mut self) -> Result<()> {
 		let system_files = get_all_files_in(&self.root)?;
 
+		let root = self.root().clone();
+		let mappings = self.mappings_mut();
+
 		for full_path in &system_files {
 			let rel_path = full_path
-				.strip_prefix(&self.root)
+				.strip_prefix(&root)
 				.unwrap_or_else(|_| unreachable!())
 				.to_path_buf();
-			self.mappings.entry(rel_path).or_default();
+			mappings.entry(rel_path).or_default();
 		}
 
 		let mut files_to_remove = Vec::new();
 
-		for rel_path in self.mappings.keys() {
-			let full_path = self.root.join(rel_path);
+		for rel_path in mappings.keys() {
+			let full_path = root.join(rel_path);
 			if !system_files.contains(&full_path) {
 				files_to_remove.push(rel_path.clone());
 			}
 		}
 		for rel_path in files_to_remove {
-			self.mappings.remove(&rel_path);
+			mappings.remove(&rel_path);
 		}
 
 		Ok(())

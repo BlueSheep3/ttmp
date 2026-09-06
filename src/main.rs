@@ -89,7 +89,7 @@ fn fallible_main() -> Result<(), Box<dyn Error>> {
 			{
 				if save
 					&& model.ctx.program_mode.can_save()
-					&& let Err(e) = important_force_save(&model.ctx)
+					&& let Err(e) = important_force_save(&mut model.ctx)
 					&& abort_on_error
 				{
 					model.ctx.cmd_out += &format!("error while saving on quit:\n{e}");
@@ -166,11 +166,11 @@ impl Model {
 
 /// Will only save in a program mode that can save.
 /// If any file fails to be saved, the error is ignored and the other files are still attempted.
-fn unimportant_maybe_save(ctx: &Context) {
+fn unimportant_maybe_save(ctx: &mut Context) {
 	if ctx.program_mode.can_save() {
 		_ = ctx.config.save(&ctx.savepaths.config);
 		_ = ctx.state.save(&ctx.savepaths.data);
-		_ = ctx.files.save(&ctx.savepaths.data);
+		_ = ctx.files.save_if_changed(&ctx.savepaths.data);
 		_ = ctx
 			.playlist
 			.save(&ctx.state.current_playlist, &ctx.savepaths.data);
@@ -180,11 +180,11 @@ fn unimportant_maybe_save(ctx: &Context) {
 /// Will always save, no matter what program mode you are in.
 /// If any file fails to be saved, the other files will still try to save,
 /// and then all errors are collected.
-fn important_force_save(ctx: &Context) -> Result<(), DataError> {
+fn important_force_save(ctx: &mut Context) -> Result<(), DataError> {
 	let results = [
 		ctx.config.save(&ctx.savepaths.config),
 		ctx.state.save(&ctx.savepaths.data),
-		ctx.files.save(&ctx.savepaths.data),
+		ctx.files.force_save(&ctx.savepaths.data),
 		ctx.playlist
 			.save(&ctx.state.current_playlist, &ctx.savepaths.data),
 	];

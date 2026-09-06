@@ -24,7 +24,7 @@ pub fn show_full_path(ctx: &mut Context) -> Result<()> {
 		ctx.cmd_out += &current.display().to_string();
 		ctx.cmd_out.push('\n');
 	} else {
-		ctx.cmd_out += &ctx.files.root.join(current).display().to_string();
+		ctx.cmd_out += &ctx.files.root().join(current).display().to_string();
 		ctx.cmd_out.push('\n');
 	}
 	Ok(())
@@ -32,8 +32,8 @@ pub fn show_full_path(ctx: &mut Context) -> Result<()> {
 
 pub fn delete_current(ctx: &mut Context) -> Result<CommandReturn> {
 	let current = ctx.playlist.remaining.front().ok_or(NoFilePlaying)?;
-	ctx.files.remove(current);
-	trash::delete(ctx.files.root.join(current))?;
+	ctx.files.mappings_mut().remove(current);
+	trash::delete(ctx.files.root().join(current))?;
 	ctx.playlist.remaining.pop_front();
 	ctx.cmd_out += "File deleted successfully.\n";
 	Ok(misc::load_in_first_song(ctx))
@@ -48,16 +48,16 @@ pub fn move_file(ctx: &mut Context, destination_folder: &[&str]) -> Result<()> {
 		.ok_or(InvalidFileName(file_name.clone()))?
 		.to_string_lossy()
 		.to_string();
-	let destination_full = ctx.files.root.join(destination_folder).join(&song_name);
+	let destination_full = ctx.files.root().join(destination_folder).join(&song_name);
 
 	let new_folder = fs::metadata(&destination_full).is_err();
-	fs::rename(ctx.files.root.join(&file_name), &destination_full)?;
+	fs::rename(ctx.files.root().join(&file_name), &destination_full)?;
 
 	let destination = destination_folder.join(&song_name);
 	*file_name = destination.clone();
 	let current = &destination;
-	if let Some(file_data) = ctx.files.remove(current) {
-		ctx.files.insert(destination, file_data);
+	if let Some(file_data) = ctx.files.mappings_mut().remove(current) {
+		ctx.files.mappings_mut().insert(destination, file_data);
 	}
 	if new_folder {
 		ctx.cmd_out += "Succesfully moved File\n";
@@ -71,11 +71,11 @@ pub fn move_file(ctx: &mut Context, destination_folder: &[&str]) -> Result<()> {
 }
 
 pub fn show_directories(files: &Files, cmd_out: &mut String) -> Result<()> {
-	if let Some(folder_name) = &files.root.file_name() {
+	if let Some(folder_name) = &files.root().file_name() {
 		*cmd_out += &folder_name.to_string_lossy();
 		cmd_out.push('\n');
 	}
-	folders_recursive(cmd_out, &files.root, "", false, &mut 21)
+	folders_recursive(cmd_out, files.root(), "", false, &mut 21)
 }
 
 fn folders_recursive(

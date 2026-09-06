@@ -171,6 +171,7 @@ fn song_data(model: &Model, frame: &mut Frame, area: Rect) {
 		tags_str = model
 			.ctx
 			.files
+			.mappings()
 			.get(current_song)
 			.map_or(String::new(), |f| {
 				let mut tags = f.tags.iter().cloned().collect::<Vec<_>>();

@@ -20,8 +20,13 @@ pub fn tag_exists(ctx: &mut Context, tags: &[&str]) -> CommandReturn {
 		return CommandReturn::Nothing;
 	};
 
+	let empty_hashset = HashSet::new();
 	ctx.playlist.remaining.retain(|file| {
-		let file_tags = &ctx.files.entry(file.to_path_buf()).or_default().tags;
+		let file_tags = ctx
+			.files
+			.mappings()
+			.get(file)
+			.map_or(&empty_hashset, |f| &f.tags);
 		tags.iter().any(|tag| tag_matches(file_tags, tag))
 	});
 
@@ -37,8 +42,13 @@ pub fn tag_all(ctx: &mut Context, tags: &[&str]) -> CommandReturn {
 		return CommandReturn::Nothing;
 	};
 
+	let empty_hashset = HashSet::new();
 	ctx.playlist.remaining.retain(|file| {
-		let file_tags = &ctx.files.entry(file.to_path_buf()).or_default().tags;
+		let file_tags = &ctx
+			.files
+			.mappings()
+			.get(file)
+			.map_or(&empty_hashset, |f| &f.tags);
 		tags.iter().all(|tag| tag_matches(file_tags, tag))
 	});
 
@@ -55,8 +65,10 @@ pub fn no_tags(ctx: &mut Context) -> CommandReturn {
 	};
 
 	ctx.playlist.remaining.retain(|file| {
-		let file_tags = &ctx.files.entry(file.to_path_buf()).or_default().tags;
-		file_tags.is_empty()
+		ctx.files
+			.mappings()
+			.get(file)
+			.is_none_or(|f| f.tags.is_empty())
 	});
 
 	if ctx.playlist.remaining.is_empty() || prev_current != ctx.playlist.remaining[0] {

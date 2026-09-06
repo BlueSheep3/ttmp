@@ -104,7 +104,7 @@ impl Context {
 
 		config.start_play_state = StartPlayState::Always;
 		state.current_playlist = "temp".to_owned();
-		files.mappings = file_paths
+		*files.mappings_mut() = file_paths
 			.iter()
 			.map(|f| (f.clone(), FileData::default()))
 			.collect();
@@ -140,7 +140,7 @@ impl Context {
 
 	pub fn get_current_duration(&self) -> Option<Duration> {
 		let first = self.playlist.remaining.front()?;
-		let song = self.files.get(first)?;
+		let song = self.files.mappings().get(first)?;
 		song.duration
 	}
 

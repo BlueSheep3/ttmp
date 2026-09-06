@@ -57,7 +57,7 @@ Give the path of the folder that contains all your Music.\
 				}
 			}
 		};
-		Files::empty_with_root(music).save(&paths.data)?;
+		Files::empty_with_root(music).save_if_changed(&paths.data)?;
 	}
 
 	let current_list_path = paths

@@ -66,7 +66,7 @@ pub fn update(mut model: Box<Model>, message: Message) -> Result<(Box<Model>, Op
 	if let AutosavePreference::AfterSeconds(s) = model.ctx.config.autosave
 		&& model.last_autosave_time.elapsed().as_secs() > s as u64
 	{
-		super::unimportant_maybe_save(&model.ctx);
+		super::unimportant_maybe_save(&mut model.ctx);
 		model.last_autosave_time = Instant::now();
 	}
 
@@ -179,7 +179,14 @@ fn receive_files_over_ipc(model: &mut Model) {
 			.map_or_else(|| path.to_string_lossy(), |p| p.to_string_lossy());
 		model.ctx.cmd_out.push_str(&format!("Added Song: {name}\n"));
 		model.ctx.playlist.remaining.push_front(path.clone());
-		model.ctx.files.mappings.insert(path, FileData::default());
+
+		if model.ctx.program_mode == ProgramMode::Temp {
+			model
+				.ctx
+				.files
+				.mappings_mut()
+				.insert(path, FileData::default());
+		}
 	}
 	model.ctx.playlist.progress = Duration::ZERO;
 	load_first_song(&mut model.ctx);
@@ -255,7 +262,7 @@ fn load_first_song(ctx: &mut Context) {
 		let mut path = if first.is_absolute() || ctx.program_mode == ProgramMode::Temp {
 			first.clone()
 		} else {
-			ctx.files.root.join(&first)
+			ctx.files.root().join(&first)
 		};
 		if is_mp4_file(&path.to_string_lossy()) {
 			match make_temp_mp4_copy(&path, &ctx.savepaths.data) {
@@ -281,8 +288,12 @@ fn load_first_song(ctx: &mut Context) {
 	let mut decoder = Decoder::new(file).expect("unable to convert file to a music file");
 
 	// update the cached duration to be accurate if the decoder type supports it
+	// it's ok to lose these mutations, because this is only updating a cache
 	if let Some(total) = decoder.total_duration()
-		&& let Some(file) = ctx.files.get_mut(&first)
+		&& let Some(file) = ctx
+			.files
+			.mappings_mut_without_marking_as_changed()
+			.get_mut(&first)
 	{
 		file.duration = Some(total);
 	}
@@ -313,7 +324,12 @@ fn remaining_songs_ended(ctx: &mut Context) {
 
 /// sets the cached duration of `song` to the progress of the current song
 fn try_update_song_duration(ctx: &mut Context, song: &Path) {
-	if let Some(file) = ctx.files.get_mut(song) {
+	// it's ok to lose these mutations, because this is only updating a cache
+	if let Some(file) = ctx
+		.files
+		.mappings_mut_without_marking_as_changed()
+		.get_mut(song)
+	{
 		file.duration = Some(ctx.playlist.progress);
 	}
 }

@@ -17,6 +17,7 @@ pub fn show_current_tags(ctx: &mut Context) -> Result<()> {
 	let current = ctx.playlist.remaining.front().ok_or(NoFilePlaying)?;
 	let tags = &ctx
 		.files
+		.mappings()
 		.get(current)
 		.ok_or(NotInFiles(current.clone()))?
 		.tags;
@@ -28,6 +29,7 @@ pub fn show_current_tags(ctx: &mut Context) -> Result<()> {
 pub fn show_all_tags(ctx: &mut Context) {
 	let tags = ctx
 		.files
+		.mappings()
 		.values()
 		.flat_map(|data| data.tags.iter())
 		.cloned()
@@ -44,6 +46,7 @@ pub fn add_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
 	let current = ctx.playlist.remaining.front().ok_or(NoFilePlaying)?;
 	let tags = &mut ctx
 		.files
+		.mappings_mut()
 		.get_mut(current)
 		.ok_or(NotInFiles(current.clone()))?
 		.tags;
@@ -58,6 +61,7 @@ pub fn remove_tag_current(ctx: &mut Context, tag: &str) -> Result<()> {
 	let current = ctx.playlist.remaining.front().ok_or(NoFilePlaying)?;
 	let tags = &mut ctx
 		.files
+		.mappings_mut()
 		.get_mut(current)
 		.ok_or(NotInFiles(current.clone()))?
 		.tags;
@@ -74,6 +78,7 @@ pub fn add_tag_remaining(ctx: &mut Context, tag: &str) -> Result<()> {
 	for file in &mut ctx.playlist.remaining {
 		let tags = &mut ctx
 			.files
+			.mappings_mut()
 			.get_mut(file)
 			.ok_or(NotInFiles(file.clone()))?
 			.tags;
@@ -89,6 +94,7 @@ pub fn remove_tag_remaining(ctx: &mut Context, tag: &str) -> Result<()> {
 	for file in &mut ctx.playlist.remaining {
 		let tags = &mut ctx
 			.files
+			.mappings_mut()
 			.get_mut(file)
 			.ok_or(NotInFiles(file.clone()))?
 			.tags;

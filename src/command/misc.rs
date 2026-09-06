@@ -15,7 +15,7 @@ use std::time::Duration;
 
 pub fn reset_remaining(ctx: &mut Context) -> Result<CommandReturn> {
 	ctx.playlist.previous.clear();
-	ctx.playlist.remaining = ctx.files.keys().cloned().collect();
+	ctx.playlist.remaining = ctx.files.mappings().keys().cloned().collect();
 	if ctx.should_be_playing() {
 		play::start_playing(ctx)?;
 	}
@@ -36,7 +36,7 @@ pub fn repeat_song(list: &mut Playlist, amount: &str) -> Result<()> {
 	Ok(())
 }
 
-pub fn save(ctx: &Context) -> Result<()> {
+pub fn save(ctx: &mut Context) -> Result<()> {
 	if ctx.program_mode.can_save() {
 		crate::important_force_save(ctx)?;
 		Ok(())
