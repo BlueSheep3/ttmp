@@ -10,7 +10,7 @@
 
   outputs = {nixpkgs, ...}: let
     system = "x86_64-linux";
-    name = "ttmp";
+    pname = "ttmp";
     version = "0.3.2";
     pkgs = import nixpkgs {inherit system;};
 
@@ -19,26 +19,26 @@
       dbus
     ];
     ttmp = pkgs.rustPlatform.buildRustPackage {
-      inherit name version;
+      inherit pname version;
       src = ./.;
       cargoLock.lockFile = ./Cargo.lock;
 
       nativeBuildInputs = [pkgs.pkg-config];
       buildInputs = rpathLibs;
-      postFixup = ''patchelf --add-rpath "${pkgs.lib.makeLibraryPath rpathLibs}" $out/bin/${name}'';
+      postFixup = ''patchelf --add-rpath "${pkgs.lib.makeLibraryPath rpathLibs}" $out/bin/${pname}'';
 
       postInstall = ''
         mkdir -p "$out/share/icons/hicolor/512x512/apps"
-        cp 'assets/icon.png' "$out/share/icons/hicolor/512x512/apps/${name}.png"
+        cp 'assets/icon.png' "$out/share/icons/hicolor/512x512/apps/${pname}.png"
 
         mkdir -p "$out/share/applications"
-        cp 'assets/desktopfile.desktop' "$out/share/applications/${name}.desktop"
+        cp 'assets/desktopfile.desktop' "$out/share/applications/${pname}.desktop"
       '';
     };
 
     pkgs-windows = pkgs.pkgsCross.mingwW64;
     ttmp-windows = pkgs-windows.rustPlatform.buildRustPackage {
-      inherit name version;
+      inherit pname version;
       src = ./.;
       cargoLock.lockFile = ./Cargo.lock;
     };
