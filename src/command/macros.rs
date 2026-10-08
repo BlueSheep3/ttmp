@@ -70,7 +70,7 @@ pub fn run_commands(
 
 // allows defining multiline macros inside other macros.
 fn replace_semicolon_specials(cmd: &str) -> String {
-	// NOTE this isnt done very smart, but i dont think
+	// this isnt done very smart, but i dont think
 	// anyone will really need any more depth than this.
 	cmd.replace(";1 ", "; ")
 		.replace(";2 ", ";1 ")

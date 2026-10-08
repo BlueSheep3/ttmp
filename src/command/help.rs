@@ -11,27 +11,27 @@ pub fn general(cmd_out: &mut String) {
 	*cmd_out += "\
 help CATEGORY  - show help for a category of commands
 
-Misc Commands:
-help, h, ? - Show this help
-q          - Save and Quit the Program
-q!         - Quit the Program without saving
-q?         - Save and Quit the Program even if errors occured
-s          - Save the Config
-r          - Reset the Playlist (put all files in it)
-redraw     - Toggle whether screen redraws should happen
-echo TEXT  - print out TEXT
-
 Categories of Subcommands:
 first      - help for someone using this program for the first time
 n, normal  - all commands in normal mode
 p, play    - modify playing songs
-l, list    - modify differnt playlists
+l, list    - modify different playlists
 f, filter  - filter the remaining songs
 t, tag     - tags to filter songs
-g, goto    - goto a time in the song
+g, goto    - go to a time in the song
 m, macro   - macros to easily do common things
 e, event   - special macro names that get called automatically
 d, dir     - commands concerning the file system
+
+Misc Commands:
+help, h, ? - show this help
+q          - save and quit
+q!         - quit without saving
+q?         - save and quit even if errors occurred
+s          - save
+r          - reset the playlist (put all files in it)
+redraw     - toggle whether screen redraws should happen
+echo TEXT  - print out TEXT
 ";
 }
 
@@ -109,24 +109,24 @@ up           - increase volume by 5%
 down         - decrease volume by 5%
 0            - go to the start of the current song
 
-r            - Reset the Playlist (put all files in it)
+r            - reset the playlist (put all files in it)
 j            - go to the next song
 k            - go to the previous song
 
-f TAGS       - Keeps all Files that match any of TAGS
-F TAGS       - Keeps all Files that match all of TAGS
-s SEARCH     - Keeps all Files whose file name contains SEARCH
-t TAG        - add TAG to the current File
-T TAG        - remove TAG from the current File
+f TAGS       - keeps all files that match any of TAGS
+F TAGS       - keeps all files that match all of TAGS
+s SEARCH     - keeps all files whose file name contains SEARCH
+t TAG        - add TAG to the current file
+T TAG        - remove TAG from the current file
 
 l NAME       - switch to the list NAME
 L            - get the names of all playlists
 
-m NAME ARGS  - run Macro with NAME and arguments ARGS
-M            - lists all Macros
+m NAME ARGS  - run macro with NAME and arguments ARGS
+M            - lists all macros
 
 These keybinds cannot be rebound and can be used in any mode:
-ctrl c       - go into normal mode and clear command output
+ctrl c, esc  - go into normal mode and clear command output
 ctrl r       - toggle whether screen redraws should happen
 ";
 }
@@ -145,7 +145,7 @@ pm NUM    - set the maximum number of files to be played
 ps SPEED  - set the playback speed to SPEED
 pv VOLUME - set the playback volume to VOLUME
 po        - order / sort the remaining songs
-pd NUM    - Repeat the currently playing song
+pd NUM    - repeat the currently playing song
 ";
 }
 
@@ -163,56 +163,69 @@ ls NAME   - switch to the list NAME
 
 fn filter(cmd_out: &mut String) {
 	*cmd_out += "\
-fte TAGS   - Keeps all Files that match any of TAGS
-fta TAGS   - Keeps all Files that match all of TAGS
-ftn        - Keeps all Files that have no Tags
-fsf SEARCH - Keeps all Files whose full path name contains SEARCH
-fs  SEARCH - Keeps all Files whose file name contains SEARCH
-fss SEARCH - Keeps all Files whose full path name starts with SEARCH
+fte TAGS   - keeps all files that match any of TAGS
+fta TAGS   - keeps all files that match all of TAGS
+ftn        - keeps all files that have no Tags
+fsf SEARCH - keeps all files whose full path name contains SEARCH
+fs  SEARCH - keeps all files whose file name contains SEARCH
+fss SEARCH - keeps all files whose full path name starts with SEARCH
+
+When filtering by tags, you can write '!FOO' to match songs that are not tagged 'FOO'.
 ";
 }
 
 fn tags(cmd_out: &mut String) {
 	*cmd_out += "\
-tlc     - Display all Tags of the current File
-tla     - Display all Tags of all Files
-tac TAG - add TAG to the current File
-trc TAG - remove TAG from the current File
-taa TAG - add TAG to all remaining Files
-tra TAG - remove TAG from all remaining Files
+tlc     - display all tags of the current file
+tla     - display all tags of all files
+tac TAG - add TAG to the current file
+trc TAG - remove TAG from the current file
+taa TAG - add TAG to all remaining files
+tra TAG - remove TAG from all remaining files
 ";
 }
 
 fn goto(cmd_out: &mut String) {
 	*cmd_out += "\
-g   TIME - go to TIME in the current Song
+g   TIME - go to TIME in the current song
 gf  TIME - jumps forward by TIME
 gb  TIME - jumps backward by TIME
-gd       - display the progress of the current Song
+gd       - display the progress of the current song
+
+TIME can be specified using a space separated list of values with units.
+For example '1m 20s' represents a duration of 1 minute and 20 seconds.
+The allowed units are: h,m,s.
 ";
 }
 
 fn macros(cmd_out: &mut String) {
 	*cmd_out += "\
-a Macro is formatted as follows: <command 1>; <command 2>; ...
-and all instances of $0, $1, ... will be replaced with the arguments
-$a will insert all arguments seperated by spaces
+A macro is formatted as follows: <command 1>; <command 2>; ...
+and all instances of $0, $1, ... will be replaced with the arguments.
+$a will insert all arguments separated by spaces.
 
-Event Macros' names start with an @ symbol. Use 'help event' for more info.
+If you want to write a ';' inside a macro you can use ';1',
+which will be converted to ';' when the macro is called.
+Similarly, ';2' converts to ';1' and ';3' converts to ';2'.
 
-m NAME ARGS - run Macro with NAME and arguments ARGS
-ma NAME DEF - add a Macro with NAME that runs DEF
-mr NAME     - remove a Macro with NAME
-mc NAME DEF - change an existing Macro with NAME to run DEF
-ml          - lists all Macros
+Event macros' names start with an @ symbol. Use 'help event' for more info.
+
+m  NAME ARGS - run macro with NAME and arguments ARGS
+ma NAME DEF  - add a macro with NAME that runs DEF
+mr NAME      - remove a macro with NAME
+mc NAME DEF  - change an existing macro with NAME to run DEF
+ml           - lists all macros
+
+When running 'm NAME ARGS' you can leave out the 'm '.
+So just writing 'NAME ARGS' will also run the macro called 'NAME'.
 ";
 }
 
 fn event_macros(cmd_out: &mut String) {
 	*cmd_out += "\
-An Event Macro is a special kind of macro that starts with an @ symbol.
-Event Macros will automatically be called by the program, but can also be called manually.
-Triggering an Event from inside another Event Macro is not supported.
+An event macro is a special kind of macro that starts with an @ symbol.
+Event macros will automatically be called by the program, but can also be called manually.
+Triggering an event from inside another event macro is not supported.
 They must have on of the following names:
 
 @cmd_empty   - entered an empty command
@@ -224,10 +237,10 @@ They must have on of the following names:
 
 fn file_system(cmd_out: &mut String) {
 	*cmd_out += "\
-dr         - Add new files to the config, and remove deleted ones
-del        - delete the current song from your computer
+dr         - add new files to the config, and remove deleted ones
+del        - trash the current song and remove it from the list of tracked files
 dm  PATH   - move the current song to a new directory
-dp         - show the full path of the file
+dp         - show the full path of the current file
 ds         - shows all directories
 ";
 }

@@ -1,0 +1,71 @@
+.TH TTMP "1" "2026-10-08" "ttmp 0.3.2" "User Commands"
+.SH NAME
+ttmp \- minimal TUI music player that organizes songs using tags.
+.SH SYNOPSIS
+.B ttmp
+[\fI\,OPTION\/\fR | \fI\,FILE\/\fR]...
+.SH DESCRIPTION
+.PP
+All arguments that do not start with a '-' will be interpreted as file paths.
+If you specify at least 1 file, you will (unless specified otherwise) start in 'temp' mode
+with all of those songs in the current playlist.
+Otherwise, you will start in 'main' mode, restoring your previous main mode playlist.
+.PP
+If the first file argument is an absolute path, IPC will be enabled,
+which will send any songs to an already open ttmp process (if one exists).
+.PP
+To get started with ttmp, run \fBttmp\fR and then press '?' or ':help first<Enter>'
+to get an introduction on how to use ttmp.
+.PP
+You can set the path to your music folder in \fI\,files.ron\/\fR in the data directory.
+.SH OPTIONS
+.TP
+\fB\-\-help, \-h\fP
+Print help and exit.
+.TP
+\fB\-\-version, \-v\fP
+Print version info and exit.
+.TP
+\fB\-\-force\-ipc\fP
+Force interprocess communication to be enabled.
+.TP
+\fB\-\-no\-ipc\fP
+Disable all interprocess communication.
+.TP
+\fB\-\-no\-media\fP
+Disable media controls and metadata.
+.TP
+\fB\-\-mode, \-m\fP \fI\,MODE\/\fR
+Specify what program mode to start in.
+\fI\,MODE\/\fR must be either 'main' or 'temp'.
+
+Main mode is the typical mode in which you can listen to the
+songs in your music folder and your last session is restored.
+
+In temp mode, pressing 'r' will only fill the playlist with the songs given in the
+command line arguments and no operation will save anything to the config or data paths.
+Do note that default config and data are still created if they don't already exist.
+.TP
+\fB\-\-data, \-d\fP \fI\,PATH\/\fR
+Specify the data path.
+\fI\,PATH\/\fR should be a directory.
+
+The default data path is \fI\,$XDG_DATA_HOME/ttmp\/\fR or \fI\,~/.local/share/ttmp\/\fR.
+.TP
+\fB\-\-config, \-c\fP \fI\,PATH\/\fR
+Specify the config path.
+\fI\,PATH\/\fR should be a directory.
+
+The default config path is \fI\,$XDG_CONFIG_HOME/ttmp\/\fR or \fI\,~/.config/ttmp\/\fR.
+.TP
+\fB\-\-\fP
+Force all arguments after this one to be interpreted as file paths.
+.SH BUGS
+.PP
+The text "audio stream error: Buffer underrun/overrun occurred." will sometimes be displayed.
+This is a bug in one of ttmp's dependencies.
+If you resize the terminal window, everything will be redrawn, which will clear this text.
+.PP
+You can report bugs at: \fI\,https://github.com/BlueSheep3/ttmp/issues\/\fR
+.SH AUTHOR
+Arne Daude (arne.daude@t-online.de) and Per Daude (per.daude@t-online.de)

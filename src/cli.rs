@@ -114,7 +114,7 @@ Otherwise, you will start in 'main' mode, restoring your previous main mode play
 If the first file argument is an absolute path, IPC will be enabled,
 which will send any songs to an already open ttmp process (if one exists).
 
-Arguments:
+Options:
   --help, -h         - print help and exit
   --version, -v      - print version info and exit
   --force-ipc        - force interprocess communication to be enabled

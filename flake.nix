@@ -28,11 +28,14 @@
       postFixup = ''patchelf --add-rpath "${pkgs.lib.makeLibraryPath rpathLibs}" $out/bin/${pname}'';
 
       postInstall = ''
-        mkdir -p "$out/share/icons/hicolor/512x512/apps"
-        cp 'assets/icon.png' "$out/share/icons/hicolor/512x512/apps/${pname}.png"
+        mkdir -p "$out/share/icons/hicolor/256x256/apps"
+        cp 'assets/icon.png' "$out/share/icons/hicolor/256x256/apps/${pname}.png"
 
         mkdir -p "$out/share/applications"
         cp 'assets/desktopfile.desktop' "$out/share/applications/${pname}.desktop"
+
+        mkdir -p "$out/share/man/man1"
+        cp 'assets/man1' "$out/share/man/man1/${pname}.1"
       '';
     };
 
