@@ -48,6 +48,7 @@ impl Default for Config {
 				),
 				(KeyCode::Char('q'), Message::RunCommand("q".to_owned())),
 				(KeyCode::Char('S'), Message::RunCommand("s".to_owned())),
+				(KeyCode::Char('.'), Message::RepeatLastCommand),
 				// managing this song
 				(KeyCode::Char(' '), Message::RunCommand("p".to_owned())),
 				(KeyCode::Char('p'), Message::RunCommand("p-".to_owned())),

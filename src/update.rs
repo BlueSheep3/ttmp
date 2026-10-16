@@ -21,8 +21,6 @@ use std::{
 	time::{Duration, Instant},
 };
 
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
-
 pub fn init(model: &mut Model) {
 	if model.ctx.playlist.remaining.is_empty() {
 		remaining_songs_ended(&mut model.ctx);
@@ -41,15 +39,15 @@ struct UpdateTemp {
 	reload_first_song: bool,
 }
 
-pub fn update(mut model: Box<Model>, message: Message) -> Result<(Box<Model>, Option<Message>)> {
+pub fn update(mut model: Box<Model>, message: Message) -> (Box<Model>, Option<Message>) {
 	let mut update_temp = UpdateTemp::default();
 
 	receive_files_over_ipc(&mut model);
 
-	handle_message(&mut model, message, &mut update_temp)?;
+	handle_message(&mut model, message, &mut update_temp);
 
 	if let Ok(cmd) = model.cmd_receiver.try_recv() {
-		run_command(&mut model, &mut update_temp, &cmd)?;
+		run_command(&mut model, &mut update_temp, &cmd);
 	}
 
 	if !model.ctx.player.is_paused() {
@@ -76,11 +74,15 @@ pub fn update(mut model: Box<Model>, message: Message) -> Result<(Box<Model>, Op
 
 	media::common_update();
 	if model.last_media_update.elapsed() > Duration::from_secs(5) {
-		model.ctx.update_media_progress()?;
+		// media metadata is not that important to the whole process, so it shouldn't crash here
+		if let Err(e) = model.ctx.update_media_progress() {
+			// FIXME report this in a better way
+			eprintln!("error while updating media progress:\n{e}");
+		}
 		model.last_media_update = Instant::now();
 	}
 
-	Ok((model, msg))
+	(model, msg)
 }
 
 fn handle_update_temp(update_temp: &UpdateTemp, ctx: &mut Context) -> Option<Message> {
@@ -105,19 +107,30 @@ fn handle_update_temp(update_temp: &UpdateTemp, ctx: &mut Context) -> Option<Mes
 	}
 }
 
-fn handle_message(model: &mut Model, message: Message, update_temp: &mut UpdateTemp) -> Result<()> {
+fn handle_message(model: &mut Model, message: Message, update_temp: &mut UpdateTemp) {
 	match message {
 		Message::DoUpdateAgain => (),
 		Message::GotoNormalMode => {
 			model.ctx.cmd_out = String::new();
 			model.current_command = None;
+			model.is_manual_command = false;
 		}
-		Message::GotoCommandMode => _ = model.current_command.get_or_insert(String::new()),
+		Message::GotoCommandMode => {
+			model.current_command = Some(String::new());
+			model.is_manual_command = true;
+		}
+		Message::RepeatLastCommand => {
+			if let Some(cmd) = &model.last_manual_command {
+				run_command(model, update_temp, &cmd.clone());
+			}
+		}
 		Message::ToggleScreenRedraws => model.ctx.state.dont_redraw_screen ^= true,
 
 		Message::Quit { .. } => (), // this gets handled in the main loop
-		Message::RunCommand(cmd) => run_command(model, update_temp, &cmd)?,
-		Message::StartCommand(cmd) => model.current_command = Some(cmd),
+		Message::RunCommand(cmd) => run_command(model, update_temp, &cmd),
+		Message::StartCommand(cmd) => {
+			model.current_command = Some(cmd);
+		}
 
 		Message::TypedChar(c) => {
 			model.current_command.get_or_insert(String::new()).push(c);
@@ -130,15 +143,19 @@ fn handle_message(model: &mut Model, message: Message, update_temp: &mut UpdateT
 		Message::Enter => {
 			if let Some(cmd) = &mut model.current_command {
 				let cmd_clone = cmd.clone();
-				run_command(model, update_temp, &cmd_clone)?;
+				run_command(model, update_temp, &cmd_clone);
+
+				if model.is_manual_command {
+					model.last_manual_command = model.current_command.clone();
+				}
 				model.current_command = None;
+				model.is_manual_command = false;
 			}
 		}
 	}
-	Ok(())
 }
 
-fn run_command(model: &mut Model, update_temp: &mut UpdateTemp, cmd: &str) -> Result<()> {
+fn run_command(model: &mut Model, update_temp: &mut UpdateTemp, cmd: &str) {
 	model.ctx.cmd_out.clear();
 
 	let was_not_empty = !model.ctx.playlist.remaining.is_empty();
@@ -161,7 +178,6 @@ fn run_command(model: &mut Model, update_temp: &mut UpdateTemp, cmd: &str) -> Re
 			update_temp,
 		);
 	}
-	Ok(())
 }
 
 fn receive_files_over_ipc(model: &mut Model) {

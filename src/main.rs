@@ -100,7 +100,7 @@ fn fallible_main() -> Result<(), Box<dyn Error>> {
 				cleanup(model);
 				return Ok(());
 			}
-			(model, message) = update::update(model, m)?;
+			(model, message) = update::update(model, m);
 		}
 	}
 }
@@ -118,6 +118,8 @@ fn cleanup(model: Box<Model>) {
 
 struct Model {
 	current_command: Option<String>,
+	is_manual_command: bool,
+	last_manual_command: Option<String>,
 
 	ctx: Context,
 	last_update_time: Instant,
@@ -133,6 +135,7 @@ enum Message {
 	DoUpdateAgain,
 	GotoNormalMode,
 	GotoCommandMode,
+	RepeatLastCommand,
 	ToggleScreenRedraws,
 
 	Quit { save: bool, abort_on_error: bool },
@@ -152,6 +155,8 @@ impl Model {
 	) -> Self {
 		Self {
 			current_command: None,
+			is_manual_command: false,
+			last_manual_command: None,
 
 			ctx,
 			last_update_time: Instant::now(),

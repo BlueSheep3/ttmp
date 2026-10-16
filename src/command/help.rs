@@ -99,6 +99,7 @@ however you can rebind them in the config file.
 ?            - open a help page
 q            - save and quit
 S            - save
+.            - repeat the last command manually entered in command mode
 
 space        - pause/play
 p            - pause
