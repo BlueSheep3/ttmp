@@ -1,4 +1,4 @@
-.TH TTMP "1" "2026-10-08" "ttmp 0.3.2" "User Commands"
+.TH TTMP "1" "2026-10-08" "ttmp 0.3.3" "User Commands"
 .SH NAME
 ttmp \- minimal TUI music player that organizes songs using tags.
 .SH SYNOPSIS
